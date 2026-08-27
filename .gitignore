@@ -1,0 +1,568 @@
+# ============================================
+# Python
+# ============================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.*.local
+.env.local
+.env.production
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# ============================================
+# Node.js / Next.js / shadcn/ui / Fintech
+# ============================================
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+*.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# promo video
+/video/
+
+# ============================================
+# Project Specific
+# ============================================
+# Virtual Environment (explicitly excluded)
+venv/
+.venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+myenv/
+pyenv/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.idea/
+.classpath
+.project
+.settings/
+*.iml
+*.iws
+*.ipr
+*.orig
+*.rej
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Uploaded files
+api/uploads/
+*.tmp
+temp/
+tmp/
+*.temp
+
+# Data files (synthetic/test data can be excluded, but keep structure)
+standardisation/data/raw/*
+!standardisation/data/raw/.gitkeep
+standardisation/data/standardized/*
+!standardisation/data/standardized/.gitkeep
+standardisation/data/mappings/*
+!standardisation/data/mappings/.gitkeep
+
+# Reconciliation outputs
+reconciliation/data/*
+!reconciliation/data/.gitkeep
+
+# Chatbot workspace
+chat-bot/workspace/uploads/*
+!chat-bot/workspace/uploads/.gitkeep
+chat-bot/workspace/.dsh/skills/*/README.md
+chat-bot/workspace/.dsh/skills/*/examples/
+
+# Backups (if generated)
+*_backup_*.csv
+*_backup_*.json
+*.bak
+*.backup
+
+# Logs
+logs/
+*.log
+log/
+access.log
+error.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache/
+.cache/**
+
+# OS-specific
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ============================================
+# Sensitive Files (Never Commit)
+# ============================================
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.secret
+*.secrets
+*.token
+*.oauth
+
+# Security
+.htaccess
+.htpasswd
+
+# ============================================
+# Documentation Build Outputs
+# ============================================
+docs/_build/
+docs/api/
+site/
+
+# ============================================
+# Backup & Temp Files
+# ============================================
+*.swp
+*.swo
+*.tmp
+*.temp
+*~
+*.orig
+*.rej
+*.old
+*.new
+
+# ============================================
+# Frontend Template Specific
+# ============================================
+# shadcn/ui (components are committed, but keep backups)
+frontend/src/components/ui/backup/
+frontend/src/components/ui/*.backup
+
+# Fintech template specific ignores
+!.gitkeep
+!.gitignore
+
+# ============================================
+# Synthetic Data (Keep structure, not the data)
+# ============================================
+synthetic/data/*.csv
+!synthetic/data/.gitkeep
+
+# ============================================
+# Docker
+# ============================================
+*.pid
+*.pid.lock
+.dockerignore
+docker-compose.override.yml
+
+# ============================================
+# Coverage Reports
+# ============================================
+coverage/
+.nyc_output/
+lcov-report/
+test-results/
+
+# ============================================
+# Performance / Profiling
+# ============================================
+*.cpuprofile
+*.heapsnapshot
+*.profile
+*.pyprof
+
+# ============================================
+# Package Manager Lock Files (optional)
+# ============================================
+# If you prefer to commit lock files, remove these lines
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ============================================
+# Miscellaneous
+# ============================================
+*.code-workspace
+*.code-search
+.codeclimate.yml
+.sass-cache/
+*.logrotate
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.log
+*.pid
+*.pid.lock
+
+# ============================================
+# Virtual Environment
+# ============================================
+venv/
+.venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+myenv/
+pyenv/
+
+# ============================================
+# Environment Variables
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.local
+.env.production
+*.env
+*.env.*
+
+# ============================================
+# IDE / Editor
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.classpath
+.project
+.settings/
+*.iml
+*.iws
+*.ipr
+*.orig
+*.rej
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================
+# Generated / Temporary Files
+# ============================================
+api/uploads/
+api/_tmp*.json
+api/_tmp_params.json
+api/*.tmp
+api/temp/
+
+# ============================================
+# Standardisation Generated Files
+# ============================================
+standardisation/data/standardized/*.csv
+standardisation/data/mappings/*.csv
+standardisation/data/last_mcp_action.json
+standardisation/data/*.json
+!standardisation/data/.gitkeep
+
+# ============================================
+# Reconciliation Generated Files
+# ============================================
+reconciliation/data/
+reconciliation/reconciliation_*.csv
+reconciliation/*.bak
+reconciliation/*.backup
+reconciliation/reconciliation_results.csv
+reconciliation/reconciliation_exceptions.csv
+reconciliation/data/*.csv
+!reconciliation/data/.gitkeep
+
+# ============================================
+# Chatbot Generated Files
+# ============================================
+chat-bot/workspace/uploads/*.csv
+chat-bot/workspace/uploads/*.json
+chat-bot/workspace/uploads/*.xlsx
+!chat-bot/workspace/uploads/.gitkeep
+
+# ============================================
+# Frontend (shadcn/fintech template)
+# ============================================
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.*
+frontend/.yarn/*
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
+frontend/coverage/
+frontend/.vercel/
+frontend/.clerk/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# ============================================
+# Synthetic Data (Optional - keep structure, ignore generated)
+# ============================================
+synthetic/data/*_generated.csv
+synthetic/data/temp/
+!synthetic/data/.gitkeep
+
+# ============================================
+# Backup Files
+# ============================================
+*_backup_*.csv
+*_backup_*.json
+*.bak
+*.backup
+*.old
+*.orig
+
+# ============================================
+# OS-specific
+# ============================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+
+# ============================================
+# Testing / Coverage
+# ============================================
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+htmlcov/
+.tox/
+.nox/
+
+# ============================================
+# Docker
+# ============================================
+*.pid
+*.pid.lock
+.dockerignore
+docker-compose.override.yml
+
+# ============================================
+# Security / Secrets
+# ============================================
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.secret
+*.secrets
+*.token
+*.oauth
+.htaccess
+.htpasswd

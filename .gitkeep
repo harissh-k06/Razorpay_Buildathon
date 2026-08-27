@@ -1,0 +1,8 @@
+# Create all needed .gitkeep files
+touch api/uploads/.gitkeep
+touch standardisation/data/raw/.gitkeep
+touch standardisation/data/standardized/.gitkeep
+touch standardisation/data/mappings/.gitkeep
+touch reconciliation/data/.gitkeep
+touch chat-bot/workspace/uploads/.gitkeep
+touch synthetic/data/.gitkeep

@@ -1,0 +1,151 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --color-primary: #305EFF;
+  --color-primary-light: #4D7FFF;
+  --color-primary-soft: #75A3FF;
+  --color-primary-dark: #2950DA;
+  --color-success: #009E5C;
+  --color-success-light: #48D08C;
+  --color-success-dark: #006C3F;
+  --color-surface-1: #F8FAFC;
+  --color-surface-2: #E6EFF4;
+  --color-surface-3: #EDF4F7;
+  --color-text-primary: #192839;
+  --color-text-secondary: #243547;
+  --color-text-muted: #40566D;
+  --color-text-disabled: #768EA7;
+  --color-accent-navy: #0C1927;
+  --color-accent-teal: #032A3E;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), Arial, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-heading: var(--font-inter), Arial, system-ui, sans-serif;
+  --font-display: "TASA Orbiter Display", var(--font-inter), Arial, system-ui, sans-serif;
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #192839;
+  --card: #FFFFFF;
+  --card-foreground: #192839;
+  --popover: #FFFFFF;
+  --popover-foreground: #192839;
+  --primary: #305EFF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EDF4F7;
+  --secondary-foreground: #192839;
+  --muted: #F8FAFC;
+  --muted-foreground: #40566D;
+  --accent: #E6EFF4;
+  --accent-foreground: #192839;
+  --destructive: #D32F2F;
+  --border: #CBD5E2;
+  --input: #CBD5E2;
+  --ring: #305EFF;
+  --chart-1: #305EFF;
+  --chart-2: #009E5C;
+  --chart-3: #4D7FFF;
+  --chart-4: #032A3E;
+  --chart-5: #75A3FF;
+  --radius: 0.5rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #192839;
+  --sidebar-primary: #305EFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E6EFF4;
+  --sidebar-accent-foreground: #192839;
+  --sidebar-border: #CBD5E2;
+  --sidebar-ring: #305EFF;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@utility animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+/* Visible horizontal and vertical table scrollbar styling */
+.table-scrollbar {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  scrollbar-width: auto;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.table-scrollbar::-webkit-scrollbar {
+  height: 8px !important;
+  width: 8px !important;
+  display: block !important;
+}
+
+.table-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.table-scrollbar::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+.table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #0D94FB;
+}

@@ -1,0 +1,164 @@
+invoice_ids,settlement_utr,_original_vendor,_razorpay_vendor,_variance_type,_bank_split_count
+INV-171,1787601594ywx6ry,Stripe Payments,STRP,abbr,1
+"INV-118,INV-151,INV-056,INV-096",1787601594qa2y8w,Stripe Payments,STRP,abbr,2
+INV-198,17876015944ntmeg,Stripe Payments,Stripe Payments,exact,1
+INV-175,1787601594ajivdt,Stripe Payments,STRP,abbr,1
+"INV-180,INV-188,INV-141",1787601594nj74nc,Stripe Payments,Stripe Payments,exact,1
+INV-043,178760159451ku9lp1,Stripe Payments,STRP,abbr,1
+INV-043,1787601594xsfe79p2,Stripe Payments,Stripe Payments,exact,1
+INV-043,178760159406eq5tp3,Stripe Payments,Stripe Payments,exact,1
+INV-113,178760159433ipyd,Stripe Payments,Stripe Payments,exact,1
+INV-001,1787601594qdv0hw,Stripe Payments,Stripe Payments,exact,1
+INV-139,17876015947pn767,Amazon Web Services,AMAZON,short,1
+INV-002,17876015942fxt6c,Amazon Web Services,Amazon Web Services,exact,1
+INV-161,1787601594zvnpjo,Amazon Web Services,Amzn,abbr,1
+INV-071,1787601594yd7715p1,Amazon Web Services,AMAZON,short,1
+INV-071,17876015949spc05p2,Amazon Web Services,AMAZON,short,1
+INV-169,1787601594ym2ees,Amazon Web Services,Amzn,abbr,1
+INV-158,1787601594mlgaol,Amazon Web Services,Amzn,abbr,1
+INV-148,1787601594e1fosy,Amazon Web Services,Amzn,abbr,1
+"INV-146,INV-108",17876015942ldbhg,Amazon Web Services,AMAZON,short,1
+INV-196,1787601594wiw79c,Zoho Corporation,ZOHO,abbr,1
+INV-042,1787601594sdxm4q,Zoho Corporation,Zoho Corporation,exact,1
+INV-104,1787601594yij2gg,Zoho Corporation,ZOHO,abbr,1
+INV-106,17876015946n48hy,Zoho Corporation,ZOHO,short,1
+INV-194,17876015944bw81m,Zoho Corporation,ZOHO,short,1
+INV-089,1787601594eun07c,Zoho Corporation,ZOHO,abbr,1
+"INV-003,INV-193",1787601594x5i1pb,Zoho Corporation,ZOHO,abbr,3
+INV-133,17876015947ac0k1,Zoho Corporation,Zoho Corporation,exact,1
+INV-012,1787601594jsjx2q,Zoho Corporation,ZOHO,abbr,1
+INV-041,1787601594perp89,Zoho Corporation,ZOHO,short,1
+INV-114,1787601594gkk8c6,Salesforce.com,SALESFORCE,short,1
+INV-004,178760159449vhwv,Salesforce.com,SFDC,abbr,1
+INV-079,1787601594hnuvmx,Salesforce.com,SFDC,abbr,1
+INV-157,17876015940z469v,Salesforce.com,SALESFORCE,short,1
+INV-095,1787601594u9igjw,Salesforce.com,SFDC,abbr,1
+INV-130,17876015940z1rcw,Salesforce.com,Salesforce.com,exact,1
+INV-163,1787601594emt3i3,Salesforce.com,SFDC,abbr,1
+INV-183,1787601594r9er8d,Salesforce.com,Salesforce.com,exact,1
+INV-147,1787601594hchtu5,Salesforce.com,SFDC,abbr,1
+"INV-040,INV-053,INV-045",1787601594diq23i,Salesforce.com,SFDC,abbr,1
+INV-068,1787601594jn5tb2p1,Salesforce.com,Salesforce.com,exact,1
+INV-068,1787601594ombzxsp2,Salesforce.com,SFDC,abbr,1
+INV-068,1787601594zkslljp3,Salesforce.com,SFDC,abbr,1
+INV-135,1787601594lic7vp,Shopify Inc,Shopify Inc,exact,1
+INV-160,1787601594p1zpco,Shopify Inc,SHOP,abbr,1
+INV-015,17876015946ciz00,Shopify Inc,SHOPIFY,short,1
+INV-092,1787601594j19c5y,Shopify Inc,Shopify Inc,exact,1
+INV-177,1787601594za2tzl,Shopify Inc,Shopify Inc,exact,1
+INV-200,1787601594huqbpx,Shopify Inc,SHOP,abbr,1
+INV-017,1787601594naph7k,Shopify Inc,SHOP,abbr,1
+INV-086,1787601594j9a0dz,Shopify Inc,Shopify Inc,exact,1
+INV-103,1787601594qrtdrnp1,Shopify Inc,SHOP,abbr,1
+INV-103,1787601594htdefop2,Shopify Inc,Shopify Inc,exact,1
+INV-007,1787601594r2p9zb,Shopify Inc,Shopify Inc,exact,1
+INV-126,1787601594yb1bxzp1,Shopify Inc,SHOPIFY,short,1
+INV-126,1787601594gr24dkp2,Shopify Inc,SHOPIFY,short,1
+INV-126,1787601594lai3s0p3,Shopify Inc,SHOPIFY,short,1
+"INV-008,INV-127,INV-005,INV-060",1787601594wa8nli,Shopify Inc,SHOP,abbr,1
+INV-072,1787601594y5ihoq,Shopify Inc,SHOP,abbr,1
+INV-078,1787601594a0uazo,Twilio Inc,Twilio Inc,exact,1
+INV-014,1787601594u39yei,Twilio Inc,TWL,abbr,1
+INV-159,1787601594furk2j,Twilio Inc,TWL,abbr,1
+INV-038,1787601594g8olhh,Twilio Inc,Twilio Inc,exact,1
+INV-182,1787601594vqf7n0,Twilio Inc,Twilio Inc,exact,1
+INV-031,1787601594ndxcp9,Twilio Inc,TWL,abbr,1
+INV-027,1787601594rcvgrb,Twilio Inc,TWL,abbr,1
+INV-046,1787601594y1brcy,Twilio Inc,TWL,abbr,1
+INV-006,1787601594ak2rch,Twilio Inc,Twilio Inc,exact,1
+"INV-057,INV-024,INV-109,INV-101",1787601594ptemxk,Freshworks Inc,Freshworks Inc,exact,1
+INV-143,1787601594f1s54x,Freshworks Inc,FRESHWORKS,short,1
+INV-009,1787601594741rpw,Freshworks Inc,Freshworks Inc,exact,1
+"INV-156,INV-138",1787601594gpd4pm,Freshworks Inc,FRESHWORKS,short,1
+INV-091,1787601594ut44h3,Atlassian,ATL,abbr,1
+INV-077,17876015947z99ue,Atlassian,ATL,abbr,1
+INV-065,1787601594up95n3p1,Atlassian,ATL,abbr,1
+INV-065,17876015949anzutp2,Atlassian,ATL,abbr,1
+"INV-049,INV-066,INV-073,INV-099",1787601594mo47s7,Atlassian,ATL,abbr,1
+INV-018,17876015946chb1u,Atlassian,Atlassian,exact,1
+"INV-028,INV-081,INV-076",17876015940atj58,Atlassian,Atlassian,exact,1
+"INV-010,INV-162",1787601594czh474,Atlassian,Atlassian,exact,2
+INV-144,17876015948j96z7,Atlassian,ATLASSIAN,short,1
+INV-070,17876015945nmt4gp1,Atlassian,ATLASSIAN,short,1
+INV-070,178760159424i46qp2,Atlassian,ATL,abbr,1
+INV-097,1787601594omzfi1,Atlassian,Atlassian,exact,1
+INV-119,17876015949m7fzy,Atlassian,ATL,abbr,1
+"INV-191,INV-082,INV-011,INV-080",17876015944kxgum,Microsoft Azure,MSFT,abbr,1
+INV-022,1787601594wikx2o,Microsoft Azure,MICROSOFT,short,1
+INV-059,1787601594f7ws81,Microsoft Azure,MSFT,abbr,1
+INV-036,1787601594g432pf,Microsoft Azure,MICROSOFT,short,1
+INV-062,1787601594vhd26v,Microsoft Azure,MSFT,abbr,1
+INV-019,178760159452tjrnp1,Google Cloud Platform,GCP,abbr,1
+INV-019,17876015942itlmvp2,Google Cloud Platform,GOOGLE,short,1
+INV-019,178760159415j06sp3,Google Cloud Platform,Google Cloud Platform,exact,1
+"INV-029,INV-064",1787601594twejas,Google Cloud Platform,GCP,abbr,1
+INV-044,1787601594cspkx8,Google Cloud Platform,GCP,abbr,1
+"INV-174,INV-168",1787601594aqd4ua,Google Cloud Platform,GOOGLE,short,1
+"INV-074,INV-129,INV-107",1787601594cqkf19,Google Cloud Platform,GCP,abbr,2
+INV-013,1787601594g3zm48,Google Cloud Platform,Google Cloud Platform,exact,1
+INV-128,1787601594e1v0tl,Cloudflare Inc,CF,abbr,1
+INV-153,17876015946ca4y3,Cloudflare Inc,Cloudflare Inc,exact,1
+"INV-075,INV-087,INV-140,INV-189",1787601594j7dsr0,Cloudflare Inc,CF,abbr,2
+INV-058,1787601594ywejh0p1,Cloudflare Inc,Cloudflare Inc,exact,1
+INV-058,1787601594a0x3wdp2,Cloudflare Inc,CF,abbr,1
+INV-058,1787601594jt6hemp3,Cloudflare Inc,CLOUDFLARE,short,1
+INV-115,1787601594kqkl33,Cloudflare Inc,CLOUDFLARE,short,1
+INV-048,1787601594mfjryfp1,Cloudflare Inc,Cloudflare Inc,exact,1
+INV-048,1787601594878zejp2,Cloudflare Inc,CF,abbr,1
+"INV-063,INV-020,INV-120,INV-111",1787601594vsvmbv,Cloudflare Inc,Cloudflare Inc,exact,1
+INV-149,1787601594ra680j,Cloudflare Inc,Cloudflare Inc,exact,1
+INV-186,1787601594owlf70,Dropbox Inc,DBX,abbr,1
+"INV-055,INV-176",17876015945wtzgu,Dropbox Inc,DROPBOX,short,3
+INV-195,1787601594olaqjo,Dropbox Inc,DROPBOX,short,1
+INV-124,17876015944p64ac,Dropbox Inc,DBX,abbr,1
+INV-125,1787601594ce0hx8,Dropbox Inc,DROPBOX,short,1
+"INV-021,INV-199",1787601594hxc9y3,Dropbox Inc,Dropbox Inc,exact,3
+INV-098,1787601594kbhbtx,Dropbox Inc,DROPBOX,short,1
+INV-178,1787601594geuea3,Dropbox Inc,Dropbox Inc,exact,1
+INV-030,1787601594uf9q36,Dropbox Inc,DBX,abbr,1
+INV-179,1787601594cffby9,Dropbox Inc,Dropbox Inc,exact,1
+INV-094,1787601594qrey32p1,Dropbox Inc,DROPBOX,short,1
+INV-094,178760159454j3rip2,Dropbox Inc,Dropbox Inc,exact,1
+INV-094,1787601594pul37vp3,Dropbox Inc,DROPBOX,short,1
+INV-190,1787601594twfh99p1,Dropbox Inc,DBX,abbr,1
+INV-190,1787601594ixhh4mp2,Dropbox Inc,DBX,abbr,1
+INV-190,17876015940wi14zp3,Dropbox Inc,DBX,abbr,1
+INV-026,1787601594j3vjwo,Dropbox Inc,DBX,abbr,1
+INV-050,17876015942u9cwg,Dropbox Inc,Dropbox Inc,exact,1
+INV-023,1787601594pn1v5i,Dropbox Inc,DROPBOX,short,1
+INV-100,1787601594tx8gug,Slack Technologies,SLK,abbr,1
+"INV-122,INV-061",1787601594rjkpwd,Slack Technologies,SLK,abbr,1
+INV-145,17876015946g80vz,Slack Technologies,Slack Technologies,exact,1
+INV-112,1787601594ibuf2y,Slack Technologies,SLK,abbr,1
+INV-121,17876015942k5fo5,Slack Technologies,SLACK,short,1
+"INV-025,INV-039",1787601594djbkqd,Slack Technologies,Slack Technologies,exact,1
+"INV-155,INV-185,INV-123,INV-131",17876015948mmul2,Slack Technologies,SLACK,short,1
+INV-152,1787601594ao2jjv,Slack Technologies,SLACK,short,1
+"INV-093,INV-084,INV-032,INV-132",1787601594txxl0t,Zoom Video Communications,Zoom Video Communications,exact,2
+"INV-069,INV-083",1787601594ug4bmk,Zoom Video Communications,ZOOM,short,1
+INV-192,1787601594rpqapx,DigitalOcean,DigitalOcean,exact,1
+INV-090,1787601594hlzzvu,DigitalOcean,DigitalOcean,exact,1
+"INV-164,INV-067,INV-102,INV-184",17876015941dmuuh,DigitalOcean,DIGITALOCEAN,short,2
+INV-035,17876015948ufj81,DigitalOcean,DigitalOcean,exact,1
+"INV-154,INV-033,INV-172,INV-166",17876015944zo65g,DigitalOcean,DigitalOcean,exact,2
+INV-047,178760159408vumc,DigitalOcean,DIGITALOCEAN,short,1
+INV-105,1787601594omg629,DigitalOcean,DO,abbr,1
+INV-037,1787601594hfo9mq,Adobe Creative Cloud,Adobe Creative Cloud,exact,1
+INV-173,178760159427r5b0,Adobe Creative Cloud,ADBE,abbr,1
+INV-170,1787601594siwemi,Adobe Creative Cloud,Adobe Creative Cloud,exact,1
+INV-051,1787601594qz2uxa,Adobe Creative Cloud,Adobe Creative Cloud,exact,1
+INV-181,1787601594qpco7p,Adobe Creative Cloud,ADOBE,short,1
+INV-134,1787601594irdhzvp1,Adobe Creative Cloud,Adobe Creative Cloud,exact,1
+INV-134,1787601594dibqtgp2,Adobe Creative Cloud,ADOBE,short,1
+INV-134,1787601594m10w6bp3,Adobe Creative Cloud,ADOBE,short,1
+"INV-165,INV-117",178760159446avt9,Adobe Creative Cloud,ADOBE,short,2
+INV-136,1787601594945a2y,Adobe Creative Cloud,ADBE,abbr,1
+INV-150,1787601594zy9drj,Adobe Creative Cloud,Adobe Creative Cloud,exact,1
+"INV-137,INV-034,INV-088,INV-085",1787601594wchwku,Adobe Creative Cloud,ADOBE,short,1
+INV-167,1787601594fexut8,Adobe Creative Cloud,ADBE,abbr,1
+INV-187,1787601594dnth5z,Adobe Creative Cloud,Adobe Creative Cloud,exact,1
+,1787601594wc4saq,Google Cloud Platform,GCP,extra,1
+,178760159419ia24,Google Cloud Platform,GCP,extra,1
+,1787601594ss78of,Twilio Inc,TWL,extra,1
+,1787601594eq3o3j,Stripe Payments,STRP,extra,1
+,178760159486ytfr,Salesforce.com,SFDC,extra,1

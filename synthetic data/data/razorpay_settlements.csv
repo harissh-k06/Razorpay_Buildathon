@@ -1,0 +1,233 @@
+entity_id,type,amount,currency,fee,tax,credit,debit,settlement_id,settlement_utr,settled_at,created_at,description,order_id,method,card_network
+pay_MIs40UBk4w017X,payment,1229344,INR,26642,4796,1197906,0,setl_xdhfYqK8rcqANk,1787854736lwjtiq,1785689358,1785522600,Amazon Web Services - Settlement,order_TUtFkIECbLgBFs,card,RUPay
+pay_YURc2wmgaZJkv6,payment,5382349,INR,105238,18943,5258168,0,setl_xdhfYqK8rcqANk,1787854736lwjtiq,1785689358,1785522600,Amazon Web Services - Settlement,order_iL92eTeFONgA4M,card,MC
+pay_Pd0EZnMrePoAuv,payment,4219684,INR,76367,13746,4129571,0,setl_VLaZuWYbj8qysx,1787854736t4h20r,1757357476,1757269800,Stripe Payments - Settlement,order_TUtFb4m9a9I11D,card,MC
+pay_xrci4HIcgiTuby,payment,3965685,INR,74854,13474,3877357,0,setl_Ke90gswSijYqDy,1787854736rwqmmu,1765857179,1765737000,Amazon Web Services - Settlement,order_TUtFbANjpaGMkM,card,RUPay
+pay_h3udQPnvgmRERQ,payment,366742,INR,7820,1408,357514,0,setl_VZVqljoh8RUfwb,1787854736cwq85x,1755931622,1755801000,Zoho Corporation - Settlement,order_TUtFbILA152eZZ,card,VISA
+pay_JXJNZUcDzYv6B2,payment,2214178,INR,40569,7302,2166307,0,setl_alZ4EVToslY3w6,17878547360sqg4e,1785034953,1784917800,Salesforce.com - Settlement,order_TUtFbPcYGeU34K,card,RUPay
+pay_cHmBYiBnIcDXNU,payment,3880431,INR,72410,13034,3794987,0,setl_p6rEKGD2iBYvFQ,1787854736fx5lik,1745947114,1745778600,Twilio Inc - Settlement,order_TUtFbZe082W6p7,card,VISA
+pay_zPFBh9Vowou6MB,payment,862296,INR,18115,3261,840920,0,setl_HgKCW41c15iI6h,1787854736vq05px,1783518964,1783362600,Shopify Inc - Settlement,order_TUtFbeMSm9vvMp,card,MC
+pay_piNrvKluHy7GBT,payment,3491182,INR,64604,11629,3414949,0,setl_TVhxbWQSAy0VdA,178785473678rapk,1783552690,1783435985,Shopify Inc - Settlement,order_TUtFbeMSm9vvMp,card,RUPay
+pay_sEqmGv0lH8wVaW,payment,5356156,INR,104909,18884,5232363,0,setl_xhL2bPsozNEmgx,1787854736wyjxtj,1750382441,1750271400,Shopify Inc - Settlement,order_gl75uqsYpX3bPD,card,RUPay
+pay_0yG7nzrbt7Qyhd,payment,152368,INR,2951,531,148886,0,setl_0LRnmQmLBDhLGQ,1787854736z0ifrm,1740981038,1740853800,Freshworks Inc - Settlement,order_EBUfRehs2jPdZF,card,VISA
+pay_TP5RbujpUeUeVQ,payment,2389454,INR,48673,8761,2332020,0,setl_weXrBEuJQYhL3P,1787854736na9zn9,1740540596,1740421800,Atlassian - Settlement,order_DtxGLhILc2Ey1G,card,VISA
+pay_RA6FsevqoexFNq,payment,1030488,INR,21439,3859,1005190,0,setl_tCcvg8dqTUnC6g,1787854736jwh55h,1778711801,1778610600,Microsoft Azure - Settlement,order_NYDX9Qwca79isJ,card,VISA
+pay_dgauUrQPHLHhvL,payment,3320501,INR,67493,12149,3240859,0,setl_OaAxkYP8kqqJvP,1787854736rym81c,1783754798,1783621800,Zoho Corporation - Settlement,order_uDkf0J7ELkpOH3,card,MC
+pay_s8gRGMOLAhR8ir,payment,2434728,INR,48541,8737,2377450,0,setl_nrxHO8wuxbLqWI,17878547366rpkzg,1787361461,1787250600,Google Cloud Platform - Settlement,order_5MsOYpSTuEc99E,card,MC
+pay_e2jdbLD6dyYEnD,payment,5263485,INR,113027,20345,5130113,0,setl_hUd1l1Jgbyhcwf,178785473605wnwl,1741812502,1741717800,Twilio Inc - Settlement,order_WJzrl9oAySp6IH,card,MC
+pay_FPiZkmwX4SkajD,payment,1680278,INR,36624,6592,1637062,0,setl_ohYgeimUnGgEzI,17878547365hrdu4,1754418435,1754245800,Shopify Inc - Settlement,order_MnQe40FaRAvnQt,card,RUPay
+pay_MNoJKEAbkSOrrc,payment,529759,INR,11544,2078,516137,0,setl_emkDNsA5o5zdnW,17878547360632cw,1748958339,1748802600,Amazon Web Services - Settlement,order_TUtFcAa67XJssR,card,RUPay
+pay_wmo5aho4zEKTuj,payment,4884570,INR,105974,19075,4759521,0,setl_CES67GsgLgPmLu,1787854736odwmqx,1751408244,1751308200,Shopify Inc - Settlement,order_TUtFcGMnnRuHme,card,VISA
+pay_qr6feECaTPF7zj,payment,4676099,INR,86496,15569,4574034,0,setl_KLYUJ9bVT9UXva,17878547360vuh17,1755920703,1755801000,Atlassian - Settlement,order_TUtFcM84vZF5gy,card,MC
+pay_epYvCFPHv1zA1c,payment,4099001,INR,80531,14496,4003974,0,setl_Wc7ACRBI3A9NTv,1787854736737suu,1762293358,1762194600,Cloudflare Inc - Settlement,order_TUtFcVUiE5F37O,card,MC
+pay_N0H6oJ5SrZddcI,payment,2407987,INR,47274,8509,2352204,0,setl_CWIWkOyFY4tsxK,17878547363yu6vk,1786721334,1786559400,Microsoft Azure - Settlement,order_TUtFcehJJUiB67,card,MC
+pay_21RwZ5fyRSk9eJ,payment,4535728,INR,90864,16356,4428508,0,setl_Xw5U2a5Hvu05nn,1787854736bslulz,1782691479,1782585000,Dropbox Inc - Settlement,order_63lsfzh3udQPnv,card,RUPay
+pay_ihcTLrjOwCuryX,payment,2559450,INR,49603,8929,2500918,0,setl_DtYbkfNRYIFjDY,1787854736ds1eeu,1761048944,1760898600,Freshworks Inc - Settlement,order_QThIOrrDZhZMa4,card,RUPay
+pay_eCfk12bgcsZoJd,payment,5525228,INR,121131,21804,5382293,0,setl_Yji9gPQaqjGZWL,1787854736mx1gm3,1782988561,1782844200,Dropbox Inc - Settlement,order_4kpFa1LQUcU2R6,card,VISA
+pay_YEUph7m3ehmOqR,payment,2717566,INR,55691,10024,2651851,0,setl_mb5OqJtFtPmJzR,1787854736m2kql0,1783476770,1783362600,Twilio Inc - Settlement,order_9Vowou6MBJHpiN,card,MC
+pay_8vrGKSBUDWaPZq,payment,3456567,INR,63468,11424,3381675,0,setl_MgQdtIrBkpCKRw,1787854736wbxanj,1745912214,1745778600,Atlassian - Settlement,order_7GBTp7YsEqmGv0,card,MC
+pay_7qcS90GXWSrBzY,payment,4685450,INR,89945,16190,4579315,0,setl_1B1oOX8GT1gLfc,17878547367aitmo,1788135178,1788028200,Dropbox Inc - Settlement,order_TP5RbujpUeUeVQ,card,MC
+pay_zdyuVH7I71s87x,payment,2104302,INR,40040,7207,2057055,0,setl_BqWS98RDPY9966,1787854736imoe0s,1762534074,1762367400,DigitalOcean - Settlement,order_rHCDS6nuGARdV7,card,VISA
+pay_Ahcppky6GOB2i4,payment,1804069,INR,38179,6872,1759018,0,setl_2qZjaTlbIokqMI,1787854736y66p61,1741112613,1740940200,DigitalOcean - Settlement,order_TUtFdNu8w45h6M,card,MC
+pay_z4SZI6SeG3Icpu,payment,5211804,INR,95130,17123,5099551,0,setl_54Ti6HT2tv2ZZb,1787854736767j2d,1787879615,1787769000,Microsoft Azure - Settlement,order_TUtFdTKV8kPyba,card,RUPay
+pay_R86zFNn8DU9wMz,payment,5614777,INR,102426,18437,5493914,0,setl_B9mllkOBEwI0do,1787854736gnrfio,1774292567,1774204200,Twilio Inc - Settlement,order_TUtFddEf4hNQKs,card,RUPay
+pay_yOwwkR99hxG1IW,payment,2603244,INR,52964,9534,2540746,0,setl_56NpMMK7bmq13a,17878547361v3zo7,1783783164,1783621800,Slack Technologies - Settlement,order_TUtFdhe23bO35n,card,MC
+pay_KDtgudwfGf6Cw1,payment,540293,INR,10425,1876,527992,0,setl_kg2wgbzC9gYtif,1787854736wbkok3,1783799698,1783652829,Slack Technologies - Settlement,order_TUtFdhe23bO35n,card,RUPay
+pay_7DdYqe4EFlERnh,payment,611518,INR,12128,2183,597207,0,setl_KS4q4coFfLk3hY,1787854736laq665,1783762618,1783664398,Slack Technologies - Settlement,order_TUtFdhe23bO35n,card,VISA
+pay_gclGr0ovsNbOVc,payment,3176352,INR,69811,12566,3093975,0,setl_Pq4xsHHbWgXxf6,1787854736nn16ux,1784591872,1784485800,Salesforce.com - Settlement,order_TUtFdnWntRcI0A,card,VISA
+pay_Vpu1s8lVjNoNG0,payment,3268335,INR,60428,10877,3197030,0,setl_KIvDTt7RL37AvA,1787854736rr3vrh,1756468152,1756319400,Zoho Corporation - Settlement,order_CuryXpy8eCfk12,card,VISA
+pay_jy08ymnB5zQLrT,payment,197991,INR,4168,750,193073,0,setl_cblA2RmyMLDVJC,1787854736uvldd9,1748478146,1748370600,Stripe Payments - Settlement,order_18EwQmYEUph7m3,card,VISA
+pay_1jYInBuNaVWswj,payment,1413234,INR,25473,4585,1383176,0,setl_plqkwKcj5FSWXE,1787854736ptkezj,1761226881,1761071400,Google Cloud Platform - Settlement,order_uaGn2br4CxSXJg,card,MC
+pay_uDFbalZNfVGqkg,payment,548435,INR,10213,1838,536384,0,setl_ZNMDj8gFslwra0,1787854736juw7wr,1769621418,1769452200,Salesforce.com - Settlement,order_ekOncp3cRhE69S,card,VISA
+pay_9DM6vvRHeaIhOi,payment,4793824,INR,90517,16293,4687014,0,setl_ey2OSMHcxtMmZC,1787854736m3hxyj,1753304291,1753209000,Twilio Inc - Settlement,order_0GXWSrBzYA1w84,card,RUPay
+pay_1CB51jjrZHBUxm,payment,3463027,INR,63333,11400,3388294,0,setl_TfUAqVsmBKUUp4,17878547362xrw6t,1766904123,1766773800,DigitalOcean - Settlement,order_nmqsozm4oTbjtF,card,RUPay
+pay_0PkgYTVUKfHf4V,payment,1085561,INR,19923,3586,1062052,0,setl_cy5DgjqiBjU4xE,1787854736f4mntf,1747499588,1747333800,Cloudflare Inc - Settlement,order_g4zPzdyuVH7I71,card,RUPay
+pay_OJMlvoKveuvb5i,payment,4491795,INR,95496,17189,4379110,0,setl_Yk1urTBZeOc6NS,1787854736e226pa,1737029063,1736879400,Atlassian - Settlement,order_hcppky6GOB2i4N,card,RUPay
+pay_8TbdnxkVEcCWRn,payment,3723587,INR,71839,12931,3638817,0,setl_4JVd2TUvG8g9MC,1787854736n5elb4,1746049213,1745951400,Dropbox Inc - Settlement,order_CC9HOhYX6rhkt2,card,MC
+pay_Xj7tC4jLlf7byz,payment,5312987,INR,108259,19487,5185241,0,setl_U3GvuBvnNMRhvp,1787854736jfe8ud,1760537710,1760380200,Adobe Creative Cloud - Settlement,order_TUtFePHQsezdDE,card,RUPay
+pay_KPbbgJXRZUlwoE,payment,393081,INR,7869,1416,383796,0,setl_VTIrRPEmVbIdpG,1787854736bpgvv4,1765277036,1765132200,Zoho Corporation - Settlement,order_TUtFeTZnQNR873,card,MC
+pay_Rso42UkIV7rYk6,payment,3774019,INR,78173,14071,3681775,0,setl_mTysph8ucIy5dc,1787854736yzqii4,1738083463,1737916200,Salesforce.com - Settlement,order_TUtFeY61P6PEnS,card,VISA
+pay_xypztqgoaWWLN6,payment,1729289,INR,33733,6072,1689484,0,setl_PWL4U1UeEGd0RV,1787854736usozdu,1738443896,1738348200,DigitalOcean - Settlement,order_TUtFecNIbxxxib,card,VISA
+pay_IE0Gvz2CUvIXKz,payment,1946202,INR,36795,6623,1902784,0,setl_xhYZmh8XVykwaw,1787854736tixc7u,1738521892,1738371709,DigitalOcean - Settlement,order_TUtFecNIbxxxib,card,RUPay
+pay_CWs8luwOO7w4Mq,payment,662230,INR,13830,2489,645911,0,setl_HkUGbTZlqkyUnD,1787854736hfu131,1745884558,1745778600,Dropbox Inc - Settlement,order_TUtFehTzErArv7,card,RUPay
+pay_RXg7yxIPn2iG00,payment,4627424,INR,91839,16531,4519054,0,setl_cSmbM2Sxq46s49,1787854736uws44c,1784989743,1784831400,Stripe Payments - Settlement,order_TUtFelr9vlQWdV,card,VISA
+pay_Q4Jb6NbVBDfO9X,payment,2051991,INR,43199,7776,2001016,0,setl_8Ai8GRBakmsZaN,1787854736gft4mp,1784955610,1784831400,Freshworks Inc - Settlement,order_TUtFerG5RYQpTB,card,MC
+pay_awOHOnmDzehnjs,payment,2577555,INR,52674,9481,2515400,0,setl_9pIEAseb9FnZcw,1787854736vpgstq,1773300370,1773167400,Microsoft Azure - Settlement,order_lZNfVGqkgTN9DM,card,VISA
+pay_VjLpgW7hwfB2CX,payment,1722918,INR,31023,5584,1686311,0,setl_NaAetsQ5jCCdWj,17878547368c0s41,1746333624,1746210600,Shopify Inc - Settlement,order_eaIhOipVYubcET,card,VISA
+pay_WEOoGkuIVUnzq8,payment,3051551,INR,64050,11529,2975972,0,setl_cE3Fdt7EnxTDVw,1787854736qsq0p8,1752902016,1752777000,Microsoft Azure - Settlement,order_V7oJGPKJvE6mci,card,VISA
+pay_Is6CMx2TTYydCo,payment,952906,INR,17847,3212,931847,0,setl_RC5utiDdKD9ymR,1787854736cs4kek,1741751479,1741631400,Cloudflare Inc - Settlement,order_bSRDfTcDzE11mf,card,VISA
+pay_CoQxbYb7VLqWxQ,payment,5146751,INR,110390,19870,5016491,0,setl_AGKkJbyQrex1VF,1787854736f7fr91,1786331388,1786213800,Google Cloud Platform - Settlement,order_TdJDG3VsfKPbbg,card,MC
+pay_jlq6XvjgYoPHte,payment,5362167,INR,104731,18852,5238584,0,setl_otKj0DQyDcdd65,1787854736iyojtp,1765947652,1765823400,DigitalOcean - Settlement,order_L9JSwfhtgp2mlJ,card,VISA
+pay_wrNlr9MIEKs9y7,payment,354961,INR,6557,1180,347224,0,setl_5bq7qC4n7a41UQ,1787854736dxo100,1768060565,1767897000,Salesforce.com - Settlement,order_8luwOO7w4Mqjbv,card,VISA
+pay_Eh30s5nxfHMIxB,payment,4621156,INR,89603,16129,4515424,0,setl_vgq9TAAEZgqVsP,1787854736bwcv6h,1748017162,1747852200,Zoom Video Communications - Settlement,order_TUtFfVTiry4Qy8,card,RUPay
+pay_xilFT9sgvzE8nb,payment,2410687,INR,46950,8451,2355286,0,setl_nrH1Io3j73rPc6,1787854736w7jp61,1770790589,1770661800,Atlassian - Settlement,order_TUtFfZZFR0D05Z,card,RUPay
+pay_2wnL7a4DHJKUrV,payment,218283,INR,4230,761,213292,0,setl_PwRDY9QyLE8MYo,1787854736dtpwdp,1754798147,1754677800,Amazon Web Services - Settlement,order_TUtFfdYIuUHsYK,card,RUPay
+pay_PniHShfK6Josl0,payment,1040889,INR,22258,4006,1014625,0,setl_GEjPb3Jn5pQr4j,1787854736s7rp42,1766955788,1766860200,Shopify Inc - Settlement,order_TUtFfhqxjS9sTl,card,RUPay
+pay_BCnjovZnemR7dx,payment,685962,INR,14612,2630,668720,0,setl_hA7ydj5WqYn7Fh,17878547368cq1xg,1766972621,1766881066,Shopify Inc - Settlement,order_TUtFfhqxjS9sTl,card,RUPay
+pay_EDbeMlTst18IWi,payment,773427,INR,14842,2672,755913,0,setl_7oSYGqe2bLCB9O,1787854736n2xr83,1766977087,1766888536,Shopify Inc - Settlement,order_TUtFfhqxjS9sTl,card,VISA
+pay_QPGRXmP1JUjTve,payment,81212,INR,1613,290,79309,0,setl_CDwCHypcq2Jj5C,1787854736fxq7bz,1744931709,1744828200,Atlassian - Settlement,order_TUtFfmBGoPHiGO,card,RUPay
+pay_TB6f7NVDe2odh0,payment,1747855,INR,34948,6291,1706616,0,setl_An4yGlzDyHkmDM,1787854736m40oey,1745015304,1744857354,Atlassian - Settlement,order_TUtFfmBGoPHiGO,card,VISA
+pay_tvWYjMiEfvR9qH,payment,193423,INR,4164,750,188509,0,setl_IzxvkUHIZrib5C,1787854736d4w1ar,1744967748,1744880516,Atlassian - Settlement,order_TUtFfmBGoPHiGO,card,MC
+pay_9iWIlYCCsxgJ3I,payment,5303498,INR,103380,18608,5181510,0,setl_A5rkRqxdHIQbOK,1787854736yvzwd3,1781328478,1781202600,Google Cloud Platform - Settlement,order_TUtFfqqZtYRhWH,card,RUPay
+pay_9tSUzhrSyWp8kx,payment,2851217,INR,53175,9572,2788470,0,setl_VAOHgFWvhNvoRM,17878547362y8rgy,1779739451,1779647400,Cloudflare Inc - Settlement,order_TUtFfwolHxLpd8,card,RUPay
+pay_lQo8jODdgswXyP,payment,347502,INR,7130,1283,339089,0,setl_DWMPm3cGDhJBfE,1787854736iqup06,1766976754,1766860200,Atlassian - Settlement,order_R86EnWxq7IlwCE,card,RUPay
+pay_BTJqZw52tDIMUp,payment,2560127,INR,47208,8497,2504422,0,setl_wUGt1XNde3I5cY,1787854736ezw9he,1738681936,1738521000,Atlassian - Settlement,order_q6XvjgYoPHteXi,card,RUPay
+pay_K4VVvsnqlLPiN8,payment,373021,INR,7183,1293,364545,0,setl_DI0cKV2lwnlK81,1787854736d4r9v4,1738673210,1738550219,Atlassian - Settlement,order_q6XvjgYoPHteXi,card,VISA
+pay_qedi5sRjh3YVvJ,payment,2437472,INR,50747,9134,2377591,0,setl_Aa2PaN5643ZC9t,1787854736spo3zd,1738678520,1738527202,Atlassian - Settlement,order_q6XvjgYoPHteXi,card,MC
+pay_E5ouNzQiQGtOD4,payment,1301181,INR,28393,5111,1267677,0,setl_OiAt6ISoFdSr1u,1787854736aq15o2,1761033551,1760898600,Twilio Inc - Settlement,order_MIEKs9y79priSS,card,MC
+pay_GUdqI78Jo2douR,payment,2942422,INR,55704,10027,2876691,0,setl_mrAmXqgSurljMq,1787854736wm7s6n,1746476558,1746383400,Salesforce.com - Settlement,order_xOeWjc8I2EYsdZ,card,VISA
+pay_voOt0C5Zz5CzwL,payment,5479228,INR,99923,17986,5361319,0,setl_GWmWKiErM8OHd6,1787854736u8h0im,1742271243,1742149800,Microsoft Azure - Settlement,order_cgHzikvIf1zgSK,card,RUPay
+pay_AjG8R9he60dLGK,payment,4817402,INR,103608,18649,4695145,0,setl_faDXcfzdgz3cWp,1787854736y95g5d,1757925807,1757788200,Atlassian - Settlement,order_niHShfK6Josl0i,card,VISA
+pay_LtxjuK13zfFpLI,payment,5366074,INR,102111,18380,5245583,0,setl_3R7GRre2gmS8hI,1787854736mpxkc5,1786762651,1786645800,Microsoft Azure - Settlement,order_ovZnemR7dxqSED,card,VISA
+pay_XbQUkjQWOpcJq5,payment,2684859,INR,48401,8712,2627746,0,setl_zgUjowepgicj3T,17878547362ink4f,1765860674,1765737000,Zoom Video Communications - Settlement,order_Tst18IWiTcQPGR,card,RUPay
+pay_n6WN7dc9Xr4uxz,payment,3342575,INR,69396,12491,3260688,0,setl_cK5sR80qpJOCTH,1787854736jgublm,1749888278,1749753000,Zoom Video Communications - Settlement,order_5sLJ9c2eFYcOkD,card,MC
+pay_2FbrEiDhfjJUgH,payment,2083190,INR,43786,7881,2031523,0,setl_b8hHB5v65J8hfo,1787854736k6819y,1749950003,1749789517,Zoom Video Communications - Settlement,order_5sLJ9c2eFYcOkD,card,MC
+pay_FfycfcDcysYyuj,payment,1695356,INR,34471,6205,1654680,0,setl_t5UGdCqHBmNWUl,1787854736hs21hd,1736505787,1736361000,Adobe Creative Cloud - Settlement,order_a2tvWYjMiEfvR9,card,MC
+pay_D95E5BZvv8oa9X,payment,2294410,INR,44461,8003,2241946,0,setl_p78YelfDpYsaXA,1787854736mlquh5,1765791474,1765650600,Shopify Inc - Settlement,order_uMffCIUdclfUmK,card,VISA
+pay_72I1H9YH8zu8cs,payment,3005923,INR,55072,9913,2940938,0,setl_xRx8a3IkFMd19E,178785473681do6o,1769438651,1769279400,Adobe Creative Cloud - Settlement,order_TUtFggQhVWdVjr,card,VISA
+pay_OcJL2vBom63OEk,payment,5663642,INR,110538,19897,5533207,0,setl_cj4MzRezSketNx,1787854736fkxwex,1778043507,1777919400,Zoho Corporation - Settlement,order_TUtFgkhu6GQXVY,card,VISA
+pay_2PCbhuwI9O4jjv,payment,3922135,INR,81141,14605,3826389,0,setl_ZeqPHR9Eukj1md,1787854736yesu4f,1778963869,1778869800,DigitalOcean - Settlement,order_TUtFgrfYB50rso,card,VISA
+pay_IoNSD624mae86p,payment,3745444,INR,71939,12949,3660556,0,setl_JcqWDWn7DSnEMm,17878547361vgll4,1778131662,1778005800,Atlassian - Settlement,order_TUtFgwOc0dDrvp,card,RUPay
+pay_ZSLhON1IcDZZgY,payment,5454479,INR,113373,20407,5320699,0,setl_QrWhVIIRwZ5KNf,178785473632uy84,1749738835,1749580200,Shopify Inc - Settlement,order_TUtFh18t6TYvVj,card,VISA
+pay_4NLtuu4rrYOTRc,payment,1185523,INR,22777,4100,1158646,0,setl_rxZ4HIBVqIb9g8,1787854736gk0eey,1745721897,1745605800,Dropbox Inc - Settlement,order_KcPLtxjuK13zfF,card,RUPay
+pay_W2cxsvTMTC1tBi,payment,2747745,INR,52849,9513,2685383,0,setl_TN8avGBeaMCokd,17878547366bkade,1757780678,1757615400,Salesforce.com - Settlement,order_QOu7SsAoqDHTZf,card,RUPay
+pay_SMOjPi6Uvestct,payment,2157190,INR,45042,8108,2104040,0,setl_M3LVF066VJftOj,1787854736duahgk,1755353002,1755196200,Stripe Payments - Settlement,order_7dc9Xr4uxzvqkw,card,VISA
+pay_hL397g0EyDAInE,payment,3207672,INR,59534,10716,3137422,0,setl_As550drLpGz8af,1787854736o1lqsr,1763019549,1762885800,Dropbox Inc - Settlement,order_YyujCVD95E5BZv,card,MC
+pay_cDn54oAgZBshRf,payment,585368,INR,11049,1989,572330,0,setl_riCUHRlT8biS1L,1787854736c4ryg9,1766406241,1766255400,Slack Technologies - Settlement,order_R6sGyZv2AMGClr,card,RUPay
+pay_6L4gOmPVxE7cPr,payment,893313,INR,17618,3171,872524,0,setl_pYgpHYr8t3KWMM,17878547364oipr1,1766502153,1766339480,Slack Technologies - Settlement,order_R6sGyZv2AMGClr,card,VISA
+pay_E9oBZXdnrF0nU8,payment,2340767,INR,49887,8980,2281900,0,setl_kux6Wp69fJcHeO,17878547367b03ra,1756429274,1756319400,Freshworks Inc - Settlement,order_uwI9O4jjvyO29g,card,MC
+pay_5Sij0phXtxqEuV,payment,5178280,INR,110212,19838,5048230,0,setl_XqJmFEuvxMpeQV,17878547364t8bp6,1785486483,1785349800,Shopify Inc - Settlement,order_8iIPMo50FsLQpl,card,MC
+pay_Elmk8UnwbOiXLk,payment,2758437,INR,52213,9398,2696826,0,setl_b0bCKow2KaTYvj,1787854736rttquf,1765139505,1765045800,Zoho Corporation - Settlement,order_7A67H9dPlM4iwX,card,VISA
+pay_SPEQXwJYWF6bvG,payment,2113370,INR,44568,8022,2060780,0,setl_Ye8mV8TBCzVuB3,1787854736mdmmmx,1779766255,1779647400,DigitalOcean - Settlement,order_TUtFhiIZkLRKO1,card,MC
+pay_ifGFilw1AZwsi9,payment,1392557,INR,27467,4944,1360146,0,setl_OTFq1HKhCoafaB,1787854736qaluld,1786191410,1786041000,Zoho Corporation - Settlement,order_TUtFhp947p1cdH,card,MC
+pay_qKQQJKRSwW6sem,payment,5347493,INR,107401,19332,5220760,0,setl_GpUfvVmWbe0w0h,1787854736kb9oi0,1740001853,1739903400,Google Cloud Platform - Settlement,order_TUtFhvwPaUfv6F,card,VISA
+pay_AY0X1bazokSlrd,payment,3092384,INR,57339,10321,3024724,0,setl_sjkQjgaVEzfSpT,1787854736ojsyt5,1761153692,1760985000,Amazon Web Services - Settlement,order_TUtFi0lIntVaoP,card,MC
+pay_SrejPXyYHikhqi,payment,1768269,INR,38681,6963,1722625,0,setl_r1jN7uc6hmvajm,1787854736snffyk,1742898067,1742754600,Freshworks Inc - Settlement,order_TUtFi5ecgr6q98,card,RUPay
+pay_MxzE0xpISPJaXb,payment,231531,INR,5041,907,225583,0,setl_Z14n0QRJqOOJBx,1787854736lr9p6h,1748147144,1748025000,Cloudflare Inc - Settlement,order_TUtFiFOFx3M0z5,card,RUPay
+pay_h51ZC8ryk4GPpK,payment,2546356,INR,51765,9318,2485273,0,setl_IQxoK07eB1Fl13,1787854736onxd70,1748164060,1748059237,Cloudflare Inc - Settlement,order_TUtFiFOFx3M0z5,card,RUPay
+pay_no7UxGGNuiqNXc,payment,1519265,INR,30769,5538,1482958,0,setl_OjfHpjwgeFlvTz,17878547360307hd,1748186273,1748071810,Cloudflare Inc - Settlement,order_TUtFiFOFx3M0z5,card,RUPay
+pay_J9dS5FztVVwgVG,payment,1141500,INR,23700,4266,1113534,0,setl_8bPkeX6Taq726W,1787854736z3a8v4,1787516966,1787423400,Slack Technologies - Settlement,order_FmxsFJsntTGATW,card,RUPay
+pay_ECsBVGx5tfiUac,payment,594435,INR,11776,2120,580539,0,setl_qwOiT7WyH11Y4Y,17878547369jd3ih,1773879601,1773772200,Stripe Payments - Settlement,order_ifGFilw1AZwsi9,card,VISA
+pay_naBmMkYrMuyDG2,payment,1051658,INR,19706,3547,1028405,0,setl_4n2vZC1z6dZ0s2,178785473633zsmv,1759587991,1759429800,Salesforce.com - Settlement,order_QJKRSwW6semcIA,card,MC
+pay_cQ1gnllkV0myrS,payment,320925,INR,6195,1115,313615,0,setl_tcBDnnxIYmTFJg,17878547368314y2,1764914864,1764786600,Cloudflare Inc - Settlement,order_Uy18IT6MT78Sre,card,RUPay
+pay_IHSLqfZIXLnqo9,payment,588422,INR,10791,1942,575689,0,setl_b2IKkURFWYXzjB,1787854736auwidq,1764964271,1764843559,Cloudflare Inc - Settlement,order_Uy18IT6MT78Sre,card,RUPay
+pay_ITbDWAIy7feqZ0,payment,3656200,INR,72973,13135,3570092,0,setl_rKYaQFW6Hsa5cp,1787854736ezg52k,1765028389,1764877218,Cloudflare Inc - Settlement,order_Uy18IT6MT78Sre,card,VISA
+pay_BvSRhKcuviHHwz,payment,915185,INR,16776,3020,895389,0,setl_XaMNztLLxB8ObP,1787854736uxdq59,1770541108,1770402600,Cloudflare Inc - Settlement,order_Hikhqi7crbSqyx,card,VISA
+pay_Csh9GzuS9bVyb9,payment,356128,INR,7582,1365,347181,0,setl_qsrtPFDUO4967l,17878547360bjwko,1770552771,1770417757,Cloudflare Inc - Settlement,order_Hikhqi7crbSqyx,card,MC
+pay_kVsnKIMMDVRhUr,payment,393869,INR,8367,1506,383996,0,setl_I3CLKeVdFsaQT8,1787854736r9kmp6,1770624476,1770503576,Cloudflare Inc - Settlement,order_Hikhqi7crbSqyx,card,VISA
+pay_19qF7w491H1Psz,payment,3607932,INR,68801,12384,3526747,0,setl_mvQT3T9vJ0oxDJ,1787854736ibjzp9,1757161868,1757010600,Adobe Creative Cloud - Settlement,order_oswE9dYf5qhxW3,card,RUPay
+pay_jQZcn2FfR6W6UA,payment,3741922,INR,74681,13443,3653798,0,setl_CWree01HF1LKfQ,17878547366vv8su,1767173980,1767033000,Stripe Payments - Settlement,order_oC8qYu7aAQfgjj,card,RUPay
+pay_cpWDhNaNQzUjje,payment,2677173,INR,56016,10083,2611074,0,setl_5PeFUR8HX5GUBc,1787854736zrwjxl,1787774747,1787682600,Atlassian - Settlement,order_VBGZ7H6ITcMddb,card,VISA
+pay_CmzB5Jc9a942S2,payment,1775857,INR,37380,6728,1731749,0,setl_o6Utt7jNDnUDE7,1787854736nog85d,1745892292,1745778600,Cloudflare Inc - Settlement,order_TUtFipAfLiGJMo,card,VISA
+pay_ry9aIEXtGT2Ivu,payment,3363476,INR,60668,10920,3291888,0,setl_KwRuoHeaxTqIpz,1787854736sr5rup,1766569982,1766428200,Slack Technologies - Settlement,order_TUtFizGa9p8WP9,card,MC
+pay_7TIRFillwq0oSg,payment,1039114,INR,20300,3654,1015160,0,setl_ymaaCVcNqJengS,1787854736p6rfe6,1785727991,1785609000,Dropbox Inc - Settlement,order_TUtFjD6nrj1ATN,card,RUPay
+pay_SD37eGekg895I1,payment,5575349,INR,117034,21066,5437249,0,setl_gSCECGaFojPPFf,1787854736exggoc,1744780813,1744655400,Dropbox Inc - Settlement,order_TUtFjIK07tktKm,card,RUPay
+pay_qv7vBEQCDwfmfZ,payment,4602667,INR,89575,16124,4496968,0,setl_TsubyV4yNE8Qpa,1787854736aoaxqo,1741026408,1740853800,Shopify Inc - Settlement,order_TUtFjNGmyIqNvB,card,RUPay
+pay_hmRTfMyhYnzqEr,payment,1490710,INR,27324,4918,1458468,0,setl_7lem8WpqYSHAGA,178785473684hxxp,1764263858,1764095400,Shopify Inc - Settlement,order_vpejQZcn2FfR6W,card,RUPay
+pay_FaclTttHrrK7gw,payment,2136768,INR,38957,7012,2090799,0,setl_1hFvJaH3tbeBbP,1787854736k3omd4,1744020795,1743877800,Cloudflare Inc - Settlement,order_nr0xY8zeURhI0w,card,RUPay
+pay_HwQ2vByQDsjEcW,payment,2788240,INR,52050,9369,2726821,0,setl_80tkiSeeklqyes,1787854736tplc6p,1744083395,1743934954,Cloudflare Inc - Settlement,order_nr0xY8zeURhI0w,card,VISA
+pay_Jv3pHtA1ACW5L7,payment,2180704,INR,40708,7327,2132669,0,setl_HmobbKtdbfkq50,1787854736zq50op,1776449724,1776277800,Google Cloud Platform - Settlement,order_H1bA7MqIoJ5QoP,card,MC
+pay_soNP4TzjHpDNfC,payment,1400127,INR,29700,5346,1365081,0,setl_txx0mRupIMlGZ9,1787854736khba5m,1776410813,1776303625,Google Cloud Platform - Settlement,order_H1bA7MqIoJ5QoP,card,VISA
+pay_PAZOV026Ao0tGg,payment,4159917,INR,87533,15756,4056628,0,setl_K1fyUHOie9wvvi,1787854736645vdb,1744799186,1744655400,Slack Technologies - Settlement,order_T2IvuI9IgAobsm,card,MC
+pay_D9sF53grX8FFIy,payment,4874965,INR,97344,17522,4760099,0,setl_x7u8wl1GifKHMW,17878547360z1r5f,1743407075,1743273000,Zoom Video Communications - Settlement,order_IHtVaxPnPlsR6B,card,MC
+pay_a7OQTxrtTQEMwk,payment,586983,INR,11899,2142,572942,0,setl_UI0bZvPyVfFXuW,1787854736xf1pi2,1761903186,1761762600,Zoho Corporation - Settlement,order_wxOXOnE3AWTX0a,card,MC
+pay_cZh7MTQHJqzrCz,payment,3031002,INR,56551,10179,2964272,0,setl_437gq6bvsgEUYv,1787854736pob7fu,1762013464,1761844278,Zoho Corporation - Settlement,order_wxOXOnE3AWTX0a,card,VISA
+pay_PWfpQ9BZcuPcxI,payment,622029,INR,11423,2056,608550,0,setl_8x28Z2r2sTVz3l,1787854736fox5ww,1761989242,1761844890,Zoho Corporation - Settlement,order_wxOXOnE3AWTX0a,card,MC
+pay_8IzXnnkQyBD3bH,payment,188680,INR,4023,724,183933,0,setl_r3wZMSCUstH9RF,1787854736ts1fb2,1741795460,1741631400,Adobe Creative Cloud - Settlement,order_QCDwfmfZrFhmRT,card,VISA
+pay_cKjyYBqKNLR2Cm,payment,16768,INR,305,55,16408,0,setl_QzSaft0QfHu6bj,1787854736ami0uz,1741866548,1741697869,Adobe Creative Cloud - Settlement,order_QCDwfmfZrFhmRT,card,MC
+pay_ZiDRIM2gnxx9wW,payment,2286160,INR,43850,7893,2234417,0,setl_p0OSpyjIXtGgLw,1787854736qfpodp,1741562047,1741458600,Shopify Inc - Settlement,order_TUtFjwgPSoOouS,card,RUPay
+pay_jTQBlByRydWkOJ,payment,3021667,INR,58548,10539,2952580,0,setl_dbWgkgYQeab5e8,17878547363fezez,1758721555,1758565800,Adobe Creative Cloud - Settlement,order_TUtFk2A8O1esFn,card,MC
+pay_hxtv6j8Y59KOTt,payment,2142060,INR,40623,7312,2094125,0,setl_HNdu6W7lZHjCJX,17878547369kr2fv,1758312976,1758220200,Adobe Creative Cloud - Settlement,order_TUtFk8GT1IGzja,card,VISA
+pay_UU8tbneTri3mWp,payment,4316038,INR,87806,15805,4212427,0,setl_6SRLtAhECdTcUX,178785473644eew1,1769079061,1768933800,Cloudflare Inc - Settlement,order_TUtFkNIkCLJdJH,card,MC
+pay_qHt66Y97Cl57Nj,payment,3629540,INR,69786,12561,3547193,0,setl_JtFmmY3VCpbRFK,1787854736aw1lxx,1770586561,1770489000,Stripe Payments - Settlement,order_TUtFkS3BklpHpw,card,VISA
+pay_EVTn7yptUANqVw,payment,1023314,INR,19775,3560,999979,0,setl_LmjDjLd3H6LBwP,1787854736z5p3vo,1776974896,1776882600,Shopify Inc - Settlement,order_Zh7MTQHJqzrCzU,card,RUPay
+pay_baKZ2VXzwjvNbx,payment,2316861,INR,42150,7587,2267124,0,setl_e5VLBgXF8hRLvJ,17878547368yc8gz,1740115262,1739989800,Freshworks Inc - Settlement,order_Q9BZcuPcxIAz8I,card,MC
+pay_QGV3JE68U93rao,payment,1712925,INR,30970,5575,1676380,0,setl_YTZUXzHMukeuXH,1787854736cqoroi,1758654640,1758565800,Atlassian - Settlement,order_BD3bH4zUCcKjyY,card,RUPay
+pay_GMLrstQRODj0JW,payment,1084227,INR,20197,3635,1060395,0,setl_Q7pPiwSZFnM8X9,17878547362tp6qa,1758765845,1758618543,Atlassian - Settlement,order_BD3bH4zUCcKjyY,card,VISA
+pay_plMBKSF0TYeoFh,payment,540781,INR,10371,1867,528543,0,setl_7moKD5QPq90N0R,1787854736ftcdz3,1758802642,1758643304,Atlassian - Settlement,order_BD3bH4zUCcKjyY,card,MC
+pay_WbQcOQDupFVh8k,payment,1069965,INR,23049,4149,1042767,0,setl_92Nfx26n8rQpTN,17878547368l6e7v,1754678360,1754591400,Slack Technologies - Settlement,order_RbJmmoe2dFXZnx,card,RUPay
+pay_yZh1d2dE3sf3xq,payment,4442820,INR,94913,17084,4330823,0,setl_3pZ3rvhwoEBzpp,1787854736m33mg1,1767466105,1767378600,Amazon Web Services - Settlement,order_he4fYLTN3wD9gv,card,RUPay
+pay_uK98yHa9a9mzP4,payment,1485644,INR,27456,4942,1453246,0,setl_HWLAuvqrLymyN8,17878547368brzva,1757094281,1756924200,Salesforce.com - Settlement,order_hxtv6j8Y59KOTt,card,MC
+pay_w122QojdKYmqYY,payment,5183402,INR,109464,19704,5054234,0,setl_Y1jeiojqjEHEQj,1787854736is2gy9,1764424453,1764268200,Cloudflare Inc - Settlement,order_Bk4w017X6YGSIJ,card,VISA
+pay_u53BySRerG1I8b,payment,1082138,INR,20507,3691,1057940,0,setl_mq2Aapo0U0ZHge,1787854736sbzb7t,1785477650,1785349800,Adobe Creative Cloud - Settlement,order_NkKTqHt66Y97Cl,card,VISA
+pay_lFb4ZegXDxErZw,payment,4169679,INR,87210,15698,4066771,0,setl_AMFjBt8aEPKTmF,1787854736r3vwmj,1750458334,1750357800,Slack Technologies - Settlement,order_TUtFl8bhXiBLqS,card,RUPay
+pay_LzzPc4rQzfnHBX,payment,5013214,INR,90818,16347,4906049,0,setl_d7zygOElbFbH84,1787854736n6y2c2,1749932981,1749839400,Cloudflare Inc - Settlement,order_TUtFlOuEr5e5ke,card,RUPay
+pay_1kVK3uqRXKj71o,payment,1434410,INR,26838,4831,1402741,0,setl_SmEqiSXFuOloAX,178785473625wm72,1740135716,1739989800,DigitalOcean - Settlement,order_TUtFlUmQT731tF,card,RUPay
+pay_ZBwvA4olAPxS7n,payment,2821373,INR,53821,9688,2757864,0,setl_gkGAsk04HfWdmL,1787854736ebevsx,1759217490,1759084200,Slack Technologies - Settlement,order_TUtFlZugzov50M,card,VISA
+pay_cNSgmkA970ikRq,payment,4769365,INR,102095,18377,4648893,0,setl_T2wJTVWAkqDfz1,1787854736phh62m,1782042554,1781893800,Freshworks Inc - Settlement,order_TUtFlfwjhWJUx2,card,VISA
+pay_RURo7oLgOD1yZT,payment,5478114,INR,105975,19076,5353063,0,setl_r8lUj7mZKcwCNA,1787854736iiwi08,1752820452,1752690600,Salesforce.com - Settlement,order_TUtFllBzMoDbhG,card,MC
+pay_eS4Ztk9yVsqnd6,payment,736025,INR,13323,2398,720304,0,setl_yXYzAAWiIbn4W8,1787854736hkhjg4,1749007639,1748889000,Amazon Web Services - Settlement,order_jk7GGww122Qojd,card,VISA
+pay_KoiSdtsi463oNN,payment,909607,INR,17465,3144,888998,0,setl_LB04BqXwG6SOyo,178785473679955c,1771285531,1771180200,Twilio Inc - Settlement,order_Y2qDdQXUxT01q8,card,VISA
+pay_UQS0d1k6E3f1XS,payment,5530605,INR,116985,21057,5392563,0,setl_2ILhrTan5vk0SJ,1787854736iwkesv,1774959492,1774809000,Shopify Inc - Settlement,order_QZoLNztv1yfJTf,card,MC
+pay_MZj4cTswenKnAQ,payment,1176396,INR,21822,3928,1150646,0,setl_MFdpEfunfecTXr,1787854736zrjo7v,1753472997,1753381800,Amazon Web Services - Settlement,order_Pc4rQzfnHBXkL1,card,MC
+pay_evFmnZ7XCMXATz,payment,4735766,INR,99725,17950,4618091,0,setl_M3cONaXJ0PFuSg,1787854736ibsmqp,1758613970,1758479400,Atlassian - Settlement,order_RXKj71oqQZBwvA,card,MC
+pay_mPqVHXkKzSStkU,payment,1352318,INR,28002,5040,1319276,0,setl_xTXLOoWF0fnw5G,1787854736cbhhlk,1762748974,1762626600,Salesforce.com - Settlement,order_aXVPcpzYGfp0Xo,card,RUPay
+pay_3WL64ZOtItkKWo,payment,804636,INR,15587,2806,786243,0,setl_LlI1shQvRV96yu,1787854736ax985i,1765505308,1765391400,DigitalOcean - Settlement,order_TUtFmCgAYhEDBL,card,MC
+pay_PhD9poBqZXhdJr,payment,1976241,INR,42501,7650,1926090,0,setl_dfwuscxTLvrMbi,1787854736nue7a3,1765573981,1765441095,DigitalOcean - Settlement,order_TUtFmCgAYhEDBL,card,RUPay
+pay_ppQlIzGsHHGMMQ,payment,1290829,INR,24790,4462,1261577,0,setl_VZqZwhUBw5J7Un,1787854736vv59ho,1772805456,1772649000,Adobe Creative Cloud - Settlement,order_TUtFmIuxeqFpZg,card,RUPay
+pay_ZJh4qdOAFGje6w,payment,265203,INR,5153,928,259122,0,setl_XdU7nSKpLzlBM4,1787854736nhksqn,1772776293,1772688446,Adobe Creative Cloud - Settlement,order_TUtFmIuxeqFpZg,card,MC
+pay_4nc8QDy20WpaH0,payment,2720152,INR,56836,10230,2653086,0,setl_K1ZJGhdE71IMar,1787854736rv7vsy,1758601902,1758479400,DigitalOcean - Settlement,order_TUtFmOQu3j2i7P,card,MC
+pay_pKWbm2FyLY7QX0,payment,2874718,INR,61542,11078,2802098,0,setl_M9bzlPUjecCFo4,1787854736m42o34,1769506601,1769365800,Adobe Creative Cloud - Settlement,order_TUtFmUtF4CxlDD,card,VISA
+pay_KIt80G4djblwl1,payment,2616518,INR,56372,10147,2549999,0,setl_P3tc4LjY6O1QmS,17878547366z0hr9,1754318259,1754159400,Google Cloud Platform - Settlement,order_TUtFmayT4NueMy,card,RUPay
+pay_e3bDoA1gusN72g,payment,3583609,INR,71430,12857,3499322,0,setl_HWufwZKMCBnpcV,1787854736ogbjze,1757762649,1757615400,Amazon Web Services - Settlement,order_TUtFmfmfYd3Fnu,card,RUPay
+pay_atdpnJz3mA5fde,payment,4284467,INR,87716,15789,4180962,0,setl_eEiP6Iy0KBGShY,1787854736c1yfmh,1750275914,1750185000,Adobe Creative Cloud - Settlement,order_TUtFmlhXQSThM4,card,MC
+pay_TURfiXyEbjFeT8,payment,213,INR,4,1,208,0,setl_3hbCngpoGqblDX,1787854736hi6hab,1745953308,1745865000,Stripe Payments - Settlement,order_bHPrMqAaGgmrZ3,card,RUPay
+pay_ZCizx7n3iocVzy,payment,287064,INR,5188,934,280942,0,setl_ULpN2xzKKZGUiL,1787854736ht7ehm,1746011762,1745902606,Stripe Payments - Settlement,order_bHPrMqAaGgmrZ3,card,VISA
+pay_mdosHvNVz7SgrC,payment,92970,INR,1882,339,90749,0,setl_AoANNoRmC2Zve9,1787854736z27ujd,1746049011,1745920098,Stripe Payments - Settlement,order_bHPrMqAaGgmrZ3,card,MC
+pay_ssGlL5YcwsGZ5z,payment,4459038,INR,82768,14898,4361372,0,setl_8rq8rUn2T0dUlk,1787854736nxiv9i,1779814586,1779647400,DigitalOcean - Settlement,order_lwz8WZJh4qdOAF,card,RUPay
+pay_bo7IegD50df5Kj,payment,5352700,INR,112881,20319,5219500,0,setl_vHOaPEIeMXnOs9,1787854736p5el2b,1780997780,1780857000,Adobe Creative Cloud - Settlement,order_sGPO9ScGKCSxTt,card,RUPay
+pay_HVdjpZu0R0ygBJ,payment,463767,INR,8946,1610,453211,0,setl_oRB0UPh4pPqslX,1787854736lpa5cg,1763573747,1763404200,Dropbox Inc - Settlement,order_rqvjj8pUgrFpPV,card,RUPay
+pay_uJRP0qSuCyG1t1,payment,177576,INR,3338,601,173637,0,setl_96HKixMfacKMal,1787854736ku8h5r,1749627331,1749493800,Shopify Inc - Settlement,order_01EeO8DNnZOcxb,card,RUPay
+pay_OwxRp5Y78TiAPm,payment,773555,INR,15661,2819,755075,0,setl_YKbftvyxBX0v5k,1787854736f0jqqn,1779813232,1779647400,Dropbox Inc - Settlement,order_GZiAFlmSfMp6WD,card,VISA
+pay_rouhlw7SLqLKfX,payment,3228176,INR,69877,12578,3145721,0,setl_dUsM4A1tXZZYuX,1787854736l9c59e,1777647935,1777487400,Dropbox Inc - Settlement,order_TUtFnKnqPF96Is,card,VISA
+pay_IkPUsJJUD5mpej,payment,3510125,INR,70997,12779,3426349,0,setl_Kv7vuVrnWDXaPd,17878547367nzbxf,1752424355,1752258600,Stripe Payments - Settlement,order_TUtFnRQag2Tn3G,card,VISA
+pay_z8Apb4mm7qT46X,payment,5448822,INR,119801,21564,5307457,0,setl_cqPl70Avn4Yk3g,1787854736gp3jk8,1761848909,1761676200,Twilio Inc - Settlement,order_TUtFncK1XefUOb,card,RUPay
+pay_4yXxbC3Lf6K7hA,payment,927715,INR,17748,3195,906772,0,setl_2ktu51GjxyQMur,1787854736agrd1p,1741254036,1741113000,DigitalOcean - Settlement,order_TUtFnmYZcqwRr4,card,MC
+pay_v1aGhr8wo6uJcU,payment,2419740,INR,50043,9008,2360689,0,setl_otKXrML6byLDLv,1787854736j6oww5,1763425974,1763317800,Slack Technologies - Settlement,order_TUtFnsNRHC3pX0,card,MC
+pay_xijOQYnaBphnmu,payment,5540375,INR,100929,18167,5421279,0,setl_EFHDBOevAQ7pwC,1787854736h2ns8j,1742386291,1742236200,Dropbox Inc - Settlement,order_7tHCRQJ0Ac6C5l,card,RUPay
+pay_E5GwSFvbYodhIY,payment,304080,INR,6326,1139,296615,0,setl_dUaW39y6pXDWUG,1787854736qz05ev,1763905750,1763749800,Adobe Creative Cloud - Settlement,order_7gwJhZV2pUS6md,card,RUPay
+pay_Ip4xtX6iiHAkh6,payment,107884,INR,2356,424,105104,0,setl_RryWmodZL97yBW,1787854736b3lpvo,1764002306,1763835613,Adobe Creative Cloud - Settlement,order_7gwJhZV2pUS6md,card,VISA
+pay_4VZofJNzMLx005,payment,106801,INR,2242,404,104155,0,setl_xV66dorGXls12w,1787854736zbrd39,1763981858,1763834274,Adobe Creative Cloud - Settlement,order_7gwJhZV2pUS6md,card,RUPay
+pay_EpPMj6WpORELeU,payment,2591594,INR,53332,9600,2528662,0,setl_KbHpONuoFasJ53,17878547361hjr6e,1757287593,1757183400,Stripe Payments - Settlement,order_qT46XhR4yXxbC3,card,RUPay
+pay_Jjy7KTwsnRWqUd,payment,5364159,INR,111434,20058,5232667,0,setl_5nexUNj5EV4uso,178785473628pijk,1750545199,1750444200,Cloudflare Inc - Settlement,order_mNnNqzMz2tayEq,card,VISA
+pay_eGoFRz3Mtmt30n,payment,324064,INR,6837,1231,315996,0,setl_Ft6uHW07jADh08,1787854736lny2sv,1742265316,1742149800,Dropbox Inc - Settlement,order_LPEy4ZbZTYHAsD,card,RUPay
+pay_k4ih9dwWNvtScf,payment,5273846,INR,103476,18626,5151744,0,setl_GA0TySNqJRu0zC,1787854736lsyj4u,1745170116,1745001000,Microsoft Azure - Settlement,order_wSFvbYodhIYxh7,card,VISA
+pay_p0ymKfbL6o7tdW,payment,5436928,INR,108786,19581,5308561,0,setl_zerX8UzNtyrD1L,1787854736ro9x49,1736778419,1736620200,DigitalOcean - Settlement,order_HAkh6Su4VZofJN,card,MC
+pay_QOpgxY42CoG8nQ,payment,1117465,INR,21150,3807,1092508,0,setl_YadVYEtR5rhGUx,17878547365b7kxu,1785926118,1785781800,Zoho Corporation - Settlement,order_059ciSEGseUHoG,card,RUPay
+pay_jXXk3EP8NZyVx3,payment,1852985,INR,37643,6776,1808566,0,setl_rSINutAtjq9J6a,178785473647d9gb,1764854159,1764700200,Zoho Corporation - Settlement,order_qJjy7KTwsnRWqU,card,MC
+pay_bOfRJJlyoZUHpd,payment,1568,INR,34,6,1528,0,setl_ok8mZCOeq7oXqx,1787854736x15xjx,1764901745,1764767200,Zoho Corporation - Settlement,order_qJjy7KTwsnRWqU,card,RUPay
+pay_ZPHkIf3JK5gZ8n,payment,960605,INR,19778,3560,937267,0,setl_AHHn4Nk9drFkX9,1787854736zkelz5,1764981094,1764824242,Zoho Corporation - Settlement,order_qJjy7KTwsnRWqU,card,RUPay
+pay_RFb91KzlxyLoQs,payment,2099474,INR,43348,7803,2048323,0,setl_LyBihyegkswHu7,17878547366gvgt2,1762729127,1762626600,Dropbox Inc - Settlement,order_TUtFoSXtUOLEJy,card,VISA
+pay_EXIBg4qzlL3l2g,payment,2763421,INR,56335,10140,2696946,0,setl_CjoFPuFHS7K8oP,1787854736b86ktf,1783858883,1783708200,Zoho Corporation - Settlement,order_TUtFoZWE6Ca52o,card,MC
+pay_Ilz3wogWCgOxwX,payment,404311,INR,8057,1450,394804,0,setl_rg9VhNGyOLSz7l,1787854736hmewcj,1783881836,1783745396,Zoho Corporation - Settlement,order_TUtFoZWE6Ca52o,card,RUPay
+pay_zjaPv4FlhPAuAg,payment,994702,INR,21517,3873,969312,0,setl_oKc6p6IMnQnosi,1787854736xsf3l2,1785831468,1785695400,Shopify Inc - Settlement,order_TUtFogBvDdXCC1,card,RUPay
+pay_MxZGakQhjl9YMi,payment,4755738,INR,92737,16693,4646308,0,setl_BlEHGhEnWUQ1NA,1787854736n8nd7g,1759037980,1758911400,Stripe Payments - Settlement,order_TUtFontl35EX6M,card,RUPay
+pay_qDYnxzdlFQWls5,payment,348691,INR,7133,1284,340274,0,setl_kyFVjRQGCTuLxq,17878547362t5ovj,1785760052,1785606338,Adobe Creative Cloud - Settlement,order_TUtFp7d14JWXRP,card,VISA
+pay_R7DvKeA05gMwfr,payment,151130,INR,3117,561,147452,0,setl_soIjQ4nWwqZcbV,1787854736qk8sz7,1786478803,1786362419,Dropbox Inc - Settlement,order_9Qwca79isJS8jh,card,RUPay
+pay_Wo8FRYpZMAr4it,payment,314419,INR,6507,1171,306741,0,setl_S16ZTFEt6KDuie,178785473658ps0r,1787530509,1787376606,Zoom Video Communications - Settlement,order_Dkf0J7ELkpOH3P,card,RUPay
+pay_7RlM5jQZGES6x7,payment,170836,INR,3313,596,166927,0,setl_qphHALzAahV9o5,178785473698ybqg,1786938208,1786783190,Microsoft Azure - Settlement,order_mZkg5MsOYpSTuE,card,RUPay
+pay_bXdPVwq31dPXwN,payment,390273,INR,7415,1335,381523,0,setl_4KWIVDeK8Uqz01,1787854736krjawo,1786592660,1786466307,Freshworks Inc - Settlement,order_miGhfIVEPRbhS8,card,RUPay
+pay_ZVhrQRYuViLTNj,payment,427317,INR,9059,1631,416627,0,setl_57f3530DAcSGVs,1787854736oapht6,1786966322,1786826089,Stripe Payments - Settlement,order_AySp6IHGiQlsMn,card,MC
+pay_4eMt2MMPmJG5pp,payment,288403,INR,5979,1076,281348,0,setl_HeJoOYSaLyGb0K,1787854736mpm5hg,1787024765,1786933089,Zoho Corporation - Settlement,order_fP4DnzCUI8Kbri,card,RUPay
+pay_hCdme931e94RNj,payment,208654,INR,4394,791,203469,0,setl_IaUBp678HeeqHu,17878547362o003e,1787250792,1787150253,Amazon Web Services - Settlement,order_E24hzkJHT3x13N,card,MC
+pay_id9jwYI1HOw6Gf,payment,856178,INR,16023,2884,837271,0,setl_xHVAqDzalAdRFa,1787854736w0gkej,1781062221,1780943400,Shopify Inc - Settlement,order_TUtFoyotEhnhrL,card,VISA
+pay_6SY3zhtx3eQeYp,payment,889930,INR,17717,3189,869024,0,setl_padwGtlL1mJHYQ,1787854736gfah5n,1785418609,1785263400,Shopify Inc - Settlement,order_TUtFbVB42cFZkx,card,VISA
+pay_olT2ZlqPYVSxIl,payment,4831431,INR,88967,16014,4726450,0,setl_SnOUdfnSQRVZTC,1787854736bb0hq6,1750803007,1750703400,Google Cloud Platform - Settlement,order_Wbm2FyLY7QX0xo,card,RUPay
+pay_jvKgbR9by8dZTG,payment,3416856,INR,72730,13091,3331035,0,setl_aPeUGpqvIWyukl,1787854736ijvddw,1766334283,1766169000,Google Cloud Platform - Settlement,order_TUtFcQGBJzYcvq,card,MC
+pay_lXqekOncp3cRhE,payment,3075853,INR,57519,10353,3007981,0,setl_Hk4oLr5EhVs9Ms,1787854736bgtj54,1768575245,1768415400,Google Cloud Platform - Settlement,order_fV0yG7nzrbt7Qy,card,VISA
+pay_mebDQIR2eBnxsT,payment,2561453,INR,51418,9255,2500780,0,setl_83bs4EZ5fBlrHC,1787854736u2y0oy,1754658703,1754505000,Dropbox Inc - Settlement,order_TUtFcaD1WshCO6,card,MC
+pay_w84uz3wOxNLPuv,payment,2974161,INR,63826,11489,2898846,0,setl_8KuXwYQLJNr2xc,1787854736zskhzt,1752626627,1752517800,Twilio Inc - Settlement,order_OZiOdsbBSZPpWi,card,RUPay
+pay_EbXhzDXlCExkpN,payment,5266937,INR,101763,18317,5146857,0,setl_NhSn6RI2D89NHo,1787854736w8l85j,1738970512,1738866600,Zoom Video Communications - Settlement,order_TUtFh5r4CDx6QC,card,MC
+pay_4oTbjtFSuKIh8g,payment,2069680,INR,42455,7642,2019583,0,setl_ZlUDyzN7K8h8ww,1787854736d0nx5w,1775918004,1775759400,Zoom Video Communications - Settlement,order_TOsTu6qLtRkvl8,card,VISA
+pay_t2ozm6RqNbOW8W,payment,558488,INR,11365,2046,545077,0,setl_MbUMn1YbtaJdec,17878547363gu7gk,1739252853,1739125800,Adobe Creative Cloud - Settlement,order_TUtFdXh7FA668B,card,RUPay
+pay_TNLEfZhFNNUWNu,payment,3050210,INR,64470,11605,2974135,0,setl_KLYlEEP48Ggtyl,1787854736na31xb,1740022350,1739903400,Adobe Creative Cloud - Settlement,order_TUtFnWQjPRWxcR,card,RUPay
+pay_apXJ5EzFFtyiki,payment,4881228,INR,89719,16149,4775360,0,setl_vQ6lxAxhy0FIv3,17878547363lritj,1760192252,1760034600,Zoho Corporation - Settlement,order_VwQAtzjo1beUvX,card,VISA
+pay_0oxIRzrIrbAEPz,payment,147338,INR,3201,576,143561,0,setl_HzGSfzI4BaJoO2,1787854736n53egd,1748383934,1748284200,Cloudflare Inc - Settlement,order_Et8FgXcJTU6k2J,card,RUPay
+pay_a9LSGUSbsKbbt4,payment,5217824,INR,102781,18501,5096542,0,setl_7REUW5FCJaULa3,1787854736ywk5jr,1770018980,1769884200,Atlassian - Settlement,order_wqDnUUiXP07lJF,card,RUPay
+pay_86EnWxq7IlwCEw,payment,5494394,INR,104933,18888,5370573,0,setl_5ysEA5JoTYswdE,1787854736u8kd9g,1770453065,1770316200,Atlassian - Settlement,order_k6TXxypztqgoaW,card,VISA
+pay_O3qjQ5qRhoL0AM,payment,452378,INR,9806,1765,440807,0,setl_Ved8lnI65Xiheh,1787854736idzs13,1788056948,1787941800,DigitalOcean - Settlement,order_mae86pwTZJXud0,card,MC
+pay_PX4KYSrOorAdIO,payment,4196696,INR,86529,15575,4094592,0,setl_rOA9Bi75DV01yS,1787854736f486i3,1753216322,1753122600,Slack Technologies - Settlement,order_TUtFiu4ZWCYeRF,card,RUPay
+pay_IgAobsmJZq1FGu,payment,1141613,INR,25083,4515,1112015,0,setl_uHrItraDGkdkJJ,1787854736fia3o1,1783337773,1783189800,Slack Technologies - Settlement,order_TUtFj7SgBtoCkS,card,RUPay
+pay_1vTFcWSwtPW89w,payment,2308011,INR,49641,8935,2249435,0,setl_uurSZUwrRJ2Buf,1787854736a3y5t3,1762787981,1762626600,Salesforce.com - Settlement,order_aFFNEkgbAVH1rd,card,RUPay
+pay_r6iiL92eTeFONg,payment,1493974,INR,27060,4871,1462043,0,setl_fraJ8g8HNmNLui,178785473643qlx3,1764030603,1763922600,Freshworks Inc - Settlement,order_TUtFkDFNTFkzZx,card,MC
+pay_r1s6nMmSVp8o7f,payment,3954770,INR,75914,13665,3865191,0,setl_DXaQGWwUOKGNA4,1787854736gh7idu,1740946081,1740853800,Stripe Payments - Settlement,order_G4djblwl12t3de,card,RUPay

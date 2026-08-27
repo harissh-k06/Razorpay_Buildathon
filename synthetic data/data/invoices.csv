@@ -1,0 +1,201 @@
+invoice_id,order_id,issue_date,due_date,vendor_name,description,subtotal,tax,total,currency
+INV-001,order_IGthkBFOlisrab,2025-09-08,2025-09-30,Stripe Payments,Stripe Payments - Usage-based,373.36,67.2,440.56,USD
+INV-002,order_J7UFF0lyth8Xiz,2025-12-15,2026-01-07,Amazon Web Services,Amazon Web Services - Usage-based,301.74,54.31,356.05,EUR
+INV-003,order_911XczKWprqEnh,2025-08-22,2025-09-15,Zoho Corporation,Zoho Corporation - One-time Payment,32.45,5.84,38.29,USD
+INV-004,order_q0wOBTQN62ToY4,2026-07-25,2026-08-16,Salesforce.com,Salesforce.com - Annual Renewal,18764.22,3377.56,22141.78,INR
+INV-005,order_uakW9Ieu1JJqkX,2026-07-29,2026-08-21,Shopify Inc,Shopify Inc - Annual Renewal,57.48,10.35,67.83,GBP
+INV-006,order_vVSJAss8vfGm0f,2025-04-28,2025-05-21,Twilio Inc,Twilio Inc - One-time Payment,343.34,61.8,405.14,USD
+INV-007,order_leGW9yOOjEty8h,2026-07-07,2026-07-22,Shopify Inc,Shopify Inc - One-time Payment,281.2,50.62,331.82,GBP
+INV-008,order_gl75uqsYpX3bPD,2025-06-19,2025-07-12,Shopify Inc,Shopify Inc - Subscription,45391.15,8170.41,53561.56,INR
+INV-009,order_EBUfRehs2jPdZF,2025-03-02,2025-03-24,Freshworks Inc,Freshworks Inc - Annual Renewal,11.59,2.09,13.68,EUR
+INV-010,order_DtxGLhILc2Ey1G,2025-02-25,2025-03-15,Atlassian,Atlassian - Subscription,20249.61,3644.93,23894.54,INR
+INV-011,order_NYDX9Qwca79isJ,2026-05-13,2026-06-12,Microsoft Azure,Microsoft Azure - Usage-based,78.41,14.11,92.52,EUR
+INV-012,order_uDkf0J7ELkpOH3,2026-07-10,2026-07-26,Zoho Corporation,Zoho Corporation - One-time Payment,293.8,52.88,346.68,USD
+INV-013,order_5MsOYpSTuEc99E,2026-08-21,2026-09-15,Google Cloud Platform,Google Cloud Platform - One-time Payment,215.42,38.78,254.2,USD
+INV-014,order_WJzrl9oAySp6IH,2025-03-12,2025-04-03,Twilio Inc,Twilio Inc - Subscription,400.48,72.09,472.57,EUR
+INV-015,order_MnQe40FaRAvnQt,2025-08-04,2025-08-29,Shopify Inc,Shopify Inc - Annual Renewal,108.53,19.54,128.07,GBP
+INV-016,order_zkJHT3x13NPGw2,2025-06-02,2025-06-18,Amazon Web Services,Amazon Web Services - Annual Renewal,46.87,8.44,55.31,USD
+INV-017,order_BtU5x1yQwG21Ny,2025-07-01,2025-07-29,Shopify Inc,Shopify Inc - Annual Renewal,371.65,66.9,438.55,EUR
+INV-018,order_BLU17RnY8h6H8L,2025-08-22,2025-09-13,Atlassian,Atlassian - Usage-based,302.04,54.37,356.41,GBP
+INV-019,order_b9H3LCbgyq6tMa,2025-12-20,2026-01-14,Google Cloud Platform,Google Cloud Platform - Usage-based,302.32,54.42,356.74,USD
+INV-020,order_pUriLpXuKjZzSN,2025-11-04,2025-11-28,Cloudflare Inc,Cloudflare Inc - Usage-based,362.68,65.28,427.96,USD
+INV-021,order_x7toRpmF7OTyJC,2025-08-07,2025-09-06,Dropbox Inc,Dropbox Inc - Annual Renewal,21707.23,3907.3,25614.53,INR
+INV-022,order_sXYJq312wNxrci,2026-08-13,2026-09-03,Microsoft Azure,Microsoft Azure - Subscription,20406.67,3673.2,24079.87,INR
+INV-023,order_63lsfzh3udQPnv,2026-06-28,2026-07-23,Dropbox Inc,Dropbox Inc - Annual Renewal,345.11,62.12,407.23,EUR
+INV-024,order_QThIOrrDZhZMa4,2025-10-20,2025-11-11,Freshworks Inc,Freshworks Inc - Subscription,165.32,29.76,195.08,GBP
+INV-025,order_u07ZuhlNNbBUqZ,2025-12-27,2026-01-20,Slack Technologies,Slack Technologies - One-time Payment,1234.48,222.21,1456.69,INR
+INV-026,order_4kpFa1LQUcU2R6,2026-07-01,2026-07-16,Dropbox Inc,Dropbox Inc - Annual Renewal,420.4,75.67,496.07,EUR
+INV-027,order_9Vowou6MBJHpiN,2026-07-07,2026-07-23,Twilio Inc,Twilio Inc - Usage-based,240.45,43.28,283.73,USD
+INV-028,order_7GBTp7YsEqmGv0,2025-04-28,2025-05-18,Atlassian,Atlassian - Subscription,263.0,47.34,310.34,EUR
+INV-029,order_fV0yG7nzrbt7Qy,2026-01-15,2026-02-01,Google Cloud Platform,Google Cloud Platform - Annual Renewal,198.68,35.76,234.44,GBP
+INV-030,order_TP5RbujpUeUeVQ,2026-08-30,2026-09-22,Dropbox Inc,Dropbox Inc - Usage-based,39707.2,7147.3,46854.5,INR
+INV-031,order_OZiOdsbBSZPpWi,2025-07-15,2025-08-01,Twilio Inc,Twilio Inc - Usage-based,263.15,47.37,310.52,USD
+INV-032,order_TOsTu6qLtRkvl8,2026-04-10,2026-05-03,Zoom Video Communications,Zoom Video Communications - One-time Payment,133.69,24.06,157.75,GBP
+INV-033,order_rHCDS6nuGARdV7,2025-11-06,2025-11-21,DigitalOcean,DigitalOcean - Usage-based,160.11,28.82,188.93,EUR
+INV-034,order_EnDJiS9HvlxNgb,2026-02-15,2026-03-17,Adobe Creative Cloud,Adobe Creative Cloud - Annual Renewal,412.84,74.31,487.15,USD
+INV-035,order_6MNoJKEAbkSOrr,2025-03-03,2025-03-21,DigitalOcean,DigitalOcean - Annual Renewal,15288.72,2751.97,18040.69,INR
+INV-036,order_aho4zEKTujRHqr,2026-08-27,2026-09-17,Microsoft Azure,Microsoft Azure - Usage-based,396.55,71.38,467.93,EUR
+INV-037,order_tlBOp1kBvyjvKg,2025-02-10,2025-03-10,Adobe Creative Cloud,Adobe Creative Cloud - Annual Renewal,4732.95,851.93,5584.88,INR
+INV-038,order_8dZTGJZepYvCFP,2026-03-23,2026-04-22,Twilio Inc,Twilio Inc - Subscription,427.21,76.9,504.11,EUR
+INV-039,order_ZLWumvMi5brH8l,2026-07-10,2026-08-08,Slack Technologies,Slack Technologies - One-time Payment,332.25,59.8,392.05,USD
+INV-040,order_F94cHzesfQz8Pi,2026-07-20,2026-08-17,Salesforce.com,Salesforce.com - Annual Renewal,205.17,36.93,242.1,GBP
+INV-041,order_VwQAtzjo1beUvX,2025-10-10,2025-11-07,Zoho Corporation,Zoho Corporation - Usage-based,371.4,66.85,438.25,EUR
+INV-042,order_CuryXpy8eCfk12,2025-08-28,2025-09-25,Zoho Corporation,Zoho Corporation - Annual Renewal,248.68,44.76,293.44,EUR
+INV-043,order_18EwQmYEUph7m3,2025-05-28,2025-06-25,Stripe Payments,Stripe Payments - Annual Renewal,1677.89,302.02,1979.91,INR
+INV-044,order_uaGn2br4CxSXJg,2025-10-22,2025-11-13,Google Cloud Platform,Google Cloud Platform - One-time Payment,125.04,22.51,147.55,USD
+INV-045,order_ekOncp3cRhE69S,2026-01-27,2026-02-18,Salesforce.com,Salesforce.com - Annual Renewal,41.73,7.51,49.24,EUR
+INV-046,order_0GXWSrBzYA1w84,2025-07-23,2025-08-19,Twilio Inc,Twilio Inc - Annual Renewal,40625.63,7312.61,47938.24,INR
+INV-047,order_nmqsozm4oTbjtF,2025-12-27,2026-01-18,DigitalOcean,DigitalOcean - Usage-based,263.49,47.43,310.92,EUR
+INV-048,order_g4zPzdyuVH7I71,2025-05-16,2025-06-11,Cloudflare Inc,Cloudflare Inc - Annual Renewal,9199.67,1655.94,10855.61,INR
+INV-049,order_hcppky6GOB2i4N,2025-01-15,2025-02-07,Atlassian,Atlassian - Subscription,397.43,71.54,468.97,USD
+INV-050,order_CC9HOhYX6rhkt2,2025-04-30,2025-05-19,Dropbox Inc,Dropbox Inc - Subscription,240.52,43.29,283.81,GBP
+INV-051,order_qNbOW8W3nDR86z,2025-10-14,2025-10-30,Adobe Creative Cloud,Adobe Creative Cloud - Subscription,45025.31,8104.56,53129.87,INR
+INV-052,order_9wMzikyOwwkR99,2025-12-08,2025-12-30,Zoho Corporation,Zoho Corporation - Usage-based,34.78,6.26,41.04,USD
+INV-053,order_AwOUKDtgudwfGf,2025-01-27,2025-02-15,Salesforce.com,Salesforce.com - Subscription,333.92,60.11,394.03,USD
+INV-054,order_90aGsb3TJHmksX,2025-02-01,2025-02-17,DigitalOcean,DigitalOcean - Usage-based,31148.23,5606.68,36754.91,INR
+INV-055,order_a3ZzYtTTP7qdFF,2025-04-28,2025-05-19,Dropbox Inc,Dropbox Inc - Annual Renewal,5612.12,1010.18,6622.3,INR
+INV-056,order_kiUHVpu1s8lVjN,2026-07-24,2026-08-09,Stripe Payments,Stripe Payments - Annual Renewal,298.9,53.8,352.7,GBP
+INV-057,order_HROaivmpiloqBQ,2026-07-24,2026-08-19,Freshworks Inc,Freshworks Inc - Usage-based,181.56,32.68,214.24,USD
+INV-058,order_Et8FgXcJTU6k2J,2025-05-27,2025-06-23,Cloudflare Inc,Cloudflare Inc - Subscription,9.52,1.71,11.23,GBP
+INV-059,order_lZNfVGqkgTN9DM,2026-03-11,2026-04-10,Microsoft Azure,Microsoft Azure - One-time Payment,166.49,29.97,196.46,GBP
+INV-060,order_eaIhOipVYubcET,2025-05-03,2025-05-18,Shopify Inc,Shopify Inc - Annual Renewal,111.29,20.03,131.32,GBP
+INV-061,order_7K6cqWbGbYE1uN,2026-02-19,2026-03-06,Slack Technologies,Slack Technologies - One-time Payment,14543.63,2617.85,17161.48,INR
+INV-062,order_V7oJGPKJvE6mci,2025-07-18,2025-08-13,Microsoft Azure,Microsoft Azure - Annual Renewal,270.0,48.6,318.6,USD
+INV-063,order_bSRDfTcDzE11mf,2025-03-11,2025-04-10,Cloudflare Inc,Cloudflare Inc - Annual Renewal,61.55,11.08,72.63,GBP
+INV-064,order_TdJDG3VsfKPbbg,2026-08-09,2026-08-30,Google Cloud Platform,Google Cloud Platform - One-time Payment,43616.53,7850.98,51467.51,INR
+INV-065,order_wqDnUUiXP07lJF,2026-02-01,2026-03-01,Atlassian,Atlassian - One-time Payment,337.03,60.67,397.7,GBP
+INV-066,order_k6TXxypztqgoaW,2026-02-06,2026-02-25,Atlassian,Atlassian - Usage-based,354.9,63.88,418.78,GBP
+INV-067,order_L9JSwfhtgp2mlJ,2025-12-16,2026-01-15,DigitalOcean,DigitalOcean - One-time Payment,407.99,73.44,481.43,EUR
+INV-068,order_8luwOO7w4Mqjbv,2026-01-09,2026-01-31,Salesforce.com,Salesforce.com - Annual Renewal,3008.14,541.47,3549.61,INR
+INV-069,order_DdX5sfHFJbfzF4,2025-05-22,2025-06-14,Zoom Video Communications,Zoom Video Communications - Annual Renewal,351.61,63.29,414.9,EUR
+INV-070,order_O9XB50oxIRzrIr,2026-02-10,2026-03-08,Atlassian,Atlassian - Annual Renewal,213.3,38.39,251.69,USD
+INV-071,order_itgGRSCaxcG4kB,2025-08-09,2025-08-28,Amazon Web Services,Amazon Web Services - One-time Payment,19.31,3.48,22.79,USD
+INV-072,order_jLpgW7hwfB2CXX,2025-12-28,2026-01-19,Shopify Inc,Shopify Inc - Subscription,161.5,29.07,190.57,GBP
+INV-073,order_IVUnzq8dLIs6CM,2025-04-17,2025-05-12,Atlassian,Atlassian - One-time Payment,178.95,32.21,211.16,USD
+INV-074,order_9hPuLWw1UHW3u3,2026-06-12,2026-07-09,Google Cloud Platform,Google Cloud Platform - Annual Renewal,342.57,61.66,404.23,GBP
+INV-075,order_5gxtElyhTEoTla,2026-05-25,2026-06-20,Cloudflare Inc,Cloudflare Inc - Annual Renewal,216.94,39.05,255.99,EUR
+INV-076,order_R86EnWxq7IlwCE,2025-12-28,2026-01-25,Atlassian,Atlassian - Usage-based,2944.93,530.09,3475.02,INR
+INV-077,order_q6XvjgYoPHteXi,2025-02-03,2025-02-22,Atlassian,Atlassian - Usage-based,45513.73,8192.47,53706.2,INR
+INV-078,order_MIEKs9y79priSS,2025-10-20,2025-11-19,Twilio Inc,Twilio Inc - One-time Payment,11026.96,1984.85,13011.81,INR
+INV-079,order_xOeWjc8I2EYsdZ,2025-05-05,2025-05-26,Salesforce.com,Salesforce.com - Annual Renewal,190.06,34.21,224.27,GBP
+INV-080,order_cgHzikvIf1zgSK,2025-03-17,2025-04-15,Microsoft Azure,Microsoft Azure - One-time Payment,416.9,75.04,491.94,EUR
+INV-081,order_niHShfK6Josl0i,2025-09-14,2025-10-05,Atlassian,Atlassian - Subscription,311.17,56.01,367.18,GBP
+INV-082,order_ovZnemR7dxqSED,2026-08-14,2026-09-06,Microsoft Azure,Microsoft Azure - Annual Renewal,474.79,85.46,560.25,USD
+INV-083,order_Tst18IWiTcQPGR,2025-12-15,2026-01-03,Zoom Video Communications,Zoom Video Communications - Annual Renewal,22753.04,4095.55,26848.59,INR
+INV-084,order_5sLJ9c2eFYcOkD,2025-06-13,2025-07-08,Zoom Video Communications,Zoom Video Communications - Usage-based,412.83,74.31,487.14,EUR
+INV-085,order_a2tvWYjMiEfvR9,2025-01-09,2025-01-27,Adobe Creative Cloud,Adobe Creative Cloud - Subscription,14367.42,2586.14,16953.56,INR
+INV-086,order_uMffCIUdclfUmK,2025-12-14,2026-01-09,Shopify Inc,Shopify Inc - Usage-based,203.01,36.54,239.55,USD
+INV-087,order_yWp8kxsqBd7wwj,2025-11-03,2025-12-03,Cloudflare Inc,Cloudflare Inc - Subscription,34216.71,6159.01,40375.72,INR
+INV-088,order_yPjrLbZZMfld0t,2026-01-25,2026-02-13,Adobe Creative Cloud,Adobe Creative Cloud - One-time Payment,228.71,41.17,269.88,EUR
+INV-089,order_TK4VVvsnqlLPiN,2026-05-05,2026-06-01,Zoho Corporation,Zoho Corporation - Usage-based,365.83,65.85,431.68,GBP
+INV-090,order_di5sRjh3YVvJC7,2026-05-16,2026-06-10,DigitalOcean,DigitalOcean - Subscription,298.42,53.72,352.14,EUR
+INV-091,order_Mh5rImkPpgnDZs,2026-05-06,2026-05-27,Atlassian,Atlassian - Subscription,31741.05,5713.39,37454.44,INR
+INV-092,order_o2douRRDvoOt0C,2025-06-11,2025-07-09,Shopify Inc,Shopify Inc - One-time Payment,482.61,86.87,569.48,USD
+INV-093,order_wLu2RCSl5Ucng3,2025-02-07,2025-03-06,Zoom Video Communications,Zoom Video Communications - One-time Payment,400.75,72.13,472.88,EUR
+INV-094,order_KcPLtxjuK13zfF,2025-04-26,2025-05-21,Dropbox Inc,Dropbox Inc - Subscription,76.58,13.78,90.36,GBP
+INV-095,order_QOu7SsAoqDHTZf,2025-09-12,2025-09-27,Salesforce.com,Salesforce.com - Usage-based,209.07,37.63,246.7,EUR
+INV-096,order_7dc9Xr4uxzvqkw,2025-08-15,2025-09-06,Stripe Payments,Stripe Payments - Annual Renewal,139.34,25.08,164.42,GBP
+INV-097,order_z3MhK0bqse3bDI,2025-04-25,2025-05-11,Atlassian,Atlassian - Annual Renewal,459.45,82.7,542.15,USD
+INV-098,order_YyujCVD95E5BZv,2025-11-12,2025-11-27,Dropbox Inc,Dropbox Inc - Annual Renewal,283.81,51.09,334.9,USD
+INV-099,order_E72I1H9YH8zu8c,2026-01-22,2026-02-18,Atlassian,Atlassian - Annual Renewal,22006.03,3961.09,25967.12,INR
+INV-100,order_R6sGyZv2AMGClr,2025-12-21,2026-01-09,Slack Technologies,Slack Technologies - Subscription,112.51,20.25,132.76,EUR
+INV-101,order_uwI9O4jjvyO29g,2025-08-28,2025-09-18,Freshworks Inc,Freshworks Inc - Annual Renewal,207.11,37.28,244.39,USD
+INV-102,order_mae86pwTZJXud0,2026-08-29,2026-09-18,DigitalOcean,DigitalOcean - Usage-based,29.22,5.26,34.48,GBP
+INV-103,order_8iIPMo50FsLQpl,2026-07-30,2026-08-27,Shopify Inc,Shopify Inc - Subscription,43883.73,7899.07,51782.8,INR
+INV-104,order_7A67H9dPlM4iwX,2025-12-07,2025-12-31,Zoho Corporation,Zoho Corporation - Usage-based,209.88,37.78,247.66,EUR
+INV-105,order_G8d04WZiNJQ5jZ,2026-05-25,2026-06-23,DigitalOcean,DigitalOcean - One-time Payment,136.51,24.57,161.08,GBP
+INV-106,order_eoqPy7neKxKse4,2026-08-07,2026-08-29,Zoho Corporation,Zoho Corporation - Subscription,89.95,16.19,106.14,GBP
+INV-107,order_Z0OrAfXmpmdeAi,2025-02-19,2025-03-06,Google Cloud Platform,Google Cloud Platform - Subscription,473.14,85.17,558.31,USD
+INV-108,order_fra6L4gOmPVxE7,2025-10-21,2025-11-05,Amazon Web Services,Amazon Web Services - Annual Renewal,199.75,35.95,235.7,GBP
+INV-109,order_FXiDAKeawj1FgC,2025-03-24,2025-04-09,Freshworks Inc,Freshworks Inc - One-time Payment,134.54,24.22,158.76,EUR
+INV-110,order_3iC5T7kusYEKOz,2025-03-18,2025-04-10,Adobe Creative Cloud,Adobe Creative Cloud - Annual Renewal,24.06,4.33,28.39,GBP
+INV-111,order_f8DbzVv7YvBQ9e,2025-05-24,2025-06-10,Cloudflare Inc,Cloudflare Inc - Usage-based,36416.54,6554.98,42971.52,INR
+INV-112,order_FmxsFJsntTGATW,2026-08-23,2026-09-19,Slack Technologies,Slack Technologies - Usage-based,9673.73,1741.27,11415.0,INR
+INV-113,order_ifGFilw1AZwsi9,2026-03-18,2026-04-16,Stripe Payments,Stripe Payments - One-time Payment,45.23,8.14,53.37,EUR
+INV-114,order_QJKRSwW6semcIA,2025-10-03,2025-10-27,Salesforce.com,Salesforce.com - Annual Renewal,8912.36,1604.22,10516.58,INR
+INV-115,order_Uy18IT6MT78Sre,2025-12-04,2026-01-02,Cloudflare Inc,Cloudflare Inc - One-time Payment,38691.08,6964.39,45655.47,INR
+INV-116,order_Hikhqi7crbSqyx,2026-02-07,2026-03-05,Cloudflare Inc,Cloudflare Inc - Annual Renewal,14111.71,2540.11,16651.82,INR
+INV-117,order_oswE9dYf5qhxW3,2025-09-05,2025-09-28,Adobe Creative Cloud,Adobe Creative Cloud - Subscription,274.52,49.41,323.93,EUR
+INV-118,order_oC8qYu7aAQfgjj,2025-12-30,2026-01-19,Stripe Payments,Stripe Payments - Annual Renewal,284.71,51.25,335.96,EUR
+INV-119,order_VBGZ7H6ITcMddb,2026-08-26,2026-09-14,Atlassian,Atlassian - Annual Renewal,22687.91,4083.82,26771.73,INR
+INV-120,order_0opK9PKJi7OZLn,2025-04-28,2025-05-13,Cloudflare Inc,Cloudflare Inc - Annual Renewal,157.13,28.28,185.41,USD
+INV-121,order_kYrMuyDG2LUcQ1,2025-07-22,2025-08-20,Slack Technologies,Slack Technologies - Usage-based,371.32,66.84,438.16,USD
+INV-122,order_0myrSmFIHSLqfZ,2025-12-23,2026-01-18,Slack Technologies,Slack Technologies - One-time Payment,28504.03,5130.73,33634.76,INR
+INV-123,order_ieITbDWAIy7feq,2026-07-05,2026-07-25,Slack Technologies,Slack Technologies - Annual Renewal,9674.69,1741.44,11416.13,INR
+INV-124,order_xNCNRwjvefjQh9,2026-08-02,2026-08-17,Dropbox Inc,Dropbox Inc - Subscription,8806.05,1585.09,10391.14,INR
+INV-125,order_S9bVyb9wOykVsn,2025-04-15,2025-05-07,Dropbox Inc,Dropbox Inc - One-time Payment,424.21,76.36,500.57,EUR
+INV-126,order_hlK8Sj7f3yIuZD,2025-03-02,2025-03-28,Shopify Inc,Shopify Inc - Usage-based,350.2,63.04,413.24,EUR
+INV-127,order_vpejQZcn2FfR6W,2025-11-26,2025-12-18,Shopify Inc,Shopify Inc - Annual Renewal,113.42,20.42,133.84,EUR
+INV-128,order_nr0xY8zeURhI0w,2025-04-06,2025-05-05,Cloudflare Inc,Cloudflare Inc - Subscription,435.76,78.44,514.2,USD
+INV-129,order_H1bA7MqIoJ5QoP,2026-04-16,2026-05-01,Google Cloud Platform,Google Cloud Platform - Usage-based,316.83,57.03,373.86,USD
+INV-130,order_aFFNEkgbAVH1rd,2025-11-09,2025-12-01,Salesforce.com,Salesforce.com - One-time Payment,204.21,36.76,240.97,USD
+INV-131,order_T2IvuI9IgAobsm,2025-04-15,2025-05-03,Slack Technologies,Slack Technologies - One-time Payment,368.07,66.25,434.32,USD
+INV-132,order_IHtVaxPnPlsR6B,2025-03-30,2025-04-17,Zoom Video Communications,Zoom Video Communications - Usage-based,41313.26,7436.39,48749.65,INR
+INV-133,order_wxOXOnE3AWTX0a,2025-10-30,2025-11-15,Zoho Corporation,Zoho Corporation - One-time Payment,322.61,58.07,380.68,EUR
+INV-134,order_QCDwfmfZrFhmRT,2025-03-11,2025-03-26,Adobe Creative Cloud,Adobe Creative Cloud - One-time Payment,18.18,3.27,21.45,USD
+INV-135,order_rt0DFaclTttHrr,2025-03-09,2025-04-02,Shopify Inc,Shopify Inc - One-time Payment,147.67,26.58,174.25,GBP
+INV-136,order_Xu2tH3UagQ8mef,2025-09-23,2025-10-13,Adobe Creative Cloud,Adobe Creative Cloud - Subscription,195.18,35.13,230.31,GBP
+INV-137,order_3pHtA1ACW5L7Cx,2025-09-19,2025-10-07,Adobe Creative Cloud,Adobe Creative Cloud - Annual Renewal,162.98,29.34,192.32,EUR
+INV-138,order_zjHpDNfCY21vTF,2025-11-24,2025-12-17,Freshworks Inc,Freshworks Inc - Annual Renewal,96.5,17.37,113.87,GBP
+INV-139,order_tPW89wthxJ5Bhn,2026-08-01,2026-08-25,Amazon Web Services,Amazon Web Services - Subscription,79.41,14.29,93.7,GBP
+INV-140,order_GgOeD9sF53grX8,2026-01-21,2026-02-14,Cloudflare Inc,Cloudflare Inc - Subscription,381.88,68.74,450.62,USD
+INV-141,order_kDpIS05YzUcO6I,2026-02-08,2026-02-25,Stripe Payments,Stripe Payments - Subscription,276.16,49.71,325.87,EUR
+INV-142,order_Zh7MTQHJqzrCzU,2026-04-23,2026-05-18,Shopify Inc,Shopify Inc - Subscription,90.54,16.3,106.84,USD
+INV-143,order_Q9BZcuPcxIAz8I,2025-02-20,2025-03-16,Freshworks Inc,Freshworks Inc - Annual Renewal,149.65,26.94,176.59,GBP
+INV-144,order_BD3bH4zUCcKjyY,2025-09-23,2025-10-10,Atlassian,Atlassian - Subscription,295.34,53.16,348.5,USD
+INV-145,order_RbJmmoe2dFXZnx,2025-08-08,2025-08-28,Slack Technologies,Slack Technologies - One-time Payment,9067.5,1632.15,10699.65,INR
+INV-146,order_he4fYLTN3wD9gv,2026-01-03,2026-02-02,Amazon Web Services,Amazon Web Services - One-time Payment,37651.02,6777.18,44428.2,INR
+INV-147,order_hxtv6j8Y59KOTt,2025-09-04,2025-09-27,Salesforce.com,Salesforce.com - Usage-based,131.45,23.66,155.11,USD
+INV-148,order_iL92eTeFONgA4M,2026-08-01,2026-08-20,Amazon Web Services,Amazon Web Services - One-time Payment,347.66,62.58,410.24,GBP
+INV-149,order_Bk4w017X6YGSIJ,2025-11-28,2025-12-14,Cloudflare Inc,Cloudflare Inc - Annual Renewal,394.39,70.99,465.38,EUR
+INV-150,order_NkKTqHt66Y97Cl,2026-07-30,2026-08-25,Adobe Creative Cloud,Adobe Creative Cloud - One-time Payment,69.9,12.58,82.48,GBP
+INV-151,order_VTn7yptUANqVws,2025-03-21,2025-04-12,Stripe Payments,Stripe Payments - Subscription,7558.17,1360.47,8918.64,INR
+INV-152,order_eXhGd1oqKE0ST7,2025-06-20,2025-07-18,Slack Technologies,Slack Technologies - Subscription,35336.26,6360.53,41696.79,INR
+INV-153,order_h3FkmdB6K3JGML,2025-06-14,2025-07-01,Cloudflare Inc,Cloudflare Inc - Usage-based,381.44,68.66,450.1,EUR
+INV-154,order_j0JWaSplMBKSF0,2025-02-20,2025-03-19,DigitalOcean,DigitalOcean - Usage-based,92.65,16.68,109.33,GBP
+INV-155,order_nYXXLCbQziJrFp,2025-09-29,2025-10-16,Slack Technologies,Slack Technologies - Annual Renewal,23909.94,4303.79,28213.73,INR
+INV-156,order_7q6jOSY0Cjgj8J,2026-06-20,2026-07-18,Freshworks Inc,Freshworks Inc - Annual Renewal,421.99,75.96,497.95,USD
+INV-157,order_CEqMyJkTtyFii1,2025-07-17,2025-08-05,Salesforce.com,Salesforce.com - Annual Renewal,416.81,75.03,491.84,EUR
+INV-158,order_jk7GGww122Qojd,2025-06-03,2025-06-22,Amazon Web Services,Amazon Web Services - One-time Payment,6237.5,1122.75,7360.25,INR
+INV-159,order_Y2qDdQXUxT01q8,2026-02-16,2026-03-04,Twilio Inc,Twilio Inc - One-time Payment,7708.53,1387.54,9096.07,INR
+INV-160,order_QZoLNztv1yfJTf,2026-03-30,2026-04-24,Shopify Inc,Shopify Inc - One-time Payment,357.24,64.3,421.54,GBP
+INV-161,order_Pc4rQzfnHBXkL1,2025-07-25,2025-08-10,Amazon Web Services,Amazon Web Services - Usage-based,89.51,16.11,105.62,EUR
+INV-162,order_RXKj71oqQZBwvA,2025-09-22,2025-10-09,Atlassian,Atlassian - One-time Payment,360.33,64.86,425.19,EUR
+INV-163,order_aXVPcpzYGfp0Xo,2025-11-09,2025-12-02,Salesforce.com,Salesforce.com - Usage-based,119.65,21.54,141.19,USD
+INV-164,order_n1Qs3SJv3xxloq,2025-12-11,2026-01-03,DigitalOcean,DigitalOcean - Subscription,246.05,44.29,290.34,USD
+INV-165,order_YCrjLtNhw4pf00,2026-03-05,2026-04-01,Adobe Creative Cloud,Adobe Creative Cloud - One-time Payment,100.51,18.09,118.6,GBP
+INV-166,order_63oNN2a2XkcHDn,2025-09-22,2025-10-12,DigitalOcean,DigitalOcean - Subscription,240.68,43.32,284.0,USD
+INV-167,order_Z1J9V939I1LFU9,2026-01-26,2026-02-19,Adobe Creative Cloud,Adobe Creative Cloud - Usage-based,218.73,39.37,258.1,EUR
+INV-168,order_jJwwIaaadAht63,2025-08-03,2025-08-23,Google Cloud Platform,Google Cloud Platform - One-time Payment,231.51,41.67,273.18,USD
+INV-169,order_qVHXkKzSStkU39,2025-09-12,2025-10-04,Amazon Web Services,Amazon Web Services - Usage-based,317.08,57.07,374.15,USD
+INV-170,order_BN9NBfHsxXnvmk,2025-06-18,2025-07-15,Adobe Creative Cloud,Adobe Creative Cloud - Subscription,276.75,49.81,326.56,GBP
+INV-171,order_bHPrMqAaGgmrZ3,2025-04-29,2025-05-27,Stripe Payments,Stripe Payments - Subscription,33.64,6.06,39.7,USD
+INV-172,order_lwz8WZJh4qdOAF,2026-05-25,2026-06-15,DigitalOcean,DigitalOcean - Subscription,394.53,71.02,465.55,USD
+INV-173,order_sGPO9ScGKCSxTt,2026-06-08,2026-06-25,Adobe Creative Cloud,Adobe Creative Cloud - Subscription,407.27,73.31,480.58,EUR
+INV-174,order_Wbm2FyLY7QX0xo,2025-06-24,2025-07-19,Google Cloud Platform,Google Cloud Platform - One-time Payment,427.48,76.95,504.43,USD
+INV-175,order_G4djblwl12t3de,2025-03-02,2025-03-22,Stripe Payments,Stripe Payments - Annual Renewal,300.91,54.16,355.07,EUR
+INV-176,order_rqvjj8pUgrFpPV,2025-11-18,2025-12-03,Dropbox Inc,Dropbox Inc - Annual Renewal,41.03,7.39,48.42,USD
+INV-177,order_01EeO8DNnZOcxb,2025-06-10,2025-07-10,Shopify Inc,Shopify Inc - Annual Renewal,15.71,2.83,18.54,USD
+INV-178,order_GZiAFlmSfMp6WD,2026-05-25,2026-06-09,Dropbox Inc,Dropbox Inc - One-time Payment,49.97,8.99,58.96,GBP
+INV-179,order_sHvNVz7SgrCKIs,2026-04-30,2026-05-26,Dropbox Inc,Dropbox Inc - Annual Renewal,208.52,37.53,246.05,GBP
+INV-180,order_5YcwsGZ5zkvbo7,2025-07-12,2025-07-30,Stripe Payments,Stripe Payments - One-time Payment,226.73,40.81,267.54,GBP
+INV-181,order_0df5KjtHYl2fX8,2025-02-19,2025-03-19,Adobe Creative Cloud,Adobe Creative Cloud - One-time Payment,269.88,48.58,318.46,USD
+INV-182,order_xIl2f0hTtiNNsq,2025-10-29,2025-11-27,Twilio Inc,Twilio Inc - One-time Payment,46176.46,8311.76,54488.22,INR
+INV-183,order_k6sp3h2aAGXDDQ,2025-12-27,2026-01-26,Salesforce.com,Salesforce.com - One-time Payment,262.47,47.24,309.71,GBP
+INV-184,order_MhWcmpiNoYfxrq,2025-03-05,2025-03-29,DigitalOcean,DigitalOcean - Subscription,59.92,10.79,70.71,GBP
+INV-185,order_APmw1z4rouhlw7,2025-11-17,2025-12-03,Slack Technologies,Slack Technologies - Usage-based,20506.27,3691.13,24197.4,INR
+INV-186,order_7tHCRQJ0Ac6C5l,2025-03-18,2025-04-07,Dropbox Inc,Dropbox Inc - Usage-based,421.55,75.88,497.43,EUR
+INV-187,order_7gwJhZV2pUS6md,2025-11-22,2025-12-14,Adobe Creative Cloud,Adobe Creative Cloud - Subscription,33.51,6.03,39.54,GBP
+INV-188,order_qT46XhR4yXxbC3,2025-09-07,2025-09-23,Stripe Payments,Stripe Payments - One-time Payment,167.4,30.13,197.53,GBP
+INV-189,order_mNnNqzMz2tayEq,2025-06-21,2025-07-06,Cloudflare Inc,Cloudflare Inc - Subscription,474.62,85.43,560.05,USD
+INV-190,order_LPEy4ZbZTYHAsD,2025-03-17,2025-04-02,Dropbox Inc,Dropbox Inc - Subscription,20.93,3.77,24.7,GBP
+INV-191,order_wSFvbYodhIYxh7,2025-04-19,2025-05-13,Microsoft Azure,Microsoft Azure - One-time Payment,340.65,61.32,401.97,GBP
+INV-192,order_HAkh6Su4VZofJN,2025-01-12,2025-01-31,DigitalOcean,DigitalOcean - Usage-based,351.19,63.21,414.4,GBP
+INV-193,order_059ciSEGseUHoG,2026-08-04,2026-08-20,Zoho Corporation,Zoho Corporation - Subscription,98.87,17.8,116.67,USD
+INV-194,order_qJjy7KTwsnRWqU,2025-12-03,2025-12-27,Zoho Corporation,Zoho Corporation - Annual Renewal,181.84,32.73,214.57,GBP
+INV-195,order_iKl01IhQ2EEBfB,2025-11-09,2025-12-09,Dropbox Inc,Dropbox Inc - Annual Renewal,17792.15,3202.59,20994.74,INR
+INV-196,order_oJY3k1IfFWAO78,2026-07-11,2026-08-10,Zoho Corporation,Zoho Corporation - One-time Payment,280.28,50.45,330.73,USD
+INV-197,order_tdWNeDWCM4WdcC,2026-08-03,2026-08-22,Shopify Inc,Shopify Inc - Usage-based,8429.68,1517.34,9947.02,INR
+INV-198,order_XXk3EP8NZyVx3A,2025-09-27,2025-10-17,Stripe Payments,Stripe Payments - One-time Payment,307.19,55.29,362.48,GBP
+INV-199,order_NLWsHOysddNJzB,2026-06-11,2026-07-04,Dropbox Inc,Dropbox Inc - Subscription,105.15,18.93,124.08,EUR
+INV-200,order_3JK5gZ8n2ty6Nl,2026-06-09,2026-06-25,Shopify Inc,Shopify Inc - Annual Renewal,65.14,11.73,76.87,EUR
