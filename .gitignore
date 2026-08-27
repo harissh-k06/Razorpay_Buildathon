@@ -111,6 +111,7 @@ celerybeat.pid
 .env.*.local
 .env.local
 .env.production
+.agentic_mode.json
 
 # Spyder project settings
 .spyderproject
