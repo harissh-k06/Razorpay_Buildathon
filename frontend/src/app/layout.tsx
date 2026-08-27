@@ -20,21 +20,17 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://shadcn-fintech.vercel.app"),
-  title: "Razorpay Blade — Finance Dashboard",
-  description: "A premium fintech dashboard built with Next.js, shadcn/ui, and the Razorpay design system (Blade).",
+  title: "PennyWise – Your Khata Agent",
+  description: "AI-powered 3-way financial reconciliation assistant and automated ledger matching engine.",
   openGraph: {
-    title: "Razorpay Blade — Finance Dashboard",
-    description: "A premium fintech dashboard built with Next.js, shadcn/ui, and the Razorpay design system (Blade).",
+    title: "PennyWise – Your Khata Agent",
+    description: "AI-powered 3-way financial reconciliation assistant and automated ledger matching engine.",
     type: "website",
-    url: "https://shadcn-fintech.vercel.app",
-    images: [{ url: "/screenshots/shadcn-fintech.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Razorpay Blade — Finance Dashboard",
-    description: "A premium fintech dashboard built with Next.js, shadcn/ui, and the Razorpay design system (Blade).",
-    images: ["/screenshots/shadcn-fintech.png"],
+    title: "PennyWise – Your Khata Agent",
+    description: "AI-powered 3-way financial reconciliation assistant and automated ledger matching engine.",
   },
 };
 

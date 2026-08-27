@@ -34,8 +34,8 @@ logger = logging.getLogger("reconciliation-api")
 
 # ── FastAPI app ────────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="Reconciliation Platform – API",
-    description="3-way transaction reconciliation with LLM standardisation and Hungarian matching.",
+    title="PennyWise – Your Khata Agent API",
+    description="3-way transaction reconciliation with LLM standardisation, Hungarian matching, and Agentic Controller.",
     version="2.0.0",
 )
 

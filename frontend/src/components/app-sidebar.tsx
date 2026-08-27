@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import * as React from "react"
 import Link from "next/link"
@@ -41,8 +41,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <LandmarkIcon className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">Razorpay AI Controller</span>
-                <span className="truncate text-xs text-muted-foreground">3-Way Reconciliation</span>
+                <span className="truncate font-semibold">PennyWise</span>
+                <span className="truncate text-xs text-muted-foreground">Your Khata Agent</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
