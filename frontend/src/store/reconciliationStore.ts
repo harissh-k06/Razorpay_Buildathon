@@ -536,7 +536,7 @@ state = {
 
       return { success: false, error: res.error || 'Failed to resolve exceptions' }
     } catch (err: any) {
-      console.error('Error resolving exceptions:', err)
+      console.warn('Resolve exceptions warning:', err)
       return { success: false, error: err.message || 'Network error while resolving exceptions' }
     }
   },

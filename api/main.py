@@ -27,6 +27,7 @@ for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "mcp_server"), str(PROJECT_ROOT 
 
 # ── Load env for OAuth config ───────────────────────────────────────────────────
 from dotenv import load_dotenv
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 # ── Logging ────────────────────────────────────────────────────────────────────
@@ -550,7 +551,8 @@ async def resolve_exceptions_endpoint(req: ResolveExceptionsRequest):
         result = resolve_exceptions_bulk(
             exception_ids=req.exception_ids,
             mode=req.mode,
-            resolution_note=req.resolution_note
+            resolution_note=req.resolution_note,
+            skip_agentic_check=True
         )
 
         if isinstance(result, dict) and "error" in result:

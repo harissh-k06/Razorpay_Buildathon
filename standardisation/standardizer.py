@@ -26,7 +26,9 @@ except Exception:
 from mydeepseek_client import DeepSeekStandardizer
 from dateutil import parser
 
-# Load .env from standardisation directory
+# Load .env from root and standardisation directory
+root_env = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=root_env)
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 

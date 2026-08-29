@@ -33,9 +33,6 @@ export default function DashboardLayout({
               <DynamicBreadcrumb />
             </div>
             <div className="ml-auto flex items-center gap-3 pr-4">
-              <kbd className="pointer-events-none hidden h-6 select-none items-center gap-1 rounded border border-border bg-surface-1 px-2 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
-                <span className="text-xs">⌘</span>K
-              </kbd>
               <UserAvatar />
             </div>
           </header>

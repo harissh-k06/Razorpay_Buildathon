@@ -43,3 +43,22 @@ When asked "Why is this an exception?", explain in simple business terms:
 - **Unmatched Invoice**: Invoice billed, but no matching payment received yet (Credit risk).
 - **Unallocated Cash**: Payment received, but no matching invoice found yet.
 - **Bank Deposit without Settlement**: Money deposited in the bank without an associated gateway settlement record.
+
+---
+
+## How to Explain Reconciliation Results & Analytics
+When the user asks "Explain the results", "Give me an overview of reconciliation", or asks about charts and metrics:
+1. Call `get_summary_stats` to retrieve the comprehensive executive KPIs, gauge, donut distribution, and financial flow realisation breakdown.
+2. Structure your response into clear, professional executive sections:
+   - 📊 **Executive Overview & KPIs**: Total Invoiced (Gross Target), Total Settled & Credited, Discrepancy Variance, and Resolved records.
+   - ⏱️ **Invoice Match Rate Realization (Gauge)**: Matched Invoices Rate % (e.g. 96.0% — 192/200 customer invoices matched, 8 missing cash).
+   - 🍩 **Reconciliation Status Distribution (Donut Chart)**: Record Coverage Rate % (e.g. 91.87% coverage across 246 total records: 226 Matched Triplets [91.9%], 12 Unallocated Cash [4.9%], 8 Missing Cash Exceptions [3.3%], 0 Resolved).
+   - 💵 **Financial Flow & Settlement Realisation (Waterfall Flow)**:
+     - **1. Gross Pay (Billed)**: Total customer billing benchmark volume.
+     - **2. Net Income (In-Hand)**: Net operating profit credited to bank from customer invoices (e.g. ₹46,53,955.86 / 78.4%).
+     - **3. Government Tax (Invoice Tax)**: Statutory GST/Sales tax collected on customer invoices for government remittance (e.g. ₹9,06,015.03 / 15.3%).
+     - **4. Razorpay Deductions**: Total payment gateway MDR transaction processing fees and taxes (e.g. ₹1,33,997.56 / 2.3%).
+     - **5. Missing Cash (Exceptions)**: Billed invoices not yet captured or settled by payment gateway (e.g. ₹2,45,464.02 / 4.1%).
+     - **6. Unallocated Cash**: Extra funds received in Razorpay/Bank without matching invoices (e.g. ₹17,153.86 / 0.3%).
+     - **Realization Equation**: `Gross Billed = Net In-Hand + Government Tax + Razorpay Deductions + Missing Cash`.
+   - 🚨 **High-Risk Exceptions & Unallocated Cash Summary**: Top exposures, affected counterparties, and recommended next steps (dispute memos, allocation requests, or vendor emails).

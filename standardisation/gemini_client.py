@@ -9,7 +9,9 @@ from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
 
-# Load .env file from standardisation folder
+# Load .env file from root and standardisation folder
+root_env = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=root_env)
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
