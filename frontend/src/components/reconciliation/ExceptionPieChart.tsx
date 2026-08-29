@@ -1,7 +1,13 @@
 "use client"
 
-import React, { useMemo } from "react"
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
+import React from "react"
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+} from "recharts"
 import {
   Card,
   CardContent,
@@ -9,56 +15,78 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { useReconciliationStore } from "@/store/reconciliationStore"
-import {
-  PieChartIcon,
-  CheckCircle2Icon,
-  AlertTriangleIcon,
-  DollarSignIcon,
-  LayersIcon,
-} from "lucide-react"
+import { PieChartIcon } from "lucide-react"
 
-export function ExceptionPieChart() {
-  const { results, reconciliationStatus } = useReconciliationStore()
+export interface ExceptionPieChartProps {
+  matchedCount?: number
+  unallocatedCount?: number
+  exceptionsCount?: number
+  resolvedCount?: number
+  totalAuditUniverse?: number
+  recordCoverageRate?: number
+  totalTriplets?: number
+  totalExceptions?: number
+}
 
-  if (reconciliationStatus !== "completed" || !results) {
-    return null
-  }
+export function ExceptionPieChart(props: ExceptionPieChartProps = {}) {
+  const store = useReconciliationStore()
+  const results = store.results
 
-  const matched = results.matchedCount || 0
-  const exceptions = results.exceptions || []
-  const resolvedCount = exceptions.filter((e) => e.status_type === "resolved" || e.status === "Resolved").length
-  const unallocatedCount = exceptions.filter((e) => e.status_type === "unallocated_cash" && e.status !== "Resolved").length
-  const auditExceptionCount = exceptions.filter((e) => e.status_type === "exception" && e.status !== "Resolved").length
+  // Resolve counts from props first, then fallback to store results
+  const storeExceptions = results?.exceptions || []
+  const storeResolvedCount = storeExceptions.filter((e) => e.status_type === "resolved" || e.status === "Resolved").length
+  const storeUnallocatedCount = storeExceptions.filter((e) => e.status_type === "unallocated_cash" && e.status !== "Resolved").length
+  const storeExceptionsCount = storeExceptions.filter((e) => e.status_type === "exception" && e.status !== "Resolved").length
+  const storeMatchedCount = results?.matchedCount || results?.triplets?.length || 0
 
-  const total = matched + resolvedCount + unallocatedCount + auditExceptionCount || results.totalCount || matched || 1
-  const matchRate = results.invoiceMatchRate ?? results.matchRate ?? 100
+  const matchedCount = props.matchedCount !== undefined ? props.matchedCount : storeMatchedCount
+  const unallocatedCount = props.unallocatedCount !== undefined ? props.unallocatedCount : storeUnallocatedCount
+  const exceptionsCount = props.exceptionsCount !== undefined ? props.exceptionsCount : storeExceptionsCount
+  const resolvedCount = props.resolvedCount !== undefined ? props.resolvedCount : storeResolvedCount
 
-  const chartData = [
+  const totalTriplets = props.totalTriplets !== undefined ? props.totalTriplets : (results?.triplets?.length || matchedCount)
+  const totalExceptions = props.totalExceptions !== undefined ? props.totalExceptions : (storeExceptions.length || (unallocatedCount + exceptionsCount + resolvedCount))
+
+  const totalAuditUniverse = props.totalAuditUniverse !== undefined
+    ? props.totalAuditUniverse
+    : Math.max(matchedCount + unallocatedCount + exceptionsCount + resolvedCount, 1)
+
+  const safeTotal = totalAuditUniverse > 0 ? totalAuditUniverse : 1
+  const recordCoverageRate = props.recordCoverageRate !== undefined
+    ? props.recordCoverageRate
+    : (results?.recordCoverageRate ?? (totalTriplets + totalExceptions > 0 ? +((totalTriplets / (totalTriplets + totalExceptions)) * 100).toFixed(1) : 100))
+
+  const matchedPercent = +((matchedCount / safeTotal) * 100).toFixed(1)
+  const unallocatedPercent = +((unallocatedCount / safeTotal) * 100).toFixed(1)
+  const exceptionsPercent = +((exceptionsCount / safeTotal) * 100).toFixed(1)
+  const resolvedPercent = +((resolvedCount / safeTotal) * 100).toFixed(1)
+
+  // 4-slice Pie Chart Data: Blue (Matched), Amber (Unallocated Cash), Red (Missing Cash Exceptions), Green (Resolved)
+  const pieData = [
     {
-      name: "Matched Invoices",
-      value: matched,
-      percent: +((matched / total) * 100).toFixed(1),
-      color: "#305EFF", // Primary Blue
+      name: "Matched Triplets",
+      value: matchedCount,
+      percent: matchedPercent,
+      color: "#0D94FB", // Blue
     },
     ...(unallocatedCount > 0
       ? [
           {
             name: "Unallocated Cash",
             value: unallocatedCount,
-            percent: +((unallocatedCount / total) * 100).toFixed(1),
-            color: "#F59E0B", // Amber
+            percent: unallocatedPercent,
+            color: "#F59E0B", // Dark Yellow / Amber
           },
         ]
       : []),
-    ...(auditExceptionCount > 0
+    ...(exceptionsCount > 0
       ? [
           {
             name: "Exceptions (Missing Cash)",
-            value: auditExceptionCount,
-            percent: +((auditExceptionCount / total) * 100).toFixed(1),
-            color: "#EF4444", // Red
+            value: exceptionsCount,
+            percent: exceptionsPercent,
+            color: "#EF4444", // Red / Coral
           },
         ]
       : []),
@@ -67,7 +95,7 @@ export function ExceptionPieChart() {
           {
             name: "Resolved",
             value: resolvedCount,
-            percent: +((resolvedCount / total) * 100).toFixed(1),
+            percent: resolvedPercent,
             color: "#10B981", // Emerald Green
           },
         ]
@@ -75,64 +103,55 @@ export function ExceptionPieChart() {
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-      {/* 1. Pie Chart Card */}
-      <Card className="border-border shadow-xs lg:col-span-6">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <PieChartIcon className="size-4" />
-              </div>
-              <CardTitle className="text-base font-semibold text-text-primary">
-                Invoice Reconciliation Distribution
-              </CardTitle>
-            </div>
-            <CardDescription className="mt-1 text-xs text-text-muted">
-              Proportion of fully matched invoices vs. unmatched billings.
-            </CardDescription>
+    <Card className="border border-border/80 bg-card shadow-xs overflow-hidden flex flex-col justify-between">
+      <CardHeader className="bg-surface-1/60 border-b border-border/50 text-center py-2.5 px-4">
+        <div className="flex items-center justify-center gap-1.5">
+          <div className="flex size-5 items-center justify-center rounded bg-[#0D94FB]/10 text-[#0D94FB]">
+            <PieChartIcon className="size-3.5" />
           </div>
+          <CardTitle className="text-sm font-bold text-text-primary">
+            Reconciliation Status Distribution
+          </CardTitle>
+        </div>
+        <CardDescription className="text-[11px] text-text-muted mt-0.5">
+          Distribution across Matched Triplets (Blue), Unallocated Cash (Amber), Exceptions (Red), and Resolved (Green).
+        </CardDescription>
+      </CardHeader>
 
-          <Badge variant="outline" className="text-[11px] font-mono">
-            {total} Total Invoices
-          </Badge>
-        </CardHeader>
-
-        <CardContent className="pt-4">
-          <div className="relative flex h-64 w-full items-center justify-center min-w-0 min-h-0">
+      <CardContent className="pt-4 pb-3.5 px-4 bg-card text-foreground flex-1 flex flex-col justify-between">
+        <div className="flex flex-col items-center justify-center">
+          {/* Donut Chart with Center Coverage Percentage */}
+          <div className="relative flex h-56 w-full max-w-sm items-center justify-center min-w-0 min-h-0">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
-                  data={chartData}
+                  data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={75}
-                  outerRadius={105}
-                  paddingAngle={chartData.length > 1 ? 4 : 0}
+                  innerRadius={72}
+                  outerRadius={98}
+                  paddingAngle={pieData.length > 1 ? 4 : 0}
                   dataKey="value"
                 >
-                  {chartData.map((entry, index) => (
+                  {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
                   ))}
                 </Pie>
-                <Tooltip
+                <RechartsTooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload
                       return (
                         <div className="rounded-lg border border-border bg-background p-2.5 shadow-md text-xs">
-                          <div className="flex items-center gap-2 font-semibold text-text-primary">
-                            <div
-                              className="size-2.5 rounded-full"
-                              style={{ backgroundColor: data.color }}
-                            />
+                          <div className="flex items-center gap-1.5 font-semibold text-text-primary">
+                            <div className="size-2 rounded-full" style={{ backgroundColor: data.color }} />
                             <span>{data.name}</span>
                           </div>
-                          <div className="mt-1 flex items-baseline gap-2">
-                            <span className="text-sm font-bold font-mono text-text-primary">
-                              {data.value} items
+                          <div className="mt-1 flex items-baseline gap-1.5">
+                            <span className="font-bold text-text-primary font-mono text-xs">{data.value} records</span>
+                            <span className="text-text-muted font-medium text-[11px]">
+                              ({data.percent || ((data.value / safeTotal) * 100).toFixed(1)}%)
                             </span>
-                            <span className="text-text-muted">({data.percent}%)</span>
                           </div>
                         </div>
                       )
@@ -143,134 +162,72 @@ export function ExceptionPieChart() {
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Centered Match Rate Label */}
+            {/* Center Record Coverage Label */}
             <div className="pointer-events-none absolute flex flex-col items-center justify-center text-center px-2">
-              <span className="font-mono text-2xl font-bold tracking-tight text-text-primary leading-none">
-                {matchRate}%
+              <span className="font-mono text-2xl font-bold tracking-tight text-[#0D94FB] leading-none">
+                {recordCoverageRate}%
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-text-muted mt-1">
-                Invoice Match Rate
+              <span className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mt-1">
+                Record Coverage
               </span>
             </div>
           </div>
 
-          {/* Chart Legend Cards */}
-          <div className="mt-2 grid grid-cols-2 gap-2 pt-2 border-t border-border/40 text-xs">
-            <div className="flex items-center gap-2 rounded-lg bg-primary/5 p-2 border border-primary/20">
-              <div className="size-2.5 rounded-full bg-primary shrink-0" />
-              <div className="truncate">
-                <p className="text-[11px] font-semibold text-text-primary">Matched</p>
-                <p className="text-[10px] text-text-muted font-mono">
-                  {matched} items ({+((matched / total) * 100).toFixed(1)}%)
-                </p>
-              </div>
+          {/* Centered Caption / Legend & Metrics */}
+          <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5 text-xs border-t border-border/40 pt-2.5 w-full max-w-2xl">
+            {/* 1. Matched Invoices (Blue) */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0D94FB]/10 border border-[#0D94FB]/25 text-[11px]">
+              <div className="size-2 rounded-full bg-[#0D94FB] shrink-0" />
+              <span className="font-semibold text-text-primary">Matched:</span>
+              <span className="font-mono font-bold text-[#0D94FB]">{matchedCount}</span>
+              <span className="text-text-muted font-medium font-mono">({matchedPercent}%)</span>
             </div>
 
+            {/* 2. Unallocated Cash (Amber) */}
             {unallocatedCount > 0 && (
-              <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 p-2 border border-amber-200 dark:border-amber-900/40">
-                <div className="size-2.5 rounded-full bg-amber-500 shrink-0" />
-                <div className="truncate">
-                  <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400">Unallocated</p>
-                  <p className="text-[10px] text-text-muted font-mono">
-                    {unallocatedCount} items ({+((unallocatedCount / total) * 100).toFixed(1)}%)
-                  </p>
-                </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 text-[11px]">
+                <div className="size-2 rounded-full bg-amber-500 shrink-0" />
+                <span className="font-semibold text-amber-700 dark:text-amber-400">Unallocated:</span>
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{unallocatedCount}</span>
+                <span className="text-text-muted font-medium font-mono">({unallocatedPercent}%)</span>
               </div>
             )}
 
-            {auditExceptionCount > 0 && (
-              <div className="flex items-center gap-2 rounded-lg bg-rose-50 dark:bg-rose-950/20 p-2 border border-rose-200 dark:border-rose-900/40">
-                <div className="size-2.5 rounded-full bg-rose-500 shrink-0" />
-                <div className="truncate">
-                  <p className="text-[11px] font-semibold text-rose-700 dark:text-rose-400">Exceptions</p>
-                  <p className="text-[10px] text-text-muted font-mono">
-                    {auditExceptionCount} items ({+((auditExceptionCount / total) * 100).toFixed(1)}%)
-                  </p>
-                </div>
+            {/* 3. Exceptions (Red) */}
+            {exceptionsCount > 0 ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/25 text-[11px]">
+                <div className="size-2 rounded-full bg-rose-500 shrink-0" />
+                <span className="font-semibold text-rose-700 dark:text-rose-400">Exceptions:</span>
+                <span className="font-mono font-bold text-rose-600 dark:text-rose-400">{exceptionsCount}</span>
+                <span className="text-text-muted font-medium font-mono">({exceptionsPercent}%)</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-2 border border-border/60 text-[11px]">
+                <span className="font-semibold text-text-primary">Zero Exceptions</span>
               </div>
             )}
 
+            {/* 4. Resolved (Green) */}
             {resolvedCount > 0 && (
-              <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 p-2 border border-emerald-200 dark:border-emerald-900/40">
-                <div className="size-2.5 rounded-full bg-emerald-500 shrink-0" />
-                <div className="truncate">
-                  <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Resolved</p>
-                  <p className="text-[10px] text-text-muted font-mono">
-                    {resolvedCount} items ({+((resolvedCount / total) * 100).toFixed(1)}%)
-                  </p>
-                </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-[11px]">
+                <div className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">Resolved:</span>
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{resolvedCount}</span>
+                <span className="text-text-muted font-medium font-mono">({resolvedPercent}%)</span>
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* 2. Financial Balance Summary Card */}
-      <Card className="border-border shadow-xs lg:col-span-6">
-        <CardHeader className="border-b border-border/60 pb-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-              <DollarSignIcon className="size-4" />
-            </div>
-            <CardTitle className="text-base font-semibold text-text-primary">
-              Reconciliation Financial Summary
-            </CardTitle>
-          </div>
-          <CardDescription className="mt-1 text-xs text-text-muted">
-            Aggregated stream valuations and variance analysis.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-3.5 pt-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border bg-surface-1 p-3">
-              <span className="text-xs font-medium text-text-muted">Total Invoiced Amount</span>
-              <p className="mt-1 font-mono text-lg font-bold text-text-primary">
-                ${(results.totalInvoiceAmount || 184500).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-              <span className="text-[10px] text-text-disabled">Across all supplier billings</span>
-            </div>
-
-            <div className="rounded-xl border border-border bg-surface-1 p-3">
-              <span className="text-xs font-medium text-text-muted">Total Razorpay Settled</span>
-              <p className="mt-1 font-mono text-lg font-bold text-text-primary">
-                ${(results.totalSettledAmount || 178250).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-              <span className="text-[10px] text-text-disabled">Gateway gross settlements</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border bg-surface-1 p-3">
-              <span className="text-xs font-medium text-text-muted">Bank Credited Ledger</span>
-              <p className="mt-1 font-mono text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                ${(results.totalBankCredit || 178250).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-              <span className="text-[10px] text-text-disabled">Verified bank credits</span>
-            </div>
-
-            <div className="rounded-xl border border-rose-200 bg-rose-50/50 dark:border-rose-900/40 dark:bg-rose-950/20 p-3">
-              <span className="text-xs font-medium text-rose-700 dark:text-rose-400">Net Unmatched Variance</span>
-              <p className="mt-1 font-mono text-lg font-bold text-rose-600 dark:text-rose-400">
-                ${(results.discrepancyAmount || 6250).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-              <span className="text-[10px] text-rose-600/80">Pending human controller review</span>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle2Icon className="size-4 text-primary" />
-              <span className="text-xs font-medium text-text-primary">
-                Ready for Month-End Closing Export
+            {/* Record Coverage */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-2 border border-border/60 text-[11px]">
+              <span className="font-semibold text-text-primary">Coverage:</span>
+              <span className="font-mono font-bold text-text-primary">{recordCoverageRate}%</span>
+              <span className="text-text-muted font-mono text-[10px]">
+                ({totalTriplets}/{totalTriplets + totalExceptions})
               </span>
             </div>
-            <Badge variant="default" className="bg-primary text-white text-[10px]">
-              Audit Verified
-            </Badge>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

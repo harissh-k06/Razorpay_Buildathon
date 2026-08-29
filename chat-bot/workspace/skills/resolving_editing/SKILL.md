@@ -17,7 +17,11 @@ This module governs how you update data, re-map records, and draft dispute memos
 ## Common Actions
 
 ### 1. Bulk Updating Data (e.g., Fixing Vendor Names)
-Use `bulk_update_csv(source, condition, new_values)` to change vendor names or fix typos across the standardized CSVs.
+Use `bulk_update_csv(source, condition, new_values)` to change vendor names, categories, or fix typos across the standardized CSVs.
+
+**CRITICAL NOTE ON DATES VS BULK UPDATES:**
+- `bulk_update_csv` and `update_csv_record` are for content value updates (e.g. updating vendor names, descriptions, or transaction notes).
+- To reformat or change dates (e.g. to `DD/MM/YYYY` or `YYYY-MM-DD`), **NEVER use `bulk_update_csv` or loop through records with `update_csv_record`**. Use `change_currency_and_date(date_format="DD/MM/YYYY")` from the `configuring` skill, which deterministically converts all date columns across all 3 datasets in <0.1s.
 
 **Summary Presentation Rule (Old Value -> New Value):**
 When presenting a summary to the user, ALWAYS clearly display the mapping:
@@ -214,7 +218,7 @@ Tool Call Example (Direct Resolve):
 ```
 
 ## Safety Rules for Updates
-1. **Backup First**: Before running `bulk_update_csv`, `mark_exceptions_resolved`, or `change_base_currency`, ALWAYS create a `.bak` backup of the file (the backend handles this, but you must mention it).
+1. **Backup First**: Before running `bulk_update_csv`, `mark_exceptions_resolved`, or `change_currency_and_date`, ALWAYS create a backup of the file (the backend handles this, but you must mention it).
 2. **Confirm Before Editing**: If the action modifies records and confirmation is needed, present a clear summary once and ask for a simple Yes/No.
 3. **The Green Light Directive**: If the user says 'I confirm', 'Go ahead', 'Yes', or 'I confirm across all 3 files' after you have presented the plan, it is the final green light. Execute immediately without asking for further clarification or re-confirmation.
 4. **Audit Trail**: Log every action you take to `action_log.md` (Date, Action, Details, Backup File, User Confirmation).

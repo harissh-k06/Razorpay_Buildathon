@@ -1,11 +1,18 @@
 "use client"
 
-import React, { useRef, useEffect } from "react"
+import React, { useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useReconciliationStore } from "@/store/reconciliationStore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   FileTextIcon, UploadCloudIcon, CheckCircle2Icon, FileSpreadsheetIcon,
   AlertCircleIcon, RotateCcwIcon, RefreshCwIcon,
@@ -85,6 +92,7 @@ export default function UploadPage() {
   const router = useRouter()
   const {
     uploadedFiles, uploadStatus, previewData, error,
+    baseCurrency, setBaseCurrency,
     setFile, uploadAndPreview, resetAll,
   } = useReconciliationStore()
 
@@ -118,7 +126,7 @@ export default function UploadPage() {
 
       {/* File upload card */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
           <div>
             <div className="flex items-center gap-2">
               <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -130,31 +138,67 @@ export default function UploadPage() {
               All three files are required. Drag-and-drop or click to browse.
             </CardDescription>
           </div>
-          {allSelected && (
-            <Button variant="ghost" size="sm" onClick={resetAll}
-              className="text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-              <RotateCcwIcon className="mr-1.5 size-3.5" /> Reset
-            </Button>
-          )}
+
+          {/* Right Header Actions: Base Currency Dropdown + Reset */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                Base Currency:
+              </span>
+              <Select
+                value={baseCurrency || "INR"}
+                onValueChange={(val) => setBaseCurrency(val || "INR")}
+              >
+                <SelectTrigger id="base-currency" className="h-8 w-36 text-xs bg-background">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INR">INR (₹)</SelectItem>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="GBP">GBP (£)</SelectItem>
+                  <SelectItem value="SGD">SGD (S$)</SelectItem>
+                  <SelectItem value="AED">AED (د.إ)</SelectItem>
+                  <SelectItem value="CAD">CAD (C$)</SelectItem>
+                  <SelectItem value="AUD">AUD (A$)</SelectItem>
+                  <SelectItem value="JPY">JPY (¥)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {allSelected && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetAll}
+                className="h-8 px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
+                <RotateCcwIcon className="mr-1.5 size-3.5" /> Reset
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="pt-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <DropZone
-              label="Invoices" sublabel="Accounts Receivable / Billing Export"
+              label="Invoices"
+              sublabel="Accounts Receivable / Billing Export"
               icon={<FileTextIcon className="size-6" />}
               file={uploadedFiles.invoice}
               totalRows={previewData.invoice?.total_rows}
               onSelect={(f) => setFile("invoice", f)}
             />
             <DropZone
-              label="Razorpay" sublabel="Payment Gateway Settlements"
+              label="Razorpay"
+              sublabel="Payment Gateway Settlements"
               icon={<FileSpreadsheetIcon className="size-6" />}
               file={uploadedFiles.razorpay}
               totalRows={previewData.razorpay?.total_rows}
               onSelect={(f) => setFile("razorpay", f)}
             />
             <DropZone
-              label="Bank Statement" sublabel="Core Banking Feed / Statement CSV"
+              label="Bank Statement"
+              sublabel="Core Banking Feed / Statement CSV"
               icon={<FileSpreadsheetIcon className="size-6" />}
               file={uploadedFiles.bank}
               totalRows={previewData.bank?.total_rows}

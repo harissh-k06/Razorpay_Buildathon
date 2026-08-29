@@ -60,51 +60,152 @@ CURRENCY_SYMBOLS = {
     "元": "CNY",
 }
 
-def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
-    """Deterministic currency conversion using EXCHANGE_RATES."""
+def convert_currency(amount: float, from_currency: str, to_currency: str, precision: int = 6) -> float:
+    """Deterministic currency conversion using EXCHANGE_RATES with high internal precision."""
     from_curr = str(from_currency).upper().strip() if from_currency else "USD"
     to_curr = str(to_currency).upper().strip() if to_currency else "USD"
     if from_curr == to_curr:
-        return round(float(amount), 2)
+        return round(float(amount), precision)
 
     rate_from = EXCHANGE_RATES.get(from_curr, 1.0)
     rate_to = EXCHANGE_RATES.get(to_curr, 1.0)
     amount_in_usd = float(amount) / rate_from
-    return round(amount_in_usd * rate_to, 2)
+    return round(amount_in_usd * rate_to, precision)
 
-def standardize_date_deterministic(date_val: Any) -> str:
-    """Convert any date representation to YYYY-MM-DD."""
-    if pd.isna(date_val) or date_val is None or str(date_val).strip() == "":
+def convert_user_format_to_strftime(format_str: Optional[str]) -> str:
+    """
+    Converts any arbitrary user-defined or LLM date format string (e.g. 'DD-MMM-YY', 'YYYYMMDD', 'DD/MM/YYYY', 'YYYY-MM-DD')
+    into a valid Python strftime format pattern.
+    """
+    if not format_str:
+        return "%Y-%m-%d"
+
+    s = str(format_str).strip()
+    if "%" in s:
+        return s
+
+    # Exact standard mappings (case-insensitive)
+    exact_map = {
+        "YYYY-MM-DD": "%Y-%m-%d",
+        "YYYY/MM/DD": "%Y/%m/%d",
+        "YYYY.MM.DD": "%Y.%m.%d",
+        "YYYYMMDD": "%Y%m%d",
+        
+        "DD/MM/YYYY": "%d/%m/%Y",
+        "DD-MM-YYYY": "%d-%m-%Y",
+        "DD.MM.YYYY": "%d.%m.%Y",
+        "DDMMYYYY": "%d%m%Y",
+        
+        "DD/MM/YY": "%d/%m/%y",
+        "DD-MM-YY": "%d-%m-%y",
+        "DD.MM.YY": "%d.%m.%y",
+        "DDMMYY": "%d%m%y",
+        
+        "MM/DD/YYYY": "%m/%d/%Y",
+        "MM-DD-YYYY": "%m-%d-%Y",
+        "MM.DD.YYYY": "%m.%d.%Y",
+        "MMDDYYYY": "%m%d%Y",
+        
+        "MM/DD/YY": "%m/%d/%y",
+        "MM-DD-YY": "%m-%d-%y",
+        "MM.DD.YY": "%m.%d.%y",
+        
+        "DD-MMM-YY": "%d-%b-%y",
+        "DD-MMM-YYYY": "%d-%b-%Y",
+        "DD/MMM/YY": "%d/%b/%y",
+        "DD/MMM/YYYY": "%d/%b/%Y",
+        "DD.MMM.YY": "%d.%b.%y",
+        "DD.MMM.YYYY": "%d.%b.%Y",
+        "DD MMM YY": "%d %b %y",
+        "DD MMM YYYY": "%d %b %Y",
+        "DD MMMM YYYY": "%d %B %Y",
+        
+        "MMM-DD-YY": "%b-%d-%y",
+        "MMM-DD-YYYY": "%b-%d-%Y",
+        "MMM/DD/YYYY": "%b/%d/%Y",
+        "MMM DD, YYYY": "%b %d, %Y",
+        "MMMM DD, YYYY": "%B %d, %Y",
+        
+        "YYYY-MMM-DD": "%Y-%b-%d",
+        "YYYY/MMM/DD": "%Y/%b/%d",
+    }
+    
+    clean_upper = s.upper().replace(" ", " ")
+    if clean_upper in exact_map:
+        return exact_map[clean_upper]
+
+    # Universal token parser for arbitrary formats
+    token_patterns = [
+        (r'(?i)\bYYYY\b', '%Y'),
+        (r'(?i)\bYY\b', '%y'),
+        (r'(?i)\bMMMM\b', '%B'),
+        (r'(?i)\bMMM\b', '%b'),
+        (r'(?i)\bMM\b', '%m'),
+        (r'(?i)\bDD\b', '%d'),
+    ]
+    
+    res = s
+    for pat, rep in token_patterns:
+        res = re.sub(pat, rep, res)
+        
+    # If no % produced (e.g. continuous tokens like YYYYMMDD without word boundaries), replace substrings
+    if "%" not in res:
+        tmp = s.upper()
+        tmp = tmp.replace("YYYY", "%Y")
+        tmp = tmp.replace("YY", "%y")
+        tmp = tmp.replace("MMMM", "%B")
+        tmp = tmp.replace("MMM", "%b")
+        tmp = tmp.replace("MM", "%m")
+        tmp = tmp.replace("DD", "%d")
+        if "%" in tmp:
+            res = tmp
+            
+    return res if "%" in res else "%Y-%m-%d"
+
+def standardize_date_deterministic(date_val: Any, target_format: Optional[str] = None) -> str:
+    """Convert any date representation to standard ISO (YYYY-MM-DD) or a specified custom date format."""
+    if pd.isna(date_val) or date_val is None or str(date_val).strip() == "" or str(date_val).strip().lower() in ["nan", "none", "null"]:
         return ""
 
     date_str = str(date_val).strip()
 
-    # If already ISO format (YYYY-MM-DD), return as-is
-    if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+    # Resolve strftime pattern
+    strftime_pattern = convert_user_format_to_strftime(target_format) if target_format else "%Y-%m-%d"
+
+    # If already ISO format (YYYY-MM-DD) and no custom format requested, return as-is
+    if not target_format and re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
         return date_str
 
+    dt = None
     # Try dateutil parser
     try:
         dt = parser.parse(date_str, fuzzy=True)
-        return dt.strftime("%Y-%m-%d")
     except Exception:
         pass
 
     # Try pandas datetime
-    try:
-        dt = pd.to_datetime(date_str)
-        return dt.strftime("%Y-%m-%d")
-    except Exception:
-        pass
+    if dt is None:
+        try:
+            dt = pd.to_datetime(date_str)
+        except Exception:
+            pass
 
-    # If it's a Unix timestamp (seconds)
-    try:
-        num = float(date_str)
-        if num > 1e9:
-            dt = pd.to_datetime(num, unit='s')
+    # If it's a Unix timestamp (seconds or milliseconds)
+    if dt is None:
+        try:
+            num = float(date_str)
+            if num > 1e11:
+                dt = pd.to_datetime(num, unit='ms')
+            elif num > 1e8:
+                dt = pd.to_datetime(num, unit='s')
+        except Exception:
+            pass
+
+    if dt is not None:
+        try:
+            return dt.strftime(strftime_pattern)
+        except Exception:
             return dt.strftime("%Y-%m-%d")
-    except Exception:
-        pass
 
     return date_str
 
@@ -136,15 +237,19 @@ def detect_currency_deterministic(amount_val: Any) -> str:
 
 class DataStandardizer:
     """
-    High-performance data standardizer using a two-stage pipeline:
-    1. Fast Serial MCP Ingestion: Parses CSVs into canonical JSON structures via MCP Server.
-    2. Parallel LLM & Deterministic Standardization: Standardizes vendor names, descriptions,
-       dates, amounts, and currencies concurrently across all sources using ThreadPoolExecutor.
+    Decoupled Two-Phase Data Standardizer with In-Memory LLM Caching:
+    
+    1. Phase 1 (LLM Processing): Standardizes semantic vendor names and summarizes descriptions via LLM.
+       Results are cached in-memory in `self._llm_data`. No intermediate CSV files are written to disk.
+    2. Phase 2 (Deterministic Normalisation): Applies date parsing, amount cleaning, currency detection,
+       and instant currency conversion to `base_currency`. Writes final `*_standardized.csv` files.
+       Can be re-run on demand in milliseconds when changing base currency without invoking the LLM.
     """
 
     def __init__(self, base_currency: str = "INR", deepseek_api_key: str = None):
         self.base_currency = base_currency.upper().strip()
         self.standardizer = DeepSeekStandardizer()
+        self._llm_data: Dict[str, pd.DataFrame] = {}
 
         # Base directories
         self.script_dir = Path(__file__).resolve().parent
@@ -224,16 +329,15 @@ class DataStandardizer:
 
         raise RuntimeError(f"Unexpected response format from MCP parser for '{resolved_file}'")
 
-    def _standardize_dataframe(self, df: pd.DataFrame, source_key: str) -> pd.DataFrame:
+    def _standardize_llm(self, df: pd.DataFrame, source_key: str) -> pd.DataFrame:
         """
-        Core standardization logic operating exclusively on hard-coded canonical columns:
-        - date, description, debit, credit, balance, cheque_number, vendor, amount, currency
+        Phase 1 Worker: Runs LLM-based vendor standardisation and description summarisation only.
+        Does not perform currency conversion, date formatting, or deterministic normalisation.
         """
         df = df.copy()
         df["source_type"] = source_key
 
         # ---- VENDORS (LLM Batch) ----
-        # Always use canonical "vendor" column if present with values; otherwise extract from "description"
         if "vendor" in df.columns and df["vendor"].astype(str).str.strip().ne("").any():
             print(f"   [{source_key}] Standardizing vendors from 'vendor' using LLM (DeepSeek)...")
             raw_vendors = df["vendor"].fillna("").astype(str).tolist()
@@ -246,7 +350,6 @@ class DataStandardizer:
             df["vendor_standardized"] = ""
 
         # ---- DESCRIPTIONS (LLM Batch) ----
-        # Always use canonical "description" column
         if "description" in df.columns and df["description"].astype(str).str.strip().ne("").any():
             print(f"   [{source_key}] Summarizing descriptions from 'description' using LLM (DeepSeek)...")
             raw_desc = df["description"].fillna("").astype(str).tolist()
@@ -254,94 +357,15 @@ class DataStandardizer:
         else:
             df["description_standardized"] = ""
 
-        # ---- DATES (Deterministic) ----
-        # Always standardize canonical "date" column (and "settled_at" if present for Razorpay)
-        if "date" in df.columns:
-            print(f"   [{source_key}] Standardizing dates from 'date'...")
-            df["date_standardized"] = df["date"].apply(standardize_date_deterministic)
-        if "settled_at" in df.columns:
-            print(f"   [{source_key}] Standardizing dates from 'settled_at'...")
-            df["settled_at_standardized"] = df["settled_at"].apply(standardize_date_deterministic)
-
-        # ---- AMOUNTS (Deterministic) ----
-        # Clean canonical numeric fields
-        for col in ["amount", "credit", "debit", "balance"]:
-            if col in df.columns:
-                cleaned = df[col].apply(extract_amount_deterministic)
-                if source_key == "razorpay":
-                    # Razorpay amounts (amount, credit, debit, balance) are always in paise -> divide by 100
-                    cleaned = cleaned / 100.0
-                df[f"{col}_cleaned"] = cleaned
-
-        # If "amount" column exists and has values (e.g. invoices), use it;
-        # otherwise compute net transaction amount from credit - debit (bank statements)
-        if "amount_cleaned" in df.columns and (df["amount_cleaned"] != 0).any():
-            pass  # amount_cleaned already populated
-        elif "credit_cleaned" in df.columns or "debit_cleaned" in df.columns:
-            credit = df["credit_cleaned"] if "credit_cleaned" in df.columns else pd.Series(0.0, index=df.index)
-            debit = df["debit_cleaned"] if "debit_cleaned" in df.columns else pd.Series(0.0, index=df.index)
-            df["amount_cleaned"] = credit - debit
-
-        # ---- CURRENCIES (Deterministic + Bank Override) ----
-        if source_key == "bank":
-            print(f"   [{source_key}] Bank currency set to INR")
-            df["currency_detected"] = "INR"
-        elif "currency" in df.columns and df["currency"].astype(str).str.strip().ne("").any():
-            print(f"   [{source_key}] Using canonical 'currency' column...")
-            df["currency_detected"] = df["currency"].fillna("USD").astype(str).str.upper()
-        elif "amount" in df.columns:
-            print(f"   [{source_key}] Detecting currency from 'amount' strings...")
-            df["currency_detected"] = df["amount"].apply(detect_currency_deterministic)
-        else:
-            df["currency_detected"] = "USD"
-
-        # ---- CONVERT TO BASE CURRENCY ----
-        for col_name in ["amount", "credit", "debit", "balance"]:
-            cleaned_col = f"{col_name}_cleaned"
-            if cleaned_col in df.columns:
-                print(f"   [{source_key}] Converting {col_name} to {self.base_currency}...")
-                cleaned_amounts = df[cleaned_col]
-                currencies = df["currency_detected"]
-                converted = []
-                for amt, curr in zip(cleaned_amounts, currencies):
-                    if amt is None or pd.isna(amt):
-                        converted.append(0.0)
-                        continue
-                    num_val = float(amt)
-                    if source_key in ("bank", "razorpay"):
-                        # Both bank and razorpay are already in INR (paise already converted to Rupees)
-                        conv = convert_currency(num_val, "INR", self.base_currency)
-                    else:
-                        conv = convert_currency(num_val, curr, self.base_currency)
-                    converted.append(round(conv, 2))
-                df[f"{col_name}_converted"] = converted
-
-        df["base_currency"] = self.base_currency
-
         return df
 
-    def _standardize_and_save(self, source_key: str, df: pd.DataFrame) -> pd.DataFrame:
-        """Worker function for parallel LLM & deterministic standardization."""
-        print(f"\n--- [Parallel LLM] Standardizing {source_key} ({len(df)} rows) ---")
-        df_std = self._standardize_dataframe(df, source_key)
-
-        # Fallback for bank reference number if missing but cheque_number is available
-        if source_key == "bank" and "ref_no" not in df_std.columns and "cheque_number" in df_std.columns:
-            df_std["ref_no"] = df_std["cheque_number"]
-
-        out_path = self.output_dir / f"{source_key}_standardized.csv"
-        df_std.to_csv(out_path, index=False)
-        print(f"   Saved: {out_path} ({len(df_std)} rows)")
-        return df_std
-
-    def process_files(self):
+    def process_llm(self) -> Dict[str, pd.DataFrame]:
         """
-        Main processing pipeline:
-        Stage 1: Serial MCP Ingestion (fast, extracts canonical & preserves original fields)
-        Stage 2: Parallel LLM Standardization & Normalization (maximizes throughput)
+        Phase 1: Ingests raw files via MCP server and executes parallel LLM processing.
+        Stores the resulting DataFrames in memory (self._llm_data). Does not write CSV files.
         """
         start_time = time.time()
-        print(f"\nStarting High-Speed Standardization Pipeline (Base Currency: {self.base_currency})")
+        print("\n=== Phase 1: Serial Ingestion & Parallel LLM Processing ===")
 
         # 1. Locate unique file paths
         file_paths: Dict[str, Path] = {}
@@ -368,10 +392,9 @@ class DataStandardizer:
 
         if not file_paths:
             print("[Warning] No datasets found in synthetic data/data/ or data/raw/.")
-            return
+            return {}
 
-        # 2. Stage 1: Serial MCP Ingestion
-        print("\n=== Stage 1: Serial Ingestion via MCP Server ===")
+        # 2. Serial Ingestion via MCP Server
         parsed_dfs: Dict[str, pd.DataFrame] = {}
         for source_key, path in file_paths.items():
             print(f"   Parsing {source_key} from {path.name}...")
@@ -395,20 +418,194 @@ class DataStandardizer:
 
             print(f"   -> Extracted {len(parsed_dfs[source_key])} transactions (Metadata: {data.get('metadata', {})})")
 
-        # 3. Stage 2: Parallel LLM & Deterministic Standardization
-        print("\n=== Stage 2: Parallel LLM & Normalization Pipeline ===")
-        processed_dfs: Dict[str, pd.DataFrame] = {}
+        # 3. Parallel LLM Processing
+        print("\n=== Running Parallel LLM Work (Vendors & Descriptions) ===")
+        llm_results: Dict[str, pd.DataFrame] = {}
         with ThreadPoolExecutor(max_workers=len(parsed_dfs)) as executor:
             futures = {
-                executor.submit(self._standardize_and_save, key, df): key
+                executor.submit(self._standardize_llm, df, key): key
                 for key, df in parsed_dfs.items()
             }
             for future in as_completed(futures):
                 key = futures[future]
                 try:
-                    processed_dfs[key] = future.result()
+                    llm_results[key] = future.result()
                 except Exception as e:
-                    print(f"[Error] Failed to standardize {key}: {e}")
+                    print(f"[Error] Failed LLM standardization for {key}: {e}")
+
+        self._llm_data = llm_results
+        total_time = time.time() - start_time
+        print(f"\nPhase 1 LLM complete in {total_time:.2f}s (In-Memory Cache keys: {list(self._llm_data.keys())})")
+        return self._llm_data
+
+    def load_or_process_llm(self) -> Dict[str, pd.DataFrame]:
+        """
+        Ensures self._llm_data is populated.
+        1. If already in memory, returns immediately.
+        2. If empty, checks if standardized CSVs on disk already contain LLM fields (e.g. after server restart)
+           and loads them directly into memory in <0.05s.
+        3. If no files exist on disk, runs process_llm().
+        """
+        if self._llm_data:
+            return self._llm_data
+
+        loaded = {}
+        for key in ["invoice", "razorpay", "bank"]:
+            p = self.output_dir / f"{key}_standardized.csv"
+            if p.exists():
+                try:
+                    df = pd.read_csv(p)
+                    if "vendor_standardized" in df.columns and "description_standardized" in df.columns:
+                        loaded[key] = df
+                except Exception:
+                    pass
+
+        if len(loaded) == 3:
+            print(f"   [Cache Warmup] Loaded existing LLM-standardized data from disk into memory: {list(loaded.keys())}")
+            self._llm_data = loaded
+            return self._llm_data
+
+        return self.process_llm()
+
+    def _apply_deterministic_df(
+        self,
+        df: pd.DataFrame,
+        source_key: str,
+        base_currency: str,
+        date_format: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Applies deterministic normalisation to a DataFrame containing LLM-standardized fields:
+        - Date formatting
+        - Amount cleaning & unit normalisation (paise -> Rupees for Razorpay)
+        - Net transaction amount calculation
+        - Currency detection & conversion to base_currency
+        """
+        df = df.copy()
+
+        # ---- DATES (Deterministic) ----
+        # Internal standardized dates MUST ALWAYS be in strict ISO format (%Y-%m-%d)
+        date_col_candidates = [
+            "date", "issue_date", "due_date", "settled_at", "transaction_date", "value_date"
+        ]
+        for col in date_col_candidates:
+            if col in df.columns:
+                # Internal matching column -> Always ISO YYYY-MM-DD
+                iso_series = df[col].apply(lambda d: standardize_date_deterministic(d, target_format=None))
+                df[f"{col}_standardized"] = iso_series
+                
+                # If custom date_format requested, create a display column for UI formatting
+                if date_format:
+                    df[f"{col}_display"] = df[col].apply(lambda d: standardize_date_deterministic(d, target_format=date_format))
+                elif f"{col}_display" in df.columns:
+                    df[f"{col}_display"] = iso_series
+
+        # Ensure all existing *_standardized date columns are in strict ISO format
+        for col in df.columns:
+            if col.endswith("_standardized") and ("date" in col or "settled_at" in col):
+                df[col] = df[col].apply(lambda d: standardize_date_deterministic(d, target_format=None))
+
+        # ---- AMOUNTS (Deterministic) ----
+        if source_key == "invoice" and "total" in df.columns and df["total"].notna().any():
+            df["amount"] = df["total"]
+
+        for col in ["amount", "credit", "debit", "balance"]:
+            if col in df.columns:
+                cleaned = df[col].apply(extract_amount_deterministic)
+                if source_key == "razorpay":
+                    # Razorpay amounts (amount, credit, debit, balance) are in paise -> divide by 100
+                    cleaned = cleaned / 100.0
+                df[f"{col}_cleaned"] = cleaned
+
+        # Net transaction amount
+        if "amount_cleaned" in df.columns and (df["amount_cleaned"] != 0).any():
+            pass
+        elif "credit_cleaned" in df.columns or "debit_cleaned" in df.columns:
+            credit = df["credit_cleaned"] if "credit_cleaned" in df.columns else pd.Series(0.0, index=df.index)
+            debit = df["debit_cleaned"] if "debit_cleaned" in df.columns else pd.Series(0.0, index=df.index)
+            df["amount_cleaned"] = credit - debit
+
+        # ---- CURRENCIES (Deterministic + Bank Override) ----
+        if source_key == "bank":
+            df["currency_detected"] = "INR"
+        elif "currency" in df.columns and df["currency"].astype(str).str.strip().ne("").any():
+            df["currency_detected"] = df["currency"].fillna("USD").astype(str).str.upper()
+        elif "amount" in df.columns:
+            df["currency_detected"] = df["amount"].apply(detect_currency_deterministic)
+        else:
+            df["currency_detected"] = "USD"
+
+        # ---- CONVERT TO BASE CURRENCY ----
+        for col_name in ["amount", "credit", "debit", "balance", "tax", "subtotal", "fee"]:
+            if col_name in df.columns or f"{col_name}_cleaned" in df.columns:
+                src_series = df[f"{col_name}_cleaned"] if f"{col_name}_cleaned" in df.columns else df[col_name]
+                cleaned_amounts = src_series.apply(extract_amount_deterministic)
+                if source_key == "razorpay" and col_name in ("fee", "tax"):
+                    cleaned_amounts = cleaned_amounts / 100.0
+                currencies = df["currency_detected"]
+                converted = []
+                for amt, curr in zip(cleaned_amounts, currencies):
+                    if amt is None or pd.isna(amt):
+                        converted.append(0.0)
+                        continue
+                    num_val = float(amt)
+                    if source_key in ("bank", "razorpay"):
+                        conv = convert_currency(num_val, "INR", base_currency, precision=6)
+                    else:
+                        conv = convert_currency(num_val, curr, base_currency, precision=6)
+                    converted.append(round(conv, 2))
+                df[f"{col_name}_converted"] = converted
+
+        df["base_currency"] = base_currency
+
+        # Fallback for bank reference number if missing but cheque_number is available
+        if source_key == "bank" and "ref_no" not in df.columns and "cheque_number" in df.columns:
+            df["ref_no"] = df["cheque_number"]
+
+        return df
+
+    def apply_deterministic(
+        self,
+        base_currency: Optional[str] = None,
+        date_format: Optional[str] = None
+    ) -> Dict[str, pd.DataFrame]:
+        """
+        Phase 2: Reads LLM-standardized data from self._llm_data, applies deterministic
+        normalisation, and writes the final *_standardized.csv files to disk.
+        Does not mutate self._llm_data and does not re-trigger LLM calls.
+        """
+        if not self._llm_data:
+            self.load_or_process_llm()
+            if not self._llm_data:
+                raise RuntimeError("No LLM data in memory. Please run process_llm() first.")
+
+        target_curr = (base_currency or self.base_currency).upper().strip()
+        self.base_currency = target_curr
+
+        processed_dfs: Dict[str, pd.DataFrame] = {}
+        for source_key, df in self._llm_data.items():
+            df_std = self._apply_deterministic_df(df, source_key, target_curr, date_format)
+            out_path = self.output_dir / f"{source_key}_standardized.csv"
+            df_std.to_csv(out_path, index=False)
+            processed_dfs[source_key] = df_std
+            print(f"   [Deterministic] Saved: {out_path} ({len(df_std)} rows, Base: {target_curr})")
+
+        return processed_dfs
+
+    def process_files(self):
+        """
+        Full two-phase pipeline (Backward Compatible):
+        1. process_llm(): Performs LLM standardisation and caches results in memory.
+        2. apply_deterministic(): Applies deterministic normalisation and writes final CSVs.
+        """
+        start_time = time.time()
+        print(f"\nStarting Two-Phase Standardization Pipeline (Base Currency: {self.base_currency})")
+
+        # Phase 1: LLM Processing (cached in memory)
+        self.process_llm()
+
+        # Phase 2: Deterministic Normalisation & Output Generation
+        processed_dfs = self.apply_deterministic(base_currency=self.base_currency)
 
         total_time = time.time() - start_time
         print(f"\nAll files processed in {total_time:.2f}s")

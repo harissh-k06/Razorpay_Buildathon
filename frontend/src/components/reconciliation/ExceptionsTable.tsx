@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useReconciliationStore } from "@/store/reconciliationStore"
+import { formatCurrency } from "@/lib/utils"
 import {
   AlertTriangleIcon,
   FilterIcon,
@@ -29,7 +30,7 @@ import {
 } from "lucide-react"
 
 export function ExceptionsTable() {
-  const { results, reconciliationStatus } = useReconciliationStore()
+  const { results, reconciliationStatus, baseCurrency } = useReconciliationStore()
   const [filterType, setFilterType] = useState<string>("ALL")
 
   if (reconciliationStatus !== "completed" || !results || !results.exceptions) {
@@ -179,7 +180,7 @@ export function ExceptionsTable() {
                         {exc.vendor}
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs font-bold text-rose-600 dark:text-rose-400">
-                        ${Number(exc.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatCurrency(exc.amount, baseCurrency)}
                       </TableCell>
                       <TableCell className="font-mono text-xs text-text-muted">
                         {exc.date}

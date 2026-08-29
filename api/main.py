@@ -247,6 +247,7 @@ async def standardize_files(req: StandardizeRequest):
     return JSONResponse(status_code=200, content={
         "status": "success",
         "duration_seconds": duration,
+        "base_currency": base_curr,
         "message": f"Standardization completed in {duration}s",
         "standardized_files": standardized_files,
     })
@@ -278,169 +279,13 @@ async def reconcile(req: ReconcileRequest):
     }
 
     try:
-        import config as _cfg; importlib.reload(_cfg)
-        config = _cfg.ReconciliationConfig(params_dict=params_dict)
+        import run_reconciliation as _rr
+        importlib.reload(_rr)
+        results = _rr.run_reconciliation_pipeline(params_dict=params_dict, project_root=PROJECT_ROOT)
+        return JSONResponse(status_code=200, content=results)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Config error: {e}")
-
-    try:
-        import run_reconciliation as _rr; importlib.reload(_rr)
-        load_records = _rr.load_records
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Reconciliation import error: {e}")
-
-    invoices = load_records(std_dir, "invoice_standardized.csv", "invoice")
-    razorpay = load_records(std_dir, "razorpay_standardized.csv", "razorpay")
-    bank     = load_records(std_dir, "bank_standardized.csv", "bank")
-
-    map_path = PROJECT_ROOT / "synthetic data" / "data" / "order_invoice_map.csv"
-    if not map_path.exists():
-        map_path = PROJECT_ROOT / "reconciliation" / "data" / "order_invoice_map.csv"
-
-    try:
-        import hungarian_matcher as _hm; importlib.reload(_hm)
-        matcher = _hm.HungarianMatcher(config, map_file_path=map_path if map_path.exists() else None)
-        raw = matcher.match(invoices, razorpay, bank)
-    except Exception as e:
-        logger.exception("HungarianMatcher failed")
+        logger.exception("Reconciliation failed")
         raise HTTPException(status_code=500, detail=f"Matching failed: {e}")
-
-    def _ser_triplet(t: dict, idx: int) -> dict:
-        rzp = t.get("razorpay") or {}
-        bnk = t.get("bank") or {}
-        inv_ids = t.get("invoice_ids", [])
-        match_type = t.get("match_type") or ("N:1 Group" if len(inv_ids) > 1 else "1:1 Exact")
-        return {
-            "id": f"TRIPLET-{1001 + idx}",
-            "invoice_id": ", ".join(str(i) for i in inv_ids),
-            "invoice_ids": [str(i) for i in inv_ids],
-            "razorpay_id": str(rzp.get("entity_id", "")),
-            "settlement_utr": str(rzp.get("settlement_utr", "")),
-            "bank_ref_no": str(bnk.get("ref_no", "")) if bnk else "",
-            "amount": float(rzp.get("amount") or 0),
-            "vendor": str(rzp.get("vendor", "")),
-            "date": str(rzp.get("date", "")) if rzp.get("date") else "",
-            "status": "Matched",
-            "match_type": match_type,
-        }
-
-    # Save output datasets to disk for persistent inspection and MCP access
-    rec_dirs = [PROJECT_ROOT / "reconciliation", PROJECT_ROOT / "reconciliation" / "data"]
-    for rdir in rec_dirs:
-        try:
-            rdir.mkdir(parents=True, exist_ok=True)
-            triplets_df = pd.DataFrame(raw.get("triplets", []))
-            exceptions_df = pd.DataFrame(raw.get("exceptions", []))
-
-            if not triplets_df.empty and "invoice_ids" in triplets_df.columns:
-                triplets_df["invoice_ids"] = triplets_df["invoice_ids"].apply(
-                    lambda x: ", ".join(x) if isinstance(x, (list, tuple, set)) else str(x)
-                )
-            if not triplets_df.empty and "razorpay" in triplets_df.columns:
-                triplets_df["razorpay_id"] = triplets_df["razorpay"].apply(
-                    lambda x: x["entity_id"] if isinstance(x, dict) else None
-                )
-            if not triplets_df.empty and "bank" in triplets_df.columns:
-                triplets_df["bank_ref"] = triplets_df["bank"].apply(
-                    lambda x: x["ref_no"] if isinstance(x, dict) else None
-                )
-
-            drop_cols = [c for c in ["razorpay", "bank"] if c in triplets_df.columns]
-            if drop_cols:
-                triplets_df.drop(columns=drop_cols, inplace=True)
-
-            if "status" not in exceptions_df.columns and not exceptions_df.empty:
-                exceptions_df["status"] = "Open"
-            if "resolution_note" not in exceptions_df.columns and not exceptions_df.empty:
-                exceptions_df["resolution_note"] = ""
-            if "resolved_at" not in exceptions_df.columns and not exceptions_df.empty:
-                exceptions_df["resolved_at"] = ""
-
-            triplets_df.to_csv(rdir / "reconciliation_results.csv", index=False)
-            exceptions_df.to_csv(rdir / "reconciliation_exceptions.csv", index=False)
-        except Exception as save_err:
-            logger.warning(f"Could not save reconciliation CSVs to {rdir}: {save_err}")
-
-    def _ser_exception(e: dict, idx: int) -> dict:
-        rec = e.get("record") or {}
-        exc_type = str(e.get("type", "")).capitalize()
-        reason = str(e.get("reason", ""))
-        source_id = (str(rec.get("invoice_id", "")) or str(rec.get("entity_id", "")) or str(rec.get("ref_no", "")) or str(e.get("source_id", "")))
-        status = str(e.get("status", "Open")).strip()
-        
-        # Determine if Unallocated Cash (Medium Risk / Extra Cash) vs Exception (High Risk / Missing Cash)
-        is_unallocated = (
-            (exc_type.lower() == "razorpay" and "no matching invoice" in reason.lower()) or
-            (exc_type.lower() == "bank" and ("no matching invoice" in reason.lower() or "unallocated" in reason.lower() or "settlement or invoice" in reason.lower()))
-        )
-        
-        if status.lower() == "resolved":
-            status_type = "resolved"
-            severity = "Resolved"
-        elif is_unallocated:
-            status_type = "unallocated_cash"
-            severity = "Medium"
-        else:
-            status_type = "exception"
-            severity = "High"
-        
-        return {
-            "id": f"EXC-{1001 + idx}",
-            "type": exc_type,
-            "source_id": source_id,
-            "vendor": str(rec.get("vendor", "")),
-            "amount": float(rec.get("amount") or 0),
-            "date": str(rec.get("date", "")) if rec.get("date") else "",
-            "reason": reason,
-            "status": status,
-            "status_type": status_type,
-            "severity": severity,
-            "resolution_note": str(e.get("resolution_note", "") or ""),
-            "resolved_at": str(e.get("resolved_at", "") or ""),
-        }
-
-    triplets   = [_ser_triplet(t, i) for i, t in enumerate(raw["triplets"])]
-    exceptions = [_ser_exception(e, i) for i, e in enumerate(raw["exceptions"])]
-
-    # Strictly Invoice Match Rate: (Matched Invoices / Total Invoices) * 100
-    matched_invoice_count = int(raw.get("matched_count", len(invoices)))
-    total_invoice_count = len(invoices)
-    invoice_match_rate = round((matched_invoice_count / total_invoice_count) * 100, 2) if total_invoice_count > 0 else 0.0
-
-    # Segregate Unallocated Cash, Exceptions, and Resolved
-    unallocated_count = sum(1 for e in exceptions if e.get("status_type") == "unallocated_cash")
-    audit_exception_count = sum(1 for e in exceptions if e.get("status_type") == "exception")
-    resolved_count = sum(1 for e in exceptions if e.get("status_type") == "resolved")
-
-    # Record coverage rate: Matched Triplets / (Matched Triplets + Total Exceptions)
-    total_triplets = len(triplets)
-    total_exceptions = len(exceptions)
-    record_coverage_rate = round((total_triplets / (total_triplets + total_exceptions)) * 100, 2) if (total_triplets + total_exceptions) > 0 else 0.0
-
-    total_invoice_amt = sum(float(inv.get("amount") or 0) for inv in invoices)
-    unallocated_rzp_amt = sum(float(e.get("amount") or 0) for e in exceptions if e.get("status_type") == "unallocated_cash" and e.get("type", "").lower() == "razorpay")
-    total_settled_amt = sum(float(t["amount"]) for t in triplets) + unallocated_rzp_amt
-
-    return JSONResponse(status_code=200, content={
-        "matchRate": invoice_match_rate,
-        "invoiceMatchRate": invoice_match_rate,
-        "recordCoverageRate": record_coverage_rate,
-        "record_coverage_rate": record_coverage_rate,
-        "matchedCount": matched_invoice_count,
-        "matchedInvoicesCount": matched_invoice_count,
-        "unallocatedCount": unallocated_count,
-        "auditExceptionCount": audit_exception_count,
-        "resolvedCount": resolved_count,
-        "matchedTripletsCount": total_triplets,
-        "exceptionCount": total_exceptions,
-        "totalCount": total_invoice_count,
-        "triplets": triplets,
-        "exceptions": exceptions,
-        "totalInvoiceAmount": round(total_invoice_amt, 2),
-        "totalSettledAmount": round(total_settled_amt, 2),
-        "totalBankCredit": round(total_settled_amt, 2),
-        "discrepancyAmount": round(abs(total_invoice_amt - total_settled_amt), 2),
-    })
 
 # ── Chat Endpoint ─────────────────────────────────────────────────────────────
 @app.post("/api/chat", tags=["Chat"])
@@ -657,11 +502,16 @@ async def get_standardized_data(source: Optional[str] = None):
         if src_clean in file_keys:
             file_keys = {src_clean: file_keys[src_clean]}
 
+    detected_base = "INR"
     standardized_files: Dict[str, Any] = {}
     for key, fname in file_keys.items():
         p = std_dir / fname
         if p.exists():
             df = _parse_csv(p)
+            if "base_currency" in df.columns and not df.empty:
+                b_val = str(df["base_currency"].iloc[0]).strip().upper()
+                if b_val and b_val != "NAN":
+                    detected_base = b_val
             preview = _df_to_preview(df)
             preview["saved_path"] = str(p)
             standardized_files[key] = preview
@@ -672,6 +522,7 @@ async def get_standardized_data(source: Optional[str] = None):
         status_code=200,
         content={
             "status": "success",
+            "base_currency": detected_base,
             "standardized_files": standardized_files,
         },
         headers={
@@ -759,103 +610,10 @@ async def resolve_exceptions_endpoint(req: ResolveExceptionsRequest):
 async def get_reconciliation_results():
     """Retrieve current reconciliation triplets and updated exceptions from disk."""
     try:
-        try:
-            from server import _get_parsed_exceptions_df
-        except ImportError:
-            from mcp_server.server import _get_parsed_exceptions_df
-
-        results_file = PROJECT_ROOT / "reconciliation" / "reconciliation_results.csv"
-        triplets = []
-        if results_file.exists():
-            tdf = pd.read_csv(results_file)
-            if not tdf.empty:
-                for idx, row in tdf.iterrows():
-                    inv_val = str(row.get("invoice_ids", row.get("invoice_id", "")))
-                    inv_list = [x.strip() for x in inv_val.split(",") if x.strip()]
-                    match_type = str(row.get("match_type", "1:1 Exact"))
-                    if not match_type or match_type == "nan":
-                        match_type = "N:1 Group" if len(inv_list) > 1 else "1:1 Exact"
-                    triplets.append({
-                        "id": f"TRIPLET-{1001 + idx}",
-                        "invoice_id": inv_val,
-                        "invoice_ids": inv_list,
-                        "razorpay_id": str(row.get("razorpay_id", "")),
-                        "settlement_utr": str(row.get("settlement_utr", "")),
-                        "bank_ref_no": str(row.get("bank_ref", row.get("bank_ref_no", ""))),
-                        "amount": float(row.get("amount", 0.0) or 0.0),
-                        "vendor": str(row.get("vendor", "")),
-                        "date": str(row.get("date", "")),
-                        "status": "Matched",
-                        "match_type": match_type,
-                    })
-
-        parsed_df = _get_parsed_exceptions_df()
-        serialized_exceptions = []
-        if not parsed_df.empty:
-            for idx, row in parsed_df.iterrows():
-                serialized_exceptions.append({
-                    "id": str(row.get("source_id") or f"EXC-{1001 + idx}"),
-                    "type": str(row.get("type", "")).capitalize(),
-                    "source_id": str(row.get("source_id", "")),
-                    "vendor": str(row.get("vendor", "")),
-                    "amount": float(row.get("amount", 0.0) or 0.0),
-                    "date": str(row.get("date", "")),
-                    "reason": str(row.get("reason", "")),
-                    "status": str(row.get("status", "Open")),
-                    "status_type": str(row.get("status_type", "exception")),
-                    "severity": str(row.get("severity", "High")),
-                    "resolution_note": str(row.get("resolution_note", "")),
-                    "resolved_at": str(row.get("resolved_at", "")),
-                })
-
-        unallocated_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "unallocated_cash")
-        audit_exception_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "exception")
-        resolved_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "resolved")
-        total_triplets = len(triplets)
-        total_exceptions = len(serialized_exceptions)
-
-        total_resolved_amount = sum(e["amount"] for e in serialized_exceptions if e.get("status_type") == "resolved")
-        record_coverage_rate = round((total_triplets / (total_triplets + total_exceptions)) * 100, 2) if (total_triplets + total_exceptions) > 0 else 100.0
-
-        # Calculate exact financial metrics matching the reconciliation engine
-        inv_file = PROJECT_ROOT / "standardisation" / "data" / "standardized" / "invoice_standardized.csv"
-        total_invoice_amt = 0.0
-        if inv_file.exists():
-            try:
-                inv_df = pd.read_csv(inv_file)
-                amt_col = "amount_converted" if "amount_converted" in inv_df.columns else "amount"
-                total_invoice_amt = float(pd.to_numeric(inv_df[amt_col], errors="coerce").fillna(0).sum())
-            except Exception:
-                total_invoice_amt = 0.0
-
-        if total_invoice_amt == 0.0:
-            matched_sum = sum(float(t.get("amount", 0.0) or 0.0) for t in triplets)
-            invoice_exc_sum = sum(float(e.get("amount", 0.0) or 0.0) for e in serialized_exceptions if str(e.get("type", "")).lower() == "invoice")
-            total_invoice_amt = matched_sum + invoice_exc_sum
-
-        unallocated_rzp_amt = sum(float(e.get("amount", 0.0) or 0.0) for e in serialized_exceptions if e.get("status_type") == "unallocated_cash" and str(e.get("type", "")).lower() == "razorpay")
-        total_settled_amt = sum(float(t.get("amount", 0.0) or 0.0) for t in triplets) + unallocated_rzp_amt
-        discrepancy_amt = abs(total_invoice_amt - total_settled_amt)
-
+        from reconciliation.run_reconciliation import get_reconciliation_results_summary
+        data = get_reconciliation_results_summary(project_root=PROJECT_ROOT)
         return JSONResponse(
-            content={
-                "status": "success",
-                "triplets": triplets,
-                "exceptions": serialized_exceptions,
-                "matchedCount": total_triplets,
-                "totalCount": total_triplets + total_exceptions,
-                "matchRate": record_coverage_rate,
-                "invoiceMatchRate": record_coverage_rate,
-                "recordCoverageRate": record_coverage_rate,
-                "unallocatedCount": unallocated_count,
-                "auditExceptionCount": audit_exception_count,
-                "resolvedCount": resolved_count,
-                "totalResolvedAmount": round(total_resolved_amount, 2),
-                "totalInvoiceAmount": round(total_invoice_amt, 2),
-                "totalSettledAmount": round(total_settled_amt, 2),
-                "totalBankCredit": round(total_settled_amt, 2),
-                "discrepancyAmount": round(discrepancy_amt, 2),
-            },
+            content=data,
             headers={
                 "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
                 "Pragma": "no-cache",

@@ -235,6 +235,8 @@ standardisation/data/standardized/*
 !standardisation/data/standardized/.gitkeep
 standardisation/data/mappings/*
 !standardisation/data/mappings/.gitkeep
+standardisation/data/backup/*
+!standardisation/data/backup/.gitkeep
 
 # Reconciliation outputs
 reconciliation/data/*
@@ -243,8 +245,8 @@ reconciliation/data/*
 # Chatbot workspace
 chat-bot/workspace/uploads/*
 !chat-bot/workspace/uploads/.gitkeep
-chat-bot/workspace/.dsh/skills/*/README.md
-chat-bot/workspace/.dsh/skills/*/examples/
+chat-bot/workspace/skills/*/README.md
+chat-bot/workspace/skills/*/examples/
 
 # Backups (if generated)
 *_backup_*.csv
@@ -457,9 +459,11 @@ api/temp/
 # ============================================
 standardisation/data/standardized/*.csv
 standardisation/data/mappings/*.csv
+standardisation/data/backup/*.csv
 standardisation/data/last_mcp_action.json
 standardisation/data/*.json
 !standardisation/data/.gitkeep
+!standardisation/data/backup/.gitkeep
 
 # ============================================
 # Reconciliation Generated Files
@@ -567,3 +571,5 @@ docker-compose.override.yml
 *.oauth
 .htaccess
 .htpasswd
+api/.sessions.json
+api/.env

@@ -146,24 +146,30 @@ def clean_amount(amount_str: Any) -> float:
 def parse_transaction_table(df: pd.DataFrame) -> List[Dict]:
     """Convert dataframe rows to canonical dicts."""
     def find_col(patterns: List[str]) -> Optional[str]:
-        for col in df.columns:
-            col_str = str(col).lower().strip()
-            if any(re.search(p, col_str, re.I) for p in patterns):
-                return col
+        for p in patterns:
+            for col in df.columns:
+                col_str = str(col).lower().strip()
+                if re.fullmatch(p, col_str, re.I) or (p.startswith(r'^') and re.search(p, col_str, re.I)):
+                    return col
+        for p in patterns:
+            for col in df.columns:
+                col_str = str(col).lower().strip()
+                if re.search(p, col_str, re.I):
+                    return col
         return None
 
-    date_col = find_col([r'transaction\s*date', r'txndate', r'value\s*date', r'date'])
-    desc_col = find_col([r'remark', r'narration', r'description', r'particulars', r'transaction\s*details'])
-    debit_col = find_col([r'withdrawal', r'debit', r'dr\b', r'paid\s*out', r'paid'])
-    credit_col = find_col([r'deposit', r'credit', r'cr\b', r'received', r'paid\s*in'])
-    balance_col = find_col([r'balance', r'closing\s*bal', r'closing\s*balance'])
-    ref_col = find_col([r'cheque', r'ref\s*no', r'ref', r'utr', r'chq', r'transaction\s*id'])
+    date_col = find_col([r'^transaction\s*date$', r'^txndate$', r'^value\s*date$', r'^issue_date$', r'^date$', r'transaction\s*date', r'txndate', r'value\s*date', r'date'])
+    desc_col = find_col([r'^description$', r'^remark$', r'^narration$', r'^particulars$', r'description', r'remark', r'narration', r'particulars', r'transaction\s*details'])
+    debit_col = find_col([r'^debit$', r'^withdrawal$', r'^dr\b', r'withdrawal', r'debit', r'dr\b', r'paid\s*out', r'paid'])
+    credit_col = find_col([r'^credit$', r'^deposit$', r'^cr\b', r'deposit', r'credit', r'cr\b', r'received', r'paid\s*in'])
+    balance_col = find_col([r'^balance$', r'^closing\s*bal$', r'^closing\s*balance$', r'balance', r'closing\s*bal', r'closing\s*balance'])
+    ref_col = find_col([r'^ref_no$', r'^ref$', r'^utr$', r'^cheque$', r'^cheque_number$', r'cheque', r'ref\s*no', r'ref', r'utr', r'chq', r'transaction\s*id'])
 
-    vendor_col = find_col([r'vendor_name', r'vendor', r'merchant'])
-    amount_col = find_col([r'total', r'amount', r'subtotal', r'net_settlement'])
-    currency_col = find_col([r'currency'])
-    invoice_id_col = find_col([r'invoice_id', r'invoice'])
-    order_id_col = find_col([r'order_id', r'order'])
+    vendor_col = find_col([r'^vendor_name$', r'^vendor$', r'^merchant$', r'vendor_name', r'vendor', r'merchant'])
+    amount_col = find_col([r'^total$', r'^amount$', r'^gross_amount$', r'^net_settlement$', r'\btotal\b', r'\bamount\b', r'subtotal'])
+    currency_col = find_col([r'^currency$', r'currency'])
+    invoice_id_col = find_col([r'^invoice_id$', r'^invoice$', r'invoice_id', r'invoice'])
+    order_id_col = find_col([r'^order_id$', r'^order$', r'order_id', r'order'])
 
     records = []
     for _, row in df.iterrows():
@@ -342,7 +348,33 @@ def parse_financial_file(file_path: str) -> Dict[str, Any]:
 # Paths to standardized data (Adjust these to your actual system paths)
 BASE_DIR = Path(__file__).resolve().parent.parent
 STANDARDIZED_DIR = BASE_DIR / "standardisation" / "data" / "standardized"
+BACKUP_DIR = BASE_DIR / "standardisation" / "data" / "backup"
 RECONCILIATION_DIR = BASE_DIR / "reconciliation" / "data"
+
+# -------------------------------------------------------------------
+# In-Memory Global DataStandardizer Singleton (LLM Cache Persistence)
+# -------------------------------------------------------------------
+_standardizer = None
+
+def get_standardizer(base_currency: str = "INR"):
+    """
+    Retrieve or lazily initialize the singleton DataStandardizer instance.
+    Keeps LLM-processed DataFrames cached in memory across MCP tool invocations.
+    """
+    global _standardizer
+    if _standardizer is None:
+        project_root = Path(__file__).resolve().parent.parent
+        std_module_path = project_root / "standardisation"
+        if str(std_module_path) not in sys.path:
+            sys.path.insert(0, str(std_module_path))
+        if str(project_root) not in sys.path:
+            sys.path.insert(0, str(project_root))
+        try:
+            from standardisation.standardizer import DataStandardizer
+        except ImportError:
+            from standardizer import DataStandardizer
+        _standardizer = DataStandardizer(base_currency=base_currency)
+    return _standardizer
 
 def load_df(source: str) -> pd.DataFrame:
     """Load standardized CSV based on source type."""
@@ -598,11 +630,42 @@ def get_unallocated_cash(
         limit=limit
     )
 
+def _resolve_column_targets(df: pd.DataFrame, col_name: str) -> List[str]:
+    """Resolve column name or aliases to actual matching columns in the DataFrame."""
+    col_clean = str(col_name).strip().lower()
+    matches = []
+    
+    # 1. Exact match (case-insensitive)
+    for c in df.columns:
+        if c.lower() == col_clean:
+            matches.append(c)
+            
+    # 2. Vendor alias resolution: vendor, vendor_name, vendor_standardized
+    if col_clean in ["vendor", "vendor_standardized", "vendor_name", "vendor_cleaned"]:
+        for alias in ["vendor_standardized", "vendor", "vendor_name"]:
+            if alias in df.columns and alias not in matches:
+                matches.append(alias)
+                
+    # 3. Description alias resolution
+    elif col_clean in ["description", "description_standardized", "desc"]:
+        for alias in ["description_standardized", "description"]:
+            if alias in df.columns and alias not in matches:
+                matches.append(alias)
+                
+    # 4. Date alias resolution
+    elif col_clean in ["date", "date_standardized", "transaction_date"]:
+        for alias in ["date_standardized", "date", "transaction_date"]:
+            if alias in df.columns and alias not in matches:
+                matches.append(alias)
+                
+    return matches
+
 @mcp.tool()
 def bulk_update_csv(source: str, condition: dict, new_values: dict) -> Dict[str, Any]:
     """
     Update field values in bulk across standardized CSV files (invoice, razorpay, bank).
     Matches records using condition dictionary and updates them with new_values dictionary.
+    Supports smart column aliases (e.g. 'vendor' maps to 'vendor_standardized' and 'vendor').
     Creates an automatic timestamped backup file before applying any modifications.
     """
     # ---- AGENTIC CHECK ----
@@ -632,21 +695,35 @@ def bulk_update_csv(source: str, condition: dict, new_values: dict) -> Dict[str,
         return {"error": f"No data found for source: {source}"}
     
     # Backup first
-    backup_file = STANDARDIZED_DIR / f"{source}_standardized_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    backup_file = BACKUP_DIR / f"{source}_standardized_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     df.to_csv(backup_file, index=False)
     
-    # Apply bulk update
+    # Apply bulk update condition matching
     mask = pd.Series(True, index=df.index)
+    has_valid_condition = False
     for key, value in condition.items():
-        if key in df.columns:
-            mask &= df[key].astype(str).str.contains(str(value), case=False, na=False)
+        target_cols = _resolve_column_targets(df, key)
+        if target_cols:
+            has_valid_condition = True
+            col_mask = pd.Series(False, index=df.index)
+            for c in target_cols:
+                col_mask |= df[c].astype(str).str.contains(str(value), case=False, na=False)
+            mask &= col_mask
+        else:
+            # Specified column does not exist in dataset -> 0 matches
+            mask = pd.Series(False, index=df.index)
     
-    if mask.sum() == 0:
+    if not has_valid_condition or mask.sum() == 0:
         return {"error": "No records matched the condition. No changes made.", "backup_file": str(backup_file)}
     
+    # Apply new values across matched columns
+    updated_fields = []
     for key, value in new_values.items():
-        if key in df.columns:
-            df.loc[mask, key] = value
+        target_cols = _resolve_column_targets(df, key)
+        for c in target_cols:
+            df.loc[mask, c] = value
+            updated_fields.append(c)
     
     # Save
     save_df(source, df)
@@ -654,8 +731,11 @@ def bulk_update_csv(source: str, condition: dict, new_values: dict) -> Dict[str,
     return {
         "success": True,
         "action": "review",
+        "source": source,
         "updated_count": int(mask.sum()),
-        "backup_file": str(backup_file)
+        "updated_fields": list(set(updated_fields)),
+        "backup_file": str(backup_file),
+        "message": f"Successfully updated {int(mask.sum())} record(s) in {source} (fields: {', '.join(set(updated_fields))})."
     }
 
 @mcp.tool()
@@ -663,6 +743,7 @@ def update_csv_record(source: str, record_id: str, field_to_update: str, new_val
     """
     Update a specific field in a single transaction record by its unique ID.
     Locates the record in invoice_id, entity_id, or ref_no and modifies the target field.
+    Supports smart column aliases (e.g. 'vendor' maps to 'vendor_standardized' and 'vendor').
     Creates an automatic timestamped backup file before saving changes.
     """
     # ---- AGENTIC CHECK ----
@@ -680,7 +761,8 @@ def update_csv_record(source: str, record_id: str, field_to_update: str, new_val
         return {"error": f"No data found for source: {source}"}
     
     # Backup
-    backup_file = STANDARDIZED_DIR / f"{source}_standardized_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    backup_file = BACKUP_DIR / f"{source}_standardized_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     df.to_csv(backup_file, index=False)
     
     # Determine ID column
@@ -691,11 +773,13 @@ def update_csv_record(source: str, record_id: str, field_to_update: str, new_val
     if mask.sum() == 0:
         return {"error": f"Record {record_id} not found in {source}.", "backup_file": str(backup_file)}
     
-    # Update
-    if field_to_update in df.columns:
-        df.loc[mask, field_to_update] = new_value
-    else:
-        return {"error": f"Field {field_to_update} not found.", "backup_file": str(backup_file)}
+    # Update target column and aliases
+    target_cols = _resolve_column_targets(df, field_to_update)
+    if not target_cols:
+        return {"error": f"Field '{field_to_update}' not found in {source}.", "backup_file": str(backup_file)}
+    
+    for c in target_cols:
+        df.loc[mask, c] = new_value
     
     # Save
     save_df(source, df)
@@ -705,7 +789,9 @@ def update_csv_record(source: str, record_id: str, field_to_update: str, new_val
         "action": "review",
         "source": source,
         "updated_count": 1,
-        "backup_file": str(backup_file)
+        "updated_fields": target_cols,
+        "backup_file": str(backup_file),
+        "message": f"Successfully updated record {record_id} in {source}."
     }
 
 @mcp.tool()
@@ -1074,28 +1160,25 @@ def standardize_data(base_currency: Optional[str] = None, config_overrides: Opti
         if str(project_root) not in sys.path:
             sys.path.insert(0, str(project_root))
 
-        # Import standardizer
-        try:
-            from standardisation.standardizer import DataStandardizer
-        except ImportError:
-            from standardizer import DataStandardizer
-
         # Determine the base currency
         curr = (base_currency or "INR").strip().upper()
 
         # Create backup for all standardized files before running
         backups = []
+        backup_dir = project_root / "standardisation" / "data" / "backup"
+        backup_dir.mkdir(parents=True, exist_ok=True)
         if std_dir.exists():
             for fname in ["invoice_standardized.csv", "razorpay_standardized.csv", "bank_standardized.csv"]:
                 src = std_dir / fname
                 if src.exists():
-                    backup_file = std_dir / f"{src.stem}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                    backup_file = backup_dir / f"{src.stem}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
                     import shutil
                     shutil.copy2(src, backup_file)
                     backups.append(str(backup_file))
 
-        # Instantiate and run the standardizer in-process
-        standardizer = DataStandardizer(base_currency=curr)
+        # Get global standardizer and execute full two-phase pipeline
+        standardizer = get_standardizer(base_currency=curr)
+        standardizer.base_currency = curr
         standardizer.process_files()
 
         # Reload standardized CSVs to get the state
@@ -1226,38 +1309,92 @@ def run_reconciliation(config_overrides: Optional[Dict[str, Any]] = None) -> Dic
         }
 
 @mcp.tool()
-def change_base_currency(new_currency: str) -> Dict[str, Any]:
+def change_currency_and_date(
+    base_currency: Optional[str] = None,
+    date_format: Optional[str] = None
+) -> Dict[str, Any]:
     """
-    Change the base accounting currency and re-run standardization across all financial files.
-    Converts invoice amounts and settlements to the requested currency code (e.g., USD, EUR, INR).
-    Creates backups prior to converting and recalculating converted columns.
+    Update base accounting currency (e.g. 'USD', 'EUR', 'INR') and/or standard date format (e.g. 'YYYY-MM-DD', 'DD/MM/YYYY')
+    across all financial files using cached in-memory LLM data. This is an instant (<0.2s), LLM-free deterministic operation.
+    
+    Parameters:
+    - base_currency: Optional base accounting currency code (e.g. 'USD', 'EUR', 'INR', 'GBP', 'AED', 'SGD').
+    - date_format: Optional date format (e.g. 'YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'DD-MM-YYYY').
+    
+    Creates automatic timestamped backups under standardisation/data/backup prior to overwriting datasets.
     """
     # ---- AGENTIC CHECK ----
     err = require_agentic_mode()
     if err:
         return err
 
-    import subprocess
-    import sys
-    
-    project_root = Path(__file__).resolve().parent.parent
-    curr = str(new_currency).strip().upper()
-    std_script = project_root / "standardisation" / "standardizer.py"
-    res = subprocess.run([sys.executable, str(std_script), curr], capture_output=True, text=True, timeout=180)
-    if res.returncode != 0:
-        return {"error": res.stderr.strip() or res.stdout.strip() or f"Standardization failed with code {res.returncode}"}
-    return {
-        "success": True,
-        "action": "standardize",
-        "target": curr,
-        "new_currency": curr,
-        "message": f"Standardized all files to new base currency {curr}."
-    }
+    if base_currency is None and date_format is None:
+        return {
+            "error": "No currency or date format changes requested. Please provide base_currency (e.g., 'USD', 'INR') and/or date_format (e.g., 'DD/MM/YYYY')."
+        }
+
+    try:
+        import shutil
+        
+        project_root = Path(__file__).resolve().parent.parent
+        std_dir = project_root / "standardisation" / "data" / "standardized"
+        backup_dir = project_root / "standardisation" / "data" / "backup"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        backups = []
+        if std_dir.exists():
+            for fname in ["invoice_standardized.csv", "razorpay_standardized.csv", "bank_standardized.csv"]:
+                src = std_dir / fname
+                if src.exists():
+                    backup_file = backup_dir / f"{src.stem}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                    shutil.copy2(src, backup_file)
+                    backups.append(str(backup_file))
+
+        # Get global standardizer
+        curr = base_currency.strip().upper() if base_currency else None
+        standardizer = get_standardizer(base_currency=curr or "INR")
+
+        # If LLM data is not cached, populate from disk or run process_llm
+        if not standardizer._llm_data:
+            try:
+                standardizer.load_or_process_llm()
+            except Exception as e:
+                return {"error": f"LLM standardisation data not found. Please run full standardisation first: {str(e)}"}
+
+        # Apply deterministic normalisation (<0.2s without invoking LLM)
+        standardizer.apply_deterministic(base_currency=curr, date_format=date_format)
+
+        # Reload standardized CSVs to get current state
+        invoices = load_df("invoice")
+        razorpay = load_df("razorpay")
+        bank = load_df("bank")
+
+        active_currency = standardizer.base_currency
+
+        return {
+            "success": True,
+            "action": "standardize",
+            "target": active_currency,
+            "base_currency": active_currency,
+            "date_format": date_format,
+            "files_standardized": {
+                "invoice": len(invoices),
+                "razorpay": len(razorpay),
+                "bank": len(bank)
+            },
+            "backups_created": backups,
+            "message": f"Deterministic normalisation applied successfully (Base Currency: {active_currency}{f', Date Format: {date_format}' if date_format else ''}). Frontend will refresh automatically."
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "action": "standardize",
+            "error": f"Failed to apply deterministic normalisation: {str(e)}"
+        }
 
 @mcp.tool()
-def revert_last_action(backup_file: str) -> Dict[str, Any]:
+def revert_last_action(backup_file: Optional[str] = None) -> Dict[str, Any]:
     """
-    Restore a standardized CSV file from a specified .bak backup file.
+    Restore a standardized CSV file from a specified backup snapshot under standardisation/data/backup.
     Overwrites current standardized data with the selected historical snapshot to undo previous edits.
     Re-run reconciliation after reverting to ensure results remain in sync.
     """
@@ -1266,42 +1403,165 @@ def revert_last_action(backup_file: str) -> Dict[str, Any]:
     if err:
         return err
 
-    backup_path = Path(backup_file)
-    if not backup_path.exists():
-        return {"error": f"Backup file not found: {backup_file}"}
-    
-    # Determine original file name (remove _backup_YYYYMMDD_HHMMSS)
-    parts = backup_path.stem.rsplit('_backup_', 1)
-    if len(parts) != 2:
-        return {"error": "Invalid backup file name format."}
-    
-    original_name = parts[0] + ".csv"
-    original_path = STANDARDIZED_DIR / original_name
-    
-    # Restore
     import shutil
-    shutil.copy2(backup_path, original_path)
+
+    # If no specific backup file provided or requested 'latest', find the most recent backup
+    backup_path: Optional[Path] = None
+    if not backup_file or str(backup_file).strip().lower() in ["latest", "last", "most_recent", ""]:
+        candidates = []
+        if BACKUP_DIR.exists():
+            candidates.extend(BACKUP_DIR.glob("*_backup_*.csv"))
+        if STANDARDIZED_DIR.exists():
+            candidates.extend(STANDARDIZED_DIR.glob("*_backup_*.csv"))
+        if not candidates:
+            return {"error": "No backup files available to revert to."}
+        candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+        backup_path = candidates[0]
+    else:
+        raw_target = str(backup_file).strip().strip("'\"")
+        p = Path(raw_target)
+        if p.is_absolute() and p.exists():
+            backup_path = p
+        elif (BACKUP_DIR / raw_target).exists():
+            backup_path = BACKUP_DIR / raw_target
+        elif (STANDARDIZED_DIR / raw_target).exists():
+            backup_path = STANDARDIZED_DIR / raw_target
+        elif (BASE_DIR / raw_target).exists():
+            backup_path = BASE_DIR / raw_target
+        elif (RECONCILIATION_DIR / raw_target).exists():
+            backup_path = RECONCILIATION_DIR / raw_target
+        else:
+            clean_name = Path(raw_target).name
+            matches = list(BACKUP_DIR.glob(f"*{clean_name}*")) if BACKUP_DIR.exists() else []
+            if not matches and STANDARDIZED_DIR.exists():
+                matches = list(STANDARDIZED_DIR.glob(f"*{clean_name}*"))
+            if matches:
+                backup_path = matches[0]
+            else:
+                return {"error": f"Backup file not found: {backup_file}. Use list_backups to view available backup snapshots."}
+
+    stem = backup_path.stem
+    if "_backup_" not in stem:
+        return {"error": f"Invalid backup file name format: {backup_path.name}. Expected filename containing '_backup_'"}
     
-    return {"success": True, "restored_file": str(original_path), "from_backup": str(backup_path)}
+    parts = stem.rsplit('_backup_', 1)
+    prefix = parts[0]
+    
+    if prefix == "reconciliation_exceptions":
+        original_path = RECONCILIATION_DIR / "reconciliation_exceptions.csv"
+    else:
+        original_name = f"{prefix}.csv" if not prefix.endswith(".csv") else prefix
+        original_path = STANDARDIZED_DIR / original_name
+
+    try:
+        shutil.copy2(backup_path, original_path)
+        row_count = None
+        try:
+            restored_df = pd.read_csv(original_path)
+            row_count = len(restored_df)
+        except Exception:
+            pass
+
+        return {
+            "success": True,
+            "action": "revert",
+            "restored_file": str(original_path),
+            "from_backup": str(backup_path),
+            "rows_restored": row_count,
+            "message": f"Successfully reverted {original_path.name} from backup snapshot {backup_path.name}."
+        }
+    except Exception as copy_err:
+        return {"error": f"Failed to restore backup file: {str(copy_err)}"}
 
 @mcp.tool()
 def list_backups() -> Dict[str, Any]:
     """
-    List all available historical .bak backup files with creation timestamps and file sizes.
+    List all available historical backup snapshots in standardisation/data/backup with creation timestamps and file sizes.
     Use this to identify which backup file path to pass into revert_last_action.
     Provides complete audit trail information of saved states.
     """
     backups = []
-    for file in STANDARDIZED_DIR.glob("*_backup_*.csv"):
-        stat = file.stat()
-        backups.append({
-            "filename": file.name,
-            "path": str(file),
-            "created": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-            "size_kb": round(stat.st_size / 1024, 2)
-        })
-    
-    return {"backups": backups, "count": len(backups)}
+    seen_paths = set()
+
+    # Search standardisation/data/backup first
+    if BACKUP_DIR.exists():
+        for file in BACKUP_DIR.glob("*_backup_*.csv"):
+            resolved = str(file.resolve())
+            if resolved in seen_paths:
+                continue
+            seen_paths.add(resolved)
+            stat = file.stat()
+            source_type = "invoice" if "invoice" in file.name.lower() else ("razorpay" if "razorpay" in file.name.lower() else ("bank" if "bank" in file.name.lower() else "exceptions"))
+            try:
+                rel_path = str(file.relative_to(BASE_DIR)).replace("\\", "/")
+            except Exception:
+                rel_path = str(file)
+            backups.append({
+                "filename": file.name,
+                "path": str(file),
+                "relative_path": rel_path,
+                "source": source_type,
+                "created": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                "size_kb": round(stat.st_size / 1024, 2),
+                "_mtime": stat.st_mtime
+            })
+
+    # Also search STANDARDIZED_DIR for any legacy backups
+    if STANDARDIZED_DIR.exists():
+        for file in STANDARDIZED_DIR.glob("*_backup_*.csv"):
+            resolved = str(file.resolve())
+            if resolved in seen_paths:
+                continue
+            seen_paths.add(resolved)
+            stat = file.stat()
+            source_type = "invoice" if "invoice" in file.name.lower() else ("razorpay" if "razorpay" in file.name.lower() else ("bank" if "bank" in file.name.lower() else "exceptions"))
+            try:
+                rel_path = str(file.relative_to(BASE_DIR)).replace("\\", "/")
+            except Exception:
+                rel_path = str(file)
+            backups.append({
+                "filename": file.name,
+                "path": str(file),
+                "relative_path": rel_path,
+                "source": source_type,
+                "created": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                "size_kb": round(stat.st_size / 1024, 2),
+                "_mtime": stat.st_mtime
+            })
+
+    # Also search RECONCILIATION_DIR
+    if RECONCILIATION_DIR.exists():
+        for file in RECONCILIATION_DIR.glob("*_backup_*.csv"):
+            resolved = str(file.resolve())
+            if resolved in seen_paths:
+                continue
+            seen_paths.add(resolved)
+            stat = file.stat()
+            try:
+                rel_path = str(file.relative_to(BASE_DIR)).replace("\\", "/")
+            except Exception:
+                rel_path = str(file)
+            backups.append({
+                "filename": file.name,
+                "path": str(file),
+                "relative_path": rel_path,
+                "source": "reconciliation_exceptions",
+                "created": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                "size_kb": round(stat.st_size / 1024, 2),
+                "_mtime": stat.st_mtime
+            })
+
+    # Sort descending by creation timestamp (most recent first)
+    backups.sort(key=lambda x: x["_mtime"], reverse=True)
+    for b in backups:
+        del b["_mtime"]
+
+    return {
+        "backups": backups,
+        "count": len(backups),
+        "backup_directory": str(BACKUP_DIR),
+        "latest_backup": backups[0] if backups else None
+    }
 
 # -------------------------------------------------------------------
 # Advanced Analytics & Reporting MCP Tools

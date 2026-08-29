@@ -37,8 +37,10 @@ export interface ReconciliationState {
   standardizationDuration: number | null
   reconcileParams: ReconcileParams
   agenticMode: boolean
+  baseCurrency: string
 
   // Actions
+  setBaseCurrency: (currency: string) => void
   setFile: (key: keyof UploadedFilesMap, file: File | null) => void
   uploadAndPreview: () => Promise<void>
   standardize: (baseCurrency?: string) => Promise<void>
@@ -76,6 +78,7 @@ const DEFAULT_RECONCILE_PARAMS: ReconcileParams = {
 
 const initialState: Omit<
   ReconciliationState,
+  | 'setBaseCurrency'
   | 'setFile'
   | 'uploadAndPreview'
   | 'standardize'
@@ -101,6 +104,7 @@ const initialState: Omit<
   standardizationDuration: null,
   reconcileParams: DEFAULT_RECONCILE_PARAMS,
   agenticMode: false,
+  baseCurrency: 'INR',
 }
 
 const STORAGE_KEY = 'reconciliation_session_state'
@@ -121,6 +125,7 @@ function loadSessionState(): Partial<ReconciliationState> {
       results: parsed.results || null,
       standardizationDuration: parsed.standardizationDuration ?? null,
       reconcileParams: parsed.reconcileParams || DEFAULT_RECONCILE_PARAMS,
+      baseCurrency: parsed.baseCurrency || 'INR',
     }
   } catch {
     return {}
@@ -140,6 +145,7 @@ function saveSessionState(current: ReconciliationState) {
       results: current.results,
       standardizationDuration: current.standardizationDuration,
       reconcileParams: current.reconcileParams,
+      baseCurrency: current.baseCurrency,
     }
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
     if (current.savedPaths.invoice) {
@@ -187,6 +193,11 @@ function getState() {
 
 state = {
   ...initialState,
+  ...loadSessionState(),
+
+  setBaseCurrency: (currency: string) => {
+    setState({ baseCurrency: (currency || 'INR').toUpperCase().trim() })
+  },
 
   setFile: (key, file) => {
     setState((prev) => ({
@@ -232,9 +243,11 @@ state = {
     const invoice = state.savedPaths.invoice || "standardisation/data/raw/invoices.csv"
     const razorpay = state.savedPaths.razorpay || "standardisation/data/raw/razorpay_settlements.csv"
     const bank = state.savedPaths.bank || "standardisation/data/raw/bank.csv"
+    const targetCurrency = (baseCurrency || state.baseCurrency || 'INR').toUpperCase().trim()
 
     setState({
       standardizationStatus: 'running',
+      baseCurrency: targetCurrency,
       error: null,
       activeProgressMessage: 'Connecting to AI standardisation engine...',
     })
@@ -244,12 +257,14 @@ state = {
         invoice_path: invoice,
         razorpay_path: razorpay,
         bank_path: bank,
-        base_currency: (baseCurrency || 'INR').toUpperCase(),
+        base_currency: targetCurrency,
       })
 
       const sf = result.standardized_files
+      const finalBaseCurrency = result.base_currency || targetCurrency
       setState({
         standardizationStatus: 'completed',
+        baseCurrency: finalBaseCurrency,
         standardizedData: {
           invoice: sf.invoice,
           razorpay: sf.razorpay,
@@ -307,8 +322,18 @@ state = {
             ? { ...sf.bank, preview: [...sf.bank.preview] }
             : prev.standardizedData.bank
 
+          const detectedBase = (
+            result.base_currency ||
+            newInvoice?.preview?.[0]?.base_currency ||
+            newRazorpay?.preview?.[0]?.base_currency ||
+            newBank?.preview?.[0]?.base_currency ||
+            prev.baseCurrency ||
+            'INR'
+          ).toString().toUpperCase().trim()
+
           return {
             standardizationStatus: 'completed',
+            baseCurrency: detectedBase,
             standardizedData: {
               invoice: newInvoice,
               razorpay: newRazorpay,

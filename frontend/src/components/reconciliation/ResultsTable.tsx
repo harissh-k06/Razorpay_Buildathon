@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useReconciliationStore } from "@/store/reconciliationStore"
+import { formatCurrency } from "@/lib/utils"
 import {
   CheckCircle2Icon,
   SearchIcon,
@@ -31,7 +32,7 @@ import {
 } from "lucide-react"
 
 export function ResultsTable() {
-  const { results, reconciliationStatus } = useReconciliationStore()
+  const { results, reconciliationStatus, baseCurrency } = useReconciliationStore()
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<"amount" | "id">("id")
   const [sortAsc, setSortAsc] = useState(true)
@@ -216,7 +217,7 @@ export function ResultsTable() {
                       {item.vendor || "GLOBAL VENDOR"}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs font-bold text-text-primary">
-                      ${Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {formatCurrency(item.amount, baseCurrency)}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge

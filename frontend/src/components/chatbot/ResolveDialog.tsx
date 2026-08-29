@@ -12,7 +12,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
+import { useReconciliationStore } from "@/store/reconciliationStore"
 import { MailIcon, FileTextIcon, ArrowRightIcon, AlertCircleIcon } from "lucide-react"
 import { ReconciliationException } from "@/lib/reconciliation-types"
 
@@ -25,6 +26,7 @@ interface ResolveDialogProps {
 }
 
 export function ResolveDialog({ open, onClose, exception, exceptions, onConfirm }: ResolveDialogProps) {
+  const baseCurrency = useReconciliationStore((state) => state.baseCurrency) || "INR"
   const [selectedAction, setSelectedAction] = useState<"memo" | "email">("memo")
   const [recipientEmail, setRecipientEmail] = useState("")
   const [emailError, setEmailError] = useState("")
@@ -60,15 +62,11 @@ export function ResolveDialog({ open, onClose, exception, exceptions, onConfirm 
   const isBatch = allExceptions.length > 1
   const count = allExceptions.length
   const totalAmount = allExceptions.reduce((sum, e) => sum + (e.amount || 0), 0)
-  const totalAmountStr = totalAmount > 0
-    ? `₹${totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : ""
+  const totalAmountStr = totalAmount > 0 ? formatCurrency(totalAmount, baseCurrency) : ""
 
   const excId = exception?.source_id || exception?.id || ""
   const excVendor = exception?.vendor || ""
-  const excAmount = exception?.amount
-    ? `₹${exception.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
-    : ""
+  const excAmount = exception?.amount != null ? formatCurrency(exception.amount, baseCurrency) : ""
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>

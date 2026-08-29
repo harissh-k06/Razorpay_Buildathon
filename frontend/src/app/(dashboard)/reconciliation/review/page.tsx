@@ -17,7 +17,7 @@ import {
   SlidersHorizontalIcon, SparklesIcon,
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency, CURRENCY_SYMBOLS } from "@/lib/utils"
 import { fetchDataStatus } from "@/lib/api"
 import {
   Pagination,
@@ -46,40 +46,31 @@ function formatColumnTitle(col: string): string {
 }
 
 // ── Currency Formatter ────────────────────────────────────────────────────────
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  INR: "₹",
-  SGD: "S$",
-  AED: "AED ",
-  CAD: "C$",
-  AUD: "A$",
-  JPY: "¥",
-  CNY: "¥",
-}
-
-function formatAmountCell(val: any, col: string, row: Record<string, any>): string {
+function formatAmountCell(val: any, col: string, row: Record<string, any>, baseCurr: string = "INR"): string {
   if (val == null || val === "") return "—"
   const num = typeof val === "number" ? val : parseFloat(String(val).replace(/[^0-9.-]/g, ""))
   if (isNaN(num)) return String(val)
 
-  // 1. If column is converted to base currency (INR), always display in ₹
-  if (col === "amount_converted" || col === "amount_inr" || col.includes("converted")) {
-    return `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  // 1. If column is converted to base currency, display using baseCurrency
+  if (
+    col === "amount_converted" ||
+    col === "amount_inr" ||
+    col.includes("converted") ||
+    col === "credit_converted" ||
+    col === "debit_converted" ||
+    col === "balance_converted"
+  ) {
+    const activeCurr = String(row.base_currency || baseCurr || "INR").trim().toUpperCase()
+    return formatCurrency(num, activeCurr)
   }
 
   // 2. Identify the row's source currency
   const rawCurr = String(row.currency || row.currency_detected || row.currency_code || "").trim().toUpperCase()
-  const symbol = CURRENCY_SYMBOLS[rawCurr] || (rawCurr ? `${rawCurr} ` : "₹")
-
-  // For INR, use en-IN numbering format
-  if (rawCurr === "INR") {
-    return `${symbol}${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  if (rawCurr) {
+    return formatCurrency(num, rawCurr)
   }
 
-  // For foreign currencies (USD, EUR, GBP, etc.), use en-US format
-  return `${symbol}${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatCurrency(num, baseCurr)
 }
 
 // ── Prioritized Standardized Columns Helper (from standardizer.py) ────────────
@@ -154,6 +145,7 @@ function getPrioritizedColumns(columns: string[], fileType: "invoice" | "razorpa
 }
 
 function EditableTable({ data, fileType, onUpdateRow }: EditableTableProps) {
+  const baseCurrency = useReconciliationStore((state) => state.baseCurrency) || "INR"
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
   const [editRowData, setEditRowData] = useState<Record<string, any>>({})
   const [isSaving, setIsSaving] = useState<boolean>(false)
@@ -434,7 +426,7 @@ function EditableTable({ data, fileType, onUpdateRow }: EditableTableProps) {
                         )}
                       >
                         {isAmt ? (
-                          formatAmountCell(rawVal, col, row)
+                          formatAmountCell(rawVal, col, row, baseCurrency)
                         ) : rawVal != null && rawVal !== "" ? (
                           String(rawVal)
                         ) : (

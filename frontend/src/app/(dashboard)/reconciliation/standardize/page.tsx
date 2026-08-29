@@ -14,14 +14,14 @@ const MESSAGES = [
   "Parsing file structure and extracting transaction data via MCP...",
   "Standardising vendor names and cleaning descriptions using AI...",
   "Extracting dates and amounts from transaction data...",
-  "Detecting currencies and converting all amounts to INR...",
+  "Detecting currencies and converting all amounts to base accounting currency...",
   "Finalising standardised data streams for reconciliation...",
   "Preparing your preview – redirecting to review...",
 ]
 
 export default function StandardizePage() {
   const router = useRouter()
-  const { standardizationStatus, standardizationDuration, error, savedPaths, standardize } =
+  const { standardizationStatus, standardizationDuration, error, savedPaths, baseCurrency, standardize } =
     useReconciliationStore()
 
   const [mounted, setMounted] = useState(false)
@@ -49,9 +49,9 @@ export default function StandardizePage() {
   useEffect(() => {
     if (mounted && !startedRef.current && savedPaths.invoice) {
       startedRef.current = true
-      standardize()
+      standardize(baseCurrency)
     }
-  }, [mounted, savedPaths.invoice, standardize])
+  }, [mounted, savedPaths.invoice, baseCurrency, standardize])
 
   // Navigate forward when done (after brief success flash)
   useEffect(() => {
