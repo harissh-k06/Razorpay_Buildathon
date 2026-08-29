@@ -27,35 +27,52 @@ export function ExceptionPieChart() {
   }
 
   const matched = results.matchedCount || 0
-  const total = results.totalCount || matched || 1
-  const matchRate = results.invoiceMatchRate ?? results.matchRate ?? 100
-  const unmatched = Math.max(0, total - matched)
-  const exceptionRate = +(100 - matchRate).toFixed(1)
+  const exceptions = results.exceptions || []
+  const resolvedCount = exceptions.filter((e) => e.status_type === "resolved" || e.status === "Resolved").length
+  const unallocatedCount = exceptions.filter((e) => e.status_type === "unallocated_cash" && e.status !== "Resolved").length
+  const auditExceptionCount = exceptions.filter((e) => e.status_type === "exception" && e.status !== "Resolved").length
 
-  const chartData =
-    matchRate === 100 || unmatched === 0
+  const total = matched + resolvedCount + unallocatedCount + auditExceptionCount || results.totalCount || matched || 1
+  const matchRate = results.invoiceMatchRate ?? results.matchRate ?? 100
+
+  const chartData = [
+    {
+      name: "Matched Invoices",
+      value: matched,
+      percent: +((matched / total) * 100).toFixed(1),
+      color: "#305EFF", // Primary Blue
+    },
+    ...(unallocatedCount > 0
       ? [
           {
-            name: "Matched Invoices",
-            value: matched,
-            percent: 100,
-            color: "#305EFF", // Razorpay primary blue
+            name: "Unallocated Cash",
+            value: unallocatedCount,
+            percent: +((unallocatedCount / total) * 100).toFixed(1),
+            color: "#F59E0B", // Amber
           },
         ]
-      : [
+      : []),
+    ...(auditExceptionCount > 0
+      ? [
           {
-            name: "Matched Invoices",
-            value: matched,
-            percent: matchRate,
-            color: "#305EFF",
-          },
-          {
-            name: "Unmatched Invoices",
-            value: unmatched,
-            percent: exceptionRate,
-            color: "#EF4444",
+            name: "Exceptions (Missing Cash)",
+            value: auditExceptionCount,
+            percent: +((auditExceptionCount / total) * 100).toFixed(1),
+            color: "#EF4444", // Red
           },
         ]
+      : []),
+    ...(resolvedCount > 0
+      ? [
+          {
+            name: "Resolved",
+            value: resolvedCount,
+            percent: +((resolvedCount / total) * 100).toFixed(1),
+            color: "#10B981", // Emerald Green
+          },
+        ]
+      : []),
+  ]
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -138,26 +155,52 @@ export function ExceptionPieChart() {
           </div>
 
           {/* Chart Legend Cards */}
-          <div className="mt-2 grid grid-cols-2 gap-3 pt-2 border-t border-border/40">
-            <div className="flex items-center gap-3 rounded-lg bg-primary/5 p-2.5 border border-primary/20">
-              <div className="size-3 rounded-full bg-primary shrink-0" />
+          <div className="mt-2 grid grid-cols-2 gap-2 pt-2 border-t border-border/40 text-xs">
+            <div className="flex items-center gap-2 rounded-lg bg-primary/5 p-2 border border-primary/20">
+              <div className="size-2.5 rounded-full bg-primary shrink-0" />
               <div className="truncate">
-                <p className="text-xs font-semibold text-text-primary">Matched</p>
-                <p className="text-[11px] text-text-muted font-mono">
-                  {matched} invoices ({matchRate}%)
+                <p className="text-[11px] font-semibold text-text-primary">Matched</p>
+                <p className="text-[10px] text-text-muted font-mono">
+                  {matched} items ({+((matched / total) * 100).toFixed(1)}%)
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/20 p-2.5 border border-rose-200 dark:border-rose-900/40">
-              <div className="size-3 rounded-full bg-rose-500 shrink-0" />
-              <div className="truncate">
-                <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">Unmatched</p>
-                <p className="text-[11px] text-text-muted font-mono">
-                  {unmatched} invoices ({exceptionRate}%)
-                </p>
+            {unallocatedCount > 0 && (
+              <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 p-2 border border-amber-200 dark:border-amber-900/40">
+                <div className="size-2.5 rounded-full bg-amber-500 shrink-0" />
+                <div className="truncate">
+                  <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400">Unallocated</p>
+                  <p className="text-[10px] text-text-muted font-mono">
+                    {unallocatedCount} items ({+((unallocatedCount / total) * 100).toFixed(1)}%)
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
+
+            {auditExceptionCount > 0 && (
+              <div className="flex items-center gap-2 rounded-lg bg-rose-50 dark:bg-rose-950/20 p-2 border border-rose-200 dark:border-rose-900/40">
+                <div className="size-2.5 rounded-full bg-rose-500 shrink-0" />
+                <div className="truncate">
+                  <p className="text-[11px] font-semibold text-rose-700 dark:text-rose-400">Exceptions</p>
+                  <p className="text-[10px] text-text-muted font-mono">
+                    {auditExceptionCount} items ({+((auditExceptionCount / total) * 100).toFixed(1)}%)
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {resolvedCount > 0 && (
+              <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 p-2 border border-emerald-200 dark:border-emerald-900/40">
+                <div className="size-2.5 rounded-full bg-emerald-500 shrink-0" />
+                <div className="truncate">
+                  <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Resolved</p>
+                  <p className="text-[10px] text-text-muted font-mono">
+                    {resolvedCount} items ({+((resolvedCount / total) * 100).toFixed(1)}%)
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

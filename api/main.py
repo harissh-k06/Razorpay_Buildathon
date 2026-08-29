@@ -25,6 +25,10 @@ for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "mcp_server"), str(PROJECT_ROOT 
     if p not in sys.path:
         sys.path.insert(0, p)
 
+# ── Load env for OAuth config ───────────────────────────────────────────────────
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=BASE_DIR / ".env")
+
 # ── Logging ────────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
@@ -41,16 +45,33 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?",
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://192.168.56.1:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Auth & Email Routers ───────────────────────────────────────────────────────
+try:
+    from auth import auth_router
+    app.include_router(auth_router)
+    logger.info("Auth router registered")
+except Exception as _auth_err:
+    logger.warning(f"Auth router not loaded: {_auth_err}")
+
+try:
+    from email_api import email_router
+    app.include_router(email_router)
+    logger.info("Email router registered")
+except Exception as _email_err:
+    logger.warning(f"Email router not loaded: {_email_err}")
 
 # ── Pydantic request models ────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
@@ -78,6 +99,17 @@ class ReconcileRequest(BaseModel):
     allow_split: bool = True
     max_invoices_per_settlement: int = 5
     split_tolerance_pct: float = 20.0
+
+class UpdateRowRequest(BaseModel):
+    source: str
+    rowId: Optional[Any] = None
+    rowIndex: Optional[int] = None
+    updatedData: Dict[str, Any]
+
+class ResolveExceptionsRequest(BaseModel):
+    exception_ids: List[str]
+    mode: str = "manual"  # "memo" | "direct" | "manual"
+    resolution_note: Optional[str] = None
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def _safe_val(v: Any) -> Any:
@@ -292,18 +324,65 @@ async def reconcile(req: ReconcileRequest):
             "match_type": match_type,
         }
 
+    # Save output datasets to disk for persistent inspection and MCP access
+    rec_dirs = [PROJECT_ROOT / "reconciliation", PROJECT_ROOT / "reconciliation" / "data"]
+    for rdir in rec_dirs:
+        try:
+            rdir.mkdir(parents=True, exist_ok=True)
+            triplets_df = pd.DataFrame(raw.get("triplets", []))
+            exceptions_df = pd.DataFrame(raw.get("exceptions", []))
+
+            if not triplets_df.empty and "invoice_ids" in triplets_df.columns:
+                triplets_df["invoice_ids"] = triplets_df["invoice_ids"].apply(
+                    lambda x: ", ".join(x) if isinstance(x, (list, tuple, set)) else str(x)
+                )
+            if not triplets_df.empty and "razorpay" in triplets_df.columns:
+                triplets_df["razorpay_id"] = triplets_df["razorpay"].apply(
+                    lambda x: x["entity_id"] if isinstance(x, dict) else None
+                )
+            if not triplets_df.empty and "bank" in triplets_df.columns:
+                triplets_df["bank_ref"] = triplets_df["bank"].apply(
+                    lambda x: x["ref_no"] if isinstance(x, dict) else None
+                )
+
+            drop_cols = [c for c in ["razorpay", "bank"] if c in triplets_df.columns]
+            if drop_cols:
+                triplets_df.drop(columns=drop_cols, inplace=True)
+
+            if "status" not in exceptions_df.columns and not exceptions_df.empty:
+                exceptions_df["status"] = "Open"
+            if "resolution_note" not in exceptions_df.columns and not exceptions_df.empty:
+                exceptions_df["resolution_note"] = ""
+            if "resolved_at" not in exceptions_df.columns and not exceptions_df.empty:
+                exceptions_df["resolved_at"] = ""
+
+            triplets_df.to_csv(rdir / "reconciliation_results.csv", index=False)
+            exceptions_df.to_csv(rdir / "reconciliation_exceptions.csv", index=False)
+        except Exception as save_err:
+            logger.warning(f"Could not save reconciliation CSVs to {rdir}: {save_err}")
+
     def _ser_exception(e: dict, idx: int) -> dict:
         rec = e.get("record") or {}
         exc_type = str(e.get("type", "")).capitalize()
         reason = str(e.get("reason", ""))
-        source_id = (str(rec.get("invoice_id", "")) or str(rec.get("entity_id", "")) or str(rec.get("ref_no", "")))
+        source_id = (str(rec.get("invoice_id", "")) or str(rec.get("entity_id", "")) or str(rec.get("ref_no", "")) or str(e.get("source_id", "")))
+        status = str(e.get("status", "Open")).strip()
         
         # Determine if Unallocated Cash (Medium Risk / Extra Cash) vs Exception (High Risk / Missing Cash)
         is_unallocated = (
             (exc_type.lower() == "razorpay" and "no matching invoice" in reason.lower()) or
-            (exc_type.lower() == "bank" and ("no matching invoice" in reason.lower() or "unallocated" in reason.lower()))
+            (exc_type.lower() == "bank" and ("no matching invoice" in reason.lower() or "unallocated" in reason.lower() or "settlement or invoice" in reason.lower()))
         )
-        severity = "Medium" if is_unallocated else "High"
+        
+        if status.lower() == "resolved":
+            status_type = "resolved"
+            severity = "Resolved"
+        elif is_unallocated:
+            status_type = "unallocated_cash"
+            severity = "Medium"
+        else:
+            status_type = "exception"
+            severity = "High"
         
         return {
             "id": f"EXC-{1001 + idx}",
@@ -313,7 +392,11 @@ async def reconcile(req: ReconcileRequest):
             "amount": float(rec.get("amount") or 0),
             "date": str(rec.get("date", "")) if rec.get("date") else "",
             "reason": reason,
+            "status": status,
+            "status_type": status_type,
             "severity": severity,
+            "resolution_note": str(e.get("resolution_note", "") or ""),
+            "resolved_at": str(e.get("resolved_at", "") or ""),
         }
 
     triplets   = [_ser_triplet(t, i) for i, t in enumerate(raw["triplets"])]
@@ -324,9 +407,10 @@ async def reconcile(req: ReconcileRequest):
     total_invoice_count = len(invoices)
     invoice_match_rate = round((matched_invoice_count / total_invoice_count) * 100, 2) if total_invoice_count > 0 else 0.0
 
-    # Segregate Unallocated Cash (Medium Risk / Extra Cash) vs Audit Exceptions (High Risk / Missing Cash)
-    unallocated_count = sum(1 for e in exceptions if e.get("severity") == "Medium")
-    audit_exception_count = sum(1 for e in exceptions if e.get("severity") == "High")
+    # Segregate Unallocated Cash, Exceptions, and Resolved
+    unallocated_count = sum(1 for e in exceptions if e.get("status_type") == "unallocated_cash")
+    audit_exception_count = sum(1 for e in exceptions if e.get("status_type") == "exception")
+    resolved_count = sum(1 for e in exceptions if e.get("status_type") == "resolved")
 
     # Record coverage rate: Matched Triplets / (Matched Triplets + Total Exceptions)
     total_triplets = len(triplets)
@@ -334,7 +418,7 @@ async def reconcile(req: ReconcileRequest):
     record_coverage_rate = round((total_triplets / (total_triplets + total_exceptions)) * 100, 2) if (total_triplets + total_exceptions) > 0 else 0.0
 
     total_invoice_amt = sum(float(inv.get("amount") or 0) for inv in invoices)
-    unallocated_rzp_amt = sum(float(e.get("amount") or 0) for e in exceptions if e.get("severity") == "Medium" and e.get("type", "").lower() == "razorpay")
+    unallocated_rzp_amt = sum(float(e.get("amount") or 0) for e in exceptions if e.get("status_type") == "unallocated_cash" and e.get("type", "").lower() == "razorpay")
     total_settled_amt = sum(float(t["amount"]) for t in triplets) + unallocated_rzp_amt
 
     return JSONResponse(status_code=200, content={
@@ -346,6 +430,7 @@ async def reconcile(req: ReconcileRequest):
         "matchedInvoicesCount": matched_invoice_count,
         "unallocatedCount": unallocated_count,
         "auditExceptionCount": audit_exception_count,
+        "resolvedCount": resolved_count,
         "matchedTripletsCount": total_triplets,
         "exceptionCount": total_exceptions,
         "totalCount": total_invoice_count,
@@ -438,6 +523,7 @@ async def set_agentic_mode_endpoint(request: AgenticModeRequest):
     return {"enabled": request.enabled}
 
 @app.get("/api/data_status", tags=["Status"])
+@app.get("/api/data-status", tags=["Status"])
 async def data_status():
     """Returns the latest file modification time of the standardized CSVs."""
     std_dir = PROJECT_ROOT / "standardisation" / "data" / "standardized"
@@ -456,15 +542,121 @@ async def data_status():
         }
     )
 
+@app.post("/api/update-row", tags=["Standardize"])
+@app.post("/api/update_row", tags=["Standardize"])
+async def update_row(req: UpdateRowRequest):
+    """Updates a single row in the specified standardized CSV file."""
+    std_dir = PROJECT_ROOT / "standardisation" / "data" / "standardized"
+    src_clean = req.source.lower().strip().replace("_standardized", "").replace(".csv", "")
+
+    file_map = {
+        "invoice": "invoice_standardized.csv",
+        "invoices": "invoice_standardized.csv",
+        "razorpay": "razorpay_standardized.csv",
+        "settlement": "razorpay_standardized.csv",
+        "settlements": "razorpay_standardized.csv",
+        "bank": "bank_standardized.csv",
+    }
+
+    filename = file_map.get(src_clean, f"{src_clean}_standardized.csv")
+    csv_path = std_dir / filename
+    if not csv_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Standardized file for '{req.source}' not found at {csv_path}"
+        )
+
+    try:
+        df = _parse_csv(csv_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read CSV: {e}")
+
+    target_idx = None
+
+    # 1. Try matching by unique ID column
+    if req.rowId is not None and str(req.rowId).strip() != "":
+        row_id_str = str(req.rowId).strip()
+        possible_id_cols = [
+            "invoice_id", "entity_id", "razorpay_id", "settlement_id",
+            "ref_no", "bank_ref_no", "utr", "id"
+        ]
+        for col in possible_id_cols:
+            if col in df.columns:
+                matches = df.index[df[col].astype(str).str.strip() == row_id_str].tolist()
+                if matches:
+                    target_idx = matches[0]
+                    break
+
+    # 2. Fallback to rowIndex
+    if target_idx is None and req.rowIndex is not None:
+        if 0 <= req.rowIndex < len(df):
+            target_idx = req.rowIndex
+
+    # 3. Fallback: if rowId is numeric and within index bounds
+    if target_idx is None and req.rowId is not None:
+        try:
+            num_idx = int(str(req.rowId))
+            if 0 <= num_idx < len(df):
+                target_idx = num_idx
+        except ValueError:
+            pass
+
+    if target_idx is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Could not locate row with rowId='{req.rowId}' or rowIndex='{req.rowIndex}' in {filename}"
+        )
+
+    # 4. Update the fields
+    for k, val in req.updatedData.items():
+        if k in df.columns:
+            # Parse numbers/floats if column is numeric
+            df.at[target_idx, k] = val
+
+    # 5. Save back to CSV
+    try:
+        df.to_csv(csv_path, index=False, encoding="utf-8")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save CSV: {e}")
+
+    preview = _df_to_preview(df)
+    preview["saved_path"] = str(csv_path)
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "message": f"Row {target_idx + 1} updated successfully in {filename}.",
+            "source": src_clean,
+            "preview": preview,
+        },
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+@app.get("/api/standardized-data", tags=["Standardize"])
 @app.get("/api/standardized_data", tags=["Standardize"])
-async def get_standardized_data():
-    """Returns previews of current standardized CSV files."""
+async def get_standardized_data(source: Optional[str] = None):
+    """Returns previews of current standardized CSV files, optionally filtered by source."""
     std_dir = PROJECT_ROOT / "standardisation" / "data" / "standardized"
     file_keys = {
         "invoice": "invoice_standardized.csv",
         "razorpay": "razorpay_standardized.csv",
         "bank": "bank_standardized.csv"
     }
+
+    if source:
+        src_clean = source.lower().strip().replace("_standardized", "").replace(".csv", "")
+        if src_clean in ["invoices"]:
+            src_clean = "invoice"
+        elif src_clean in ["settlement", "settlements"]:
+            src_clean = "razorpay"
+        if src_clean in file_keys:
+            file_keys = {src_clean: file_keys[src_clean]}
+
     standardized_files: Dict[str, Any] = {}
     for key, fname in file_keys.items():
         p = std_dir / fname
@@ -488,6 +680,191 @@ async def get_standardized_data():
             "Expires": "0"
         }
     )
+
+@app.post("/api/resolve-exceptions", tags=["Reconcile"])
+async def resolve_exceptions_endpoint(req: ResolveExceptionsRequest):
+    """
+    Resolve one or multiple reconciliation exceptions (Missing Cash or Unallocated Cash).
+    Supports 3 workflows:
+    - 'memo': Drafts dispute/unallocated memo for review (requires confirmation).
+    - 'direct': Direct mark with custom resolution note.
+    - 'manual': One-click mark with default audit note.
+    """
+    try:
+        try:
+            from server import resolve_exceptions_bulk, _get_parsed_exceptions_df
+        except ImportError:
+            from mcp_server.server import resolve_exceptions_bulk, _get_parsed_exceptions_df
+
+        result = resolve_exceptions_bulk(
+            exception_ids=req.exception_ids,
+            mode=req.mode,
+            resolution_note=req.resolution_note
+        )
+
+        if isinstance(result, dict) and "error" in result:
+            return JSONResponse(status_code=400, content={"status": "error", "error": result["error"]})
+
+        # Load updated parsed exceptions from disk to return serialized exception list
+        parsed_df = _get_parsed_exceptions_df()
+        serialized_exceptions = []
+        if not parsed_df.empty:
+            for idx, row in parsed_df.iterrows():
+                serialized_exceptions.append({
+                    "id": str(row.get("source_id") or f"EXC-{1001 + idx}"),
+                    "type": str(row.get("type", "")).capitalize(),
+                    "source_id": str(row.get("source_id", "")),
+                    "vendor": str(row.get("vendor", "")),
+                    "amount": float(row.get("amount", 0.0)),
+                    "date": str(row.get("date", "")),
+                    "reason": str(row.get("reason", "")),
+                    "status": str(row.get("status", "Open")),
+                    "status_type": str(row.get("status_type", "exception")),
+                    "severity": str(row.get("severity", "High")),
+                    "resolution_note": str(row.get("resolution_note", "")),
+                    "resolved_at": str(row.get("resolved_at", "")),
+                })
+
+        unallocated_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "unallocated_cash")
+        audit_exception_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "exception")
+        resolved_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "resolved")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "success": True,
+                "mode": req.mode,
+                "result": result,
+                "exceptions": serialized_exceptions,
+                "unallocatedCount": unallocated_count,
+                "auditExceptionCount": audit_exception_count,
+                "resolvedCount": resolved_count,
+                "totalCount": len(serialized_exceptions),
+                "memo_text": result.get("memo_text") if isinstance(result, dict) else None,
+                "requires_confirmation": result.get("requires_confirmation", False) if isinstance(result, dict) else False,
+            },
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+    except Exception as e:
+        logger.exception("Failed to resolve exceptions")
+        raise HTTPException(status_code=500, detail=f"Failed to resolve exceptions: {e}")
+
+@app.get("/api/reconciliation-results", tags=["Reconcile"])
+@app.get("/api/reconciliation_results", tags=["Reconcile"])
+async def get_reconciliation_results():
+    """Retrieve current reconciliation triplets and updated exceptions from disk."""
+    try:
+        try:
+            from server import _get_parsed_exceptions_df
+        except ImportError:
+            from mcp_server.server import _get_parsed_exceptions_df
+
+        results_file = PROJECT_ROOT / "reconciliation" / "reconciliation_results.csv"
+        triplets = []
+        if results_file.exists():
+            tdf = pd.read_csv(results_file)
+            if not tdf.empty:
+                for idx, row in tdf.iterrows():
+                    inv_val = str(row.get("invoice_ids", row.get("invoice_id", "")))
+                    inv_list = [x.strip() for x in inv_val.split(",") if x.strip()]
+                    match_type = str(row.get("match_type", "1:1 Exact"))
+                    if not match_type or match_type == "nan":
+                        match_type = "N:1 Group" if len(inv_list) > 1 else "1:1 Exact"
+                    triplets.append({
+                        "id": f"TRIPLET-{1001 + idx}",
+                        "invoice_id": inv_val,
+                        "invoice_ids": inv_list,
+                        "razorpay_id": str(row.get("razorpay_id", "")),
+                        "settlement_utr": str(row.get("settlement_utr", "")),
+                        "bank_ref_no": str(row.get("bank_ref", row.get("bank_ref_no", ""))),
+                        "amount": float(row.get("amount", 0.0) or 0.0),
+                        "vendor": str(row.get("vendor", "")),
+                        "date": str(row.get("date", "")),
+                        "status": "Matched",
+                        "match_type": match_type,
+                    })
+
+        parsed_df = _get_parsed_exceptions_df()
+        serialized_exceptions = []
+        if not parsed_df.empty:
+            for idx, row in parsed_df.iterrows():
+                serialized_exceptions.append({
+                    "id": str(row.get("source_id") or f"EXC-{1001 + idx}"),
+                    "type": str(row.get("type", "")).capitalize(),
+                    "source_id": str(row.get("source_id", "")),
+                    "vendor": str(row.get("vendor", "")),
+                    "amount": float(row.get("amount", 0.0) or 0.0),
+                    "date": str(row.get("date", "")),
+                    "reason": str(row.get("reason", "")),
+                    "status": str(row.get("status", "Open")),
+                    "status_type": str(row.get("status_type", "exception")),
+                    "severity": str(row.get("severity", "High")),
+                    "resolution_note": str(row.get("resolution_note", "")),
+                    "resolved_at": str(row.get("resolved_at", "")),
+                })
+
+        unallocated_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "unallocated_cash")
+        audit_exception_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "exception")
+        resolved_count = sum(1 for e in serialized_exceptions if e.get("status_type") == "resolved")
+        total_triplets = len(triplets)
+        total_exceptions = len(serialized_exceptions)
+
+        total_resolved_amount = sum(e["amount"] for e in serialized_exceptions if e.get("status_type") == "resolved")
+        record_coverage_rate = round((total_triplets / (total_triplets + total_exceptions)) * 100, 2) if (total_triplets + total_exceptions) > 0 else 100.0
+
+        # Calculate exact financial metrics matching the reconciliation engine
+        inv_file = PROJECT_ROOT / "standardisation" / "data" / "standardized" / "invoice_standardized.csv"
+        total_invoice_amt = 0.0
+        if inv_file.exists():
+            try:
+                inv_df = pd.read_csv(inv_file)
+                amt_col = "amount_converted" if "amount_converted" in inv_df.columns else "amount"
+                total_invoice_amt = float(pd.to_numeric(inv_df[amt_col], errors="coerce").fillna(0).sum())
+            except Exception:
+                total_invoice_amt = 0.0
+
+        if total_invoice_amt == 0.0:
+            matched_sum = sum(float(t.get("amount", 0.0) or 0.0) for t in triplets)
+            invoice_exc_sum = sum(float(e.get("amount", 0.0) or 0.0) for e in serialized_exceptions if str(e.get("type", "")).lower() == "invoice")
+            total_invoice_amt = matched_sum + invoice_exc_sum
+
+        unallocated_rzp_amt = sum(float(e.get("amount", 0.0) or 0.0) for e in serialized_exceptions if e.get("status_type") == "unallocated_cash" and str(e.get("type", "")).lower() == "razorpay")
+        total_settled_amt = sum(float(t.get("amount", 0.0) or 0.0) for t in triplets) + unallocated_rzp_amt
+        discrepancy_amt = abs(total_invoice_amt - total_settled_amt)
+
+        return JSONResponse(
+            content={
+                "status": "success",
+                "triplets": triplets,
+                "exceptions": serialized_exceptions,
+                "matchedCount": total_triplets,
+                "totalCount": total_triplets + total_exceptions,
+                "matchRate": record_coverage_rate,
+                "invoiceMatchRate": record_coverage_rate,
+                "recordCoverageRate": record_coverage_rate,
+                "unallocatedCount": unallocated_count,
+                "auditExceptionCount": audit_exception_count,
+                "resolvedCount": resolved_count,
+                "totalResolvedAmount": round(total_resolved_amount, 2),
+                "totalInvoiceAmount": round(total_invoice_amt, 2),
+                "totalSettledAmount": round(total_settled_amt, 2),
+                "totalBankCredit": round(total_settled_amt, 2),
+                "discrepancyAmount": round(discrepancy_amt, 2),
+            },
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error fetching reconciliation results: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"status": "error", "error": str(e)})
 
 if __name__ == "__main__":
     import uvicorn

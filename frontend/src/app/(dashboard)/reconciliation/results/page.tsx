@@ -15,9 +15,12 @@ import {
   CheckCircle2Icon, AlertTriangleIcon, TrendingUpIcon,
   RotateCcwIcon, SearchIcon, DownloadIcon, ChevronDownIcon, ChevronRightIcon,
   LayersIcon, ShieldCheckIcon, HelpCircleIcon, PieChartIcon,
-  BanknoteIcon, DollarSignIcon,
+  BanknoteIcon, DollarSignIcon, CheckIcon, XIcon, MessageSquareIcon,
+  SparklesIcon, CheckSquareIcon, SquareIcon, CheckSquare2Icon,
 } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { ResolveDialog } from "@/components/chatbot/ResolveDialog"
 
 // ── Financial Metric Card with Clean Light Background and Blue Accent Text ───
 function SummaryCard({
@@ -38,7 +41,15 @@ function SummaryCard({
         <div className="flex items-start justify-between gap-2.5">
           <div className="space-y-0.5">
             <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">{title}</p>
-            <p className="text-xl font-bold font-mono tracking-tight text-[#0D94FB]">{value}</p>
+            <p className={cn(
+              "text-xl font-bold font-mono tracking-tight",
+              variant === "success" ? "text-emerald-600 dark:text-emerald-400" :
+              variant === "warning" ? "text-amber-600 dark:text-amber-400" :
+              variant === "destructive" ? "text-rose-600 dark:text-rose-400" :
+              "text-[#0D94FB]"
+            )}>
+              {value}
+            </p>
             {sub && <p className="text-[11px] text-text-muted leading-tight">{sub}</p>}
           </div>
           <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", iconColors[variant])}>
@@ -152,13 +163,13 @@ function groupTriplets(triplets: MatchedTriplet[]): DisplayRow[] {
         id: `GROUP-N1-${settKey}`,
         groupType: "N:1",
         key: settKey,
-        title: `Settlement: ${first.razorpay_id || settKey}`,
-        subtitle: `${groupTrips.length} Invoices batched in 1 Deposit`,
+        title: `Settlement: ${settKey}`,
+        subtitle: `${groupTrips.length} Invoices grouped into 1 Settlement`,
         vendor: first.vendor || "—",
         totalAmount: totalAmt,
         date: first.date || "—",
         items: groupTrips.map((t, idx) => ({
-          id: t.id || `batch-${idx}`,
+          id: t.id || `group-item-${idx}`,
           invoice_id: t.invoice_id,
           razorpay_id: t.razorpay_id,
           bank_ref_no: t.bank_ref_no,
@@ -170,35 +181,31 @@ function groupTriplets(triplets: MatchedTriplet[]): DisplayRow[] {
       })
       groupTrips.forEach((t) => processedTripletIds.add(t.id))
     } else if (isMultiInvoiceSingleTrip) {
-      const t = groupTrips[0]
-      const invList =
-        t.invoice_ids && t.invoice_ids.length > 0
-          ? t.invoice_ids
-          : t.invoice_id.split(",").map((s) => s.trim())
-      const subAmount = t.amount / (invList.length || 1)
-
+      const trip = groupTrips[0]
+      const invList = trip.invoice_ids || trip.invoice_id.split(",").map((s) => s.trim())
+      const partialAmt = trip.amount / (invList.length || 1)
       result.push({
         kind: "group",
-        id: `GROUP-N1-MULTI-${t.id}`,
+        id: `GROUP-N1-MULTI-${trip.id}`,
         groupType: "N:1",
-        key: t.razorpay_id || t.id,
-        title: `Settlement: ${t.razorpay_id || t.id}`,
-        subtitle: `${invList.length} Invoices covered in 1 Deposit`,
-        vendor: t.vendor || "—",
-        totalAmount: t.amount,
-        date: t.date || "—",
-        items: invList.map((inv, idx) => ({
-          id: `${t.id}-inv-${idx}`,
-          invoice_id: inv,
-          razorpay_id: t.razorpay_id,
-          bank_ref_no: t.bank_ref_no,
-          vendor: t.vendor || "—",
-          amount: subAmount,
-          date: t.date || "—",
+        key: trip.id,
+        title: `Settlement: ${trip.razorpay_id || trip.id}`,
+        subtitle: `${invList.length} Invoices batched in Single Settlement`,
+        vendor: trip.vendor || "—",
+        totalAmount: trip.amount,
+        date: trip.date || "—",
+        items: invList.map((invId, idx) => ({
+          id: `${trip.id}-inv-${idx}`,
+          invoice_id: invId,
+          razorpay_id: trip.razorpay_id,
+          bank_ref_no: trip.bank_ref_no,
+          vendor: trip.vendor || "—",
+          amount: partialAmt,
+          date: trip.date || "—",
           match_type: "N:1 Group",
         })),
       })
-      processedTripletIds.add(t.id)
+      processedTripletIds.add(trip.id)
     }
   }
 
@@ -220,28 +227,55 @@ function groupTriplets(triplets: MatchedTriplet[]): DisplayRow[] {
 export default function ResultsPage() {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const { results, resetAll } = useReconciliationStore()
+  const { results, resetAll, resolveExceptions, agenticMode, loadData } = useReconciliationStore()
   const [activeTab, setActiveTab] = useState<string>("matched")
   const [search, setSearch] = useState("")
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
+  // Selection & Resolution State
+  const [selectedExceptionIds, setSelectedExceptionIds] = useState<Set<string>>(new Set())
+  const [isResolving, setIsResolving] = useState(false)
+  const [resolveModalOpen, setResolveModalOpen] = useState(false)
+  const [targetResolveIds, setTargetResolveIds] = useState<string[]>([])
+  const [customNote, setCustomNote] = useState("")
+  const [resolveMode, setResolveMode] = useState<"direct" | "manual" | "memo">("manual")
+
+  // ResolveDialog state
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false)
+  const [resolveDialogException, setResolveDialogException] = useState<ReconciliationException | null>(null)
+  const [resolveDialogExceptions, setResolveDialogExceptions] = useState<ReconciliationException[]>([])
+
   useEffect(() => {
     setMounted(true)
-  }, [])
+    loadData()
+    const handleDataRefresh = () => {
+      loadData()
+    }
+    window.addEventListener("pennywise:data_refresh", handleDataRefresh)
+    return () => {
+      window.removeEventListener("pennywise:data_refresh", handleDataRefresh)
+    }
+  }, [loadData])
 
   // Process grouped rows
   const groupedRows = useMemo(() => groupTriplets(results?.triplets || []), [results?.triplets])
 
-  // Split exceptions into Unallocated Cash (Medium Risk / Extra Cash) vs True Audit Exceptions (High Risk / Missing Cash)
+  // Split exceptions into Resolved, Unallocated Cash, and Audit Exceptions
+  const resolvedList = useMemo(() => {
+    return (results?.exceptions || []).filter((e) => {
+      return e.status === "Resolved" || e.status_type === "resolved"
+    })
+  }, [results?.exceptions])
+
   const unallocatedCashList = useMemo(() => {
     return (results?.exceptions || []).filter((e) => {
+      if (e.status === "Resolved" || e.status_type === "resolved") return false
+      if (e.status_type === "unallocated_cash") return true
       const type = e.type.toLowerCase()
       const reason = (e.reason || "").toLowerCase()
-      // Razorpay with "No matching invoice" (Extra cash sitting at gateway)
       if (type === "razorpay" && (reason.includes("no matching invoice") || reason.includes("without invoice") || reason.includes("unallocated"))) {
         return true
       }
-      // Bank with "No matching invoice" or "No matching Razorpay settlement or invoice" (Extra cash sitting in bank)
       if (type === "bank" && (reason.includes("no matching invoice") || reason.includes("unallocated") || reason.includes("settlement or invoice"))) {
         return true
       }
@@ -251,22 +285,13 @@ export default function ResultsPage() {
 
   const auditExceptionsList = useMemo(() => {
     return (results?.exceptions || []).filter((e) => {
+      if (e.status === "Resolved" || e.status_type === "resolved") return false
+      if (e.status_type === "exception") return true
       const type = e.type.toLowerCase()
       const reason = (e.reason || "").toLowerCase()
-      // Invoices with "No matching Razorpay settlement" (Billed, but gateway didn't capture)
-      if (type === "invoice" && (reason.includes("no matching razorpay") || reason.includes("settlement") || reason.includes("unmatched"))) {
-        return true
-      }
-      // Razorpay with "No matching Bank deposit" (Gateway settled, but bank didn't receive)
-      if (type === "razorpay" && (reason.includes("no matching bank") || reason.includes("bank deposit"))) {
-        return true
-      }
-      // Bank with "No matching Razorpay settlement" (Bank deposit exists, but no gateway matching it)
-      if (type === "bank" && reason.includes("no matching razorpay settlement") && !reason.includes("invoice")) {
-        return true
-      }
-      // Default fallback
       if (type === "invoice") return true
+      if (type === "razorpay" && (reason.includes("no matching bank") || reason.includes("bank deposit"))) return true
+      if (type === "bank" && reason.includes("no matching razorpay settlement") && !reason.includes("invoice")) return true
       if (type === "razorpay" && !reason.includes("no matching invoice")) return true
       if (type === "bank" && !reason.includes("no matching invoice")) return true
       return false
@@ -328,6 +353,20 @@ export default function ResultsPage() {
     )
   }, [auditExceptionsList, search])
 
+  // Filtered rows for Tab 4 (Resolved)
+  const filteredResolvedList = useMemo(() => {
+    if (!search.trim()) return resolvedList
+    const q = search.toLowerCase()
+    return resolvedList.filter(
+      (e) =>
+        e.source_id.toLowerCase().includes(q) ||
+        (e.vendor ?? "").toLowerCase().includes(q) ||
+        (e.reason ?? "").toLowerCase().includes(q) ||
+        (e.resolution_note ?? "").toLowerCase().includes(q) ||
+        e.type.toLowerCase().includes(q)
+    )
+  }, [resolvedList, search])
+
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev)
@@ -379,6 +418,182 @@ export default function ResultsPage() {
       ? `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : "—"
 
+  // Checkbox handlers
+  const handleToggleSelectAll = (list: ReconciliationException[]) => {
+    const listIds = list.map((e) => e.source_id || e.id)
+    const allSelected = listIds.length > 0 && listIds.every((id) => selectedExceptionIds.has(id))
+    setSelectedExceptionIds((prev) => {
+      const next = new Set(prev)
+      if (allSelected) {
+        listIds.forEach((id) => next.delete(id))
+      } else {
+        listIds.forEach((id) => next.add(id))
+      }
+      return next
+    })
+  }
+
+  const handleToggleRowSelect = (id: string) => {
+    setSelectedExceptionIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Direct manual resolve (One-Click)
+  const handleDirectManualResolve = async (ids: string[], note?: string) => {
+    setIsResolving(true)
+    const result = await resolveExceptions(ids, "manual", note || "Resolved manually by user")
+    setIsResolving(false)
+    if (result.success) {
+      toast({
+        title: "Record(s) Resolved",
+        description: `Successfully resolved ${ids.length} record(s) and moved to the Resolved tab.`,
+        variant: "success",
+      })
+      setSelectedExceptionIds((prev) => {
+        const next = new Set(prev)
+        ids.forEach((id) => next.delete(id))
+        return next
+      })
+      setResolveModalOpen(false)
+      setCustomNote("")
+    } else {
+      toast({
+        title: "Resolution Failed",
+        description: result.error || "Failed to resolve records.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Open PennyWise Chat for drafting dispute/unallocated memos
+  const handleOpenMemoChat = (ids: string[]) => {
+    const prompt = `@resolve_exceptions ids: [${ids.map((id) => `"${id}"`).join(", ")}] mode: memo`
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("pennywise:open_and_send", {
+          detail: { prompt },
+        })
+      )
+    }
+    setResolveModalOpen(false)
+    toast({
+      title: "PennyWise AI Dispatched",
+      description: `Drafting resolution memo for ${ids.length} record(s) in chat window.`,
+      variant: "default",
+    })
+  }
+
+  // Open ResolveDialog for a single exception
+  const handleOpenPennyWiseResolve = (exc: ReconciliationException) => {
+    setResolveDialogException(exc)
+    setResolveDialogExceptions([])
+    setResolveDialogOpen(true)
+  }
+
+  // Open ResolveDialog for batch selected exceptions
+  const handleOpenBatchPennyWiseResolve = (ids: string[]) => {
+    const excList = (results?.exceptions || []).filter((e) => ids.includes(e.source_id || e.id))
+    setResolveDialogException(null)
+    setResolveDialogExceptions(excList)
+    setResolveDialogOpen(true)
+  }
+
+  // Called when user clicks Continue in the ResolveDialog (single or batch)
+  const handleResolveDialogConfirm = (action: "memo" | "email", recipient?: string) => {
+    const isBatch = resolveDialogExceptions.length > 0
+    if (!resolveDialogException && !isBatch) return
+
+    if (isBatch) {
+      const ids = resolveDialogExceptions.map((e) => e.source_id || e.id)
+      const totalAmt = resolveDialogExceptions.reduce((sum, e) => sum + (e.amount || 0), 0)
+      const count = ids.length
+
+      let prompt: string
+      if (action === "email" && recipient) {
+        prompt = `Generate resolution email draft(s) for ${count} exceptions (${ids.join(", ")}) totalling ${fmt(totalAmt)} to be sent to ${recipient}. Use the generate_email_from_exception tool with exception_ids=${JSON.stringify(ids)} and recipient_email="${recipient}". Group by vendor into separate email drafts for each counterparty and display the draft cards so I can review and send each.`
+      } else {
+        prompt = `Please help me resolve these ${count} exception records (${ids.join(", ")}) totalling ${fmt(totalAmt)} and draft formal dispute/allocation resolution memos for each.`
+      }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("pennywise:open_and_send", {
+            detail: {
+              prompt,
+              action,
+              recipient: recipient || null,
+              exceptionIds: ids,
+            },
+          })
+        )
+      }
+
+      toast({
+        title: action === "email" ? "Opening PennyWise – Batch Email Flow" : "Opening PennyWise – Batch Memo Flow",
+        description: action === "email"
+          ? `Drafting consolidated email for ${count} exception(s) to ${recipient}…`
+          : `Drafting resolution memos for ${count} record(s) in chat window.`,
+        variant: "default",
+      })
+      return
+    }
+
+    // Single exception flow
+    const exc = resolveDialogException!
+    const excId = exc.source_id || exc.id
+    const excType = exc.type || "Exception"
+    const vendorStr = exc.vendor ? ` for ${exc.vendor}` : ""
+    const amtStr = exc.amount ? ` of ${fmt(exc.amount)}` : ""
+    const reasonStr = exc.reason ? ` (${exc.reason})` : ""
+
+    let prompt: string
+    if (action === "email" && recipient) {
+      prompt = `Generate an email for exception ${excId}${vendorStr}${amtStr}${reasonStr} to be sent to ${recipient}. Use the generate_email_from_exception tool with exception_ids=["${excId}"] and recipient_email="${recipient}". Display the email draft so I can review and send it.`
+    } else {
+      prompt = `Please help me resolve this ${excType} record ${excId}${vendorStr}${amtStr}${reasonStr} and draft a formal resolution memo.`
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("pennywise:open_and_send", {
+          detail: {
+            prompt,
+            action,
+            exceptionId: excId,
+            exceptionIds: [excId],
+            recipient: recipient || null,
+            exceptionData: {
+              id: excId,
+              type: excType,
+              vendor: exc.vendor,
+              amount: exc.amount,
+              reason: exc.reason,
+            },
+          },
+        })
+      )
+    }
+
+    toast({
+      title: action === "email" ? "Opening PennyWise – Email Flow" : "Opening PennyWise – Memo Flow",
+      description: action === "email"
+        ? `Drafting email for ${excId} to ${recipient}…`
+        : `Drafting resolution memo for ${excId} in chat window.`,
+      variant: "default",
+    })
+  }
+
+  const handleOpenCustomNoteModal = (ids: string[]) => {
+    setTargetResolveIds(ids)
+    setCustomNote("")
+    setResolveMode("direct")
+    setResolveModalOpen(true)
+  }
+
   // If no results, show placeholder
   if (!mounted || !results) {
     return (
@@ -401,8 +616,6 @@ export default function ResultsPage() {
   const matchedCount = results.matchedCount || 0
   const totalCount = results.totalCount || matchedCount || 1
   const matchRate = results.invoiceMatchRate ?? results.matchRate ?? 100
-  const unmatchedCount = Math.max(0, totalCount - matchedCount)
-  const exceptionRate = +(100 - matchRate).toFixed(1)
 
   // Record Coverage Rate (Matched Triplets / (Matched Triplets + Total Exceptions))
   const totalTriplets = results.triplets?.length || matchedCount
@@ -413,16 +626,20 @@ export default function ResultsPage() {
       ? +((totalTriplets / (totalTriplets + totalExceptions)) * 100).toFixed(1)
       : 100)
 
-  // 3-Way Reconciliation Universe: Matched Invoices + Unallocated Cash + Missing Cash Exceptions
+  // 4-Way Reconciliation Universe: Matched Invoices + Unallocated Cash + Exceptions + Resolved
   const unallocatedCount = unallocatedCashList.length
   const auditExceptionsCount = auditExceptionsList.length
-  const totalAuditUniverse = matchedCount + unallocatedCount + auditExceptionsCount || 1
+  const resolvedCount = resolvedList.length
+  const totalResolvedAmount = resolvedList.reduce((sum, e) => sum + (e.amount || 0), 0)
+
+  const totalAuditUniverse = matchedCount + unallocatedCount + auditExceptionsCount + resolvedCount || 1
 
   const matchedPercent = +((matchedCount / totalAuditUniverse) * 100).toFixed(1)
   const unallocatedPercent = +((unallocatedCount / totalAuditUniverse) * 100).toFixed(1)
   const exceptionsPercent = +((auditExceptionsCount / totalAuditUniverse) * 100).toFixed(1)
+  const resolvedPercent = +((resolvedCount / totalAuditUniverse) * 100).toFixed(1)
 
-  // 3-slice Pie Chart Data: Blue (Matched), Dark Yellow/Amber (Unallocated Cash), Red (Missing Cash Exceptions)
+  // 4-slice Pie Chart Data: Blue (Matched), Amber (Unallocated Cash), Red (Missing Cash Exceptions), Green (Resolved)
   const pieData = [
     {
       name: "Matched Invoices",
@@ -433,7 +650,7 @@ export default function ResultsPage() {
     ...(unallocatedCount > 0
       ? [
           {
-            name: "Unallocated Cash (Extra)",
+            name: "Unallocated Cash",
             value: unallocatedCount,
             percent: unallocatedPercent,
             color: "#F59E0B", // Dark Yellow / Amber
@@ -450,13 +667,23 @@ export default function ResultsPage() {
           },
         ]
       : []),
+    ...(resolvedCount > 0
+      ? [
+          {
+            name: "Resolved",
+            value: resolvedCount,
+            percent: resolvedPercent,
+            color: "#10B981", // Emerald Green
+          },
+        ]
+      : []),
   ]
 
   const n1Count = groupedRows.filter((r) => r.kind === "group" && r.groupType === "N:1").length
   const oneNCount = groupedRows.filter((r) => r.kind === "group" && r.groupType === "1:N").length
 
   return (
-    <div className="p-4 sm:p-5 max-w-7xl mx-auto space-y-4">
+    <div className="p-4 sm:p-5 max-w-7xl mx-auto space-y-4 relative pb-20">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -474,8 +701,8 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* 1. Top Section: Three Summary Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* 1. Top Section: 4 Summary KPI Cards */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
           title="Total Invoiced Amount"
           value={fmt(results.totalInvoiceAmount)}
@@ -496,6 +723,13 @@ export default function ResultsPage() {
           icon={<AlertTriangleIcon className="size-4" />}
           variant={results.discrepancyAmount && results.discrepancyAmount > 0 ? "warning" : "success"}
         />
+        <SummaryCard
+          title="Resolved Records"
+          value={`${resolvedCount} resolved`}
+          sub={totalResolvedAmount > 0 ? `${fmt(totalResolvedAmount)} accounted` : "Audited & closed items"}
+          icon={<ShieldCheckIcon className="size-4" />}
+          variant="success"
+        />
       </div>
 
       {/* 2. Below: Centered Pie Chart Card */}
@@ -510,13 +744,13 @@ export default function ResultsPage() {
             </CardTitle>
           </div>
           <CardDescription className="text-[11px] text-text-muted mt-0.5">
-            Breakdown of Matched Triplets (Blue), Unallocated Cash (Amber), and Missing Cash Exceptions (Red).
+            Distribution across Matched Triplets (Blue), Unallocated Cash (Amber), Exceptions (Red), and Resolved (Green).
           </CardDescription>
         </CardHeader>
 
         <CardContent className="pt-4 pb-3.5 px-4 bg-card text-foreground">
           <div className="flex flex-col items-center justify-center">
-            {/* Donut Chart with Center Percentage (Enlarged with ample inner clearance) */}
+            {/* Donut Chart with Center Percentage */}
             <div className="relative flex h-56 w-full max-w-sm items-center justify-center min-w-0 min-h-0">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <PieChart>
@@ -558,7 +792,7 @@ export default function ResultsPage() {
                 </PieChart>
               </ResponsiveContainer>
 
-              {/* Center Match Rate Label with comfortable clearance */}
+              {/* Center Match Rate Label */}
               <div className="pointer-events-none absolute flex flex-col items-center justify-center text-center px-2">
                 <span className="font-mono text-2xl font-bold tracking-tight text-[#0D94FB] leading-none">
                   {matchRate}%
@@ -569,8 +803,8 @@ export default function ResultsPage() {
               </div>
             </div>
 
-            {/* Centered Caption / Legend & Dual Metrics */}
-            <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5 text-xs border-t border-border/40 pt-2.5 w-full max-w-xl">
+            {/* Centered Caption / Legend & Metrics */}
+            <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5 text-xs border-t border-border/40 pt-2.5 w-full max-w-2xl">
               {/* 1. Matched Invoices (Blue) */}
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0D94FB]/10 border border-[#0D94FB]/25 text-[11px]">
                 <div className="size-2 rounded-full bg-[#0D94FB] shrink-0" />
@@ -579,11 +813,11 @@ export default function ResultsPage() {
                 <span className="text-text-muted font-medium font-mono">({matchedPercent}%)</span>
               </div>
 
-              {/* 2. Unallocated Cash (Amber / Dark Yellow) */}
+              {/* 2. Unallocated Cash (Amber) */}
               {unallocatedCount > 0 && (
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 text-[11px]">
                   <div className="size-2 rounded-full bg-amber-500 shrink-0" />
-                  <span className="font-semibold text-amber-700 dark:text-amber-400">Unallocated Cash:</span>
+                  <span className="font-semibold text-amber-700 dark:text-amber-400">Unallocated:</span>
                   <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{unallocatedCount}</span>
                   <span className="text-text-muted font-medium font-mono">({unallocatedPercent}%)</span>
                 </div>
@@ -598,10 +832,18 @@ export default function ResultsPage() {
                   <span className="text-text-muted font-medium font-mono">({exceptionsPercent}%)</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0D94FB]/10 border border-[#0D94FB]/25 text-[11px]">
-                  <CheckCircle2Icon className="size-3 text-[#0D94FB] shrink-0" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-2 border border-border/60 text-[11px]">
                   <span className="font-semibold text-text-primary">Zero Exceptions</span>
-                  <span className="font-mono font-bold text-[#0D94FB]">(0%)</span>
+                </div>
+              )}
+
+              {/* 4. Resolved (Green) */}
+              {resolvedCount > 0 && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-[11px]">
+                  <div className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">Resolved:</span>
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{resolvedCount}</span>
+                  <span className="text-text-muted font-medium font-mono">({resolvedPercent}%)</span>
                 </div>
               )}
 
@@ -616,56 +858,71 @@ export default function ResultsPage() {
         </CardContent>
       </Card>
 
-      {/* 3. Below: 3 Distinct Tabs (Matched Triplets | Unallocated Cash | Exceptions) */}
+      {/* 3. Below: 4 Distinct Tabs (Matched Triplets | Unallocated Cash | Exceptions | Resolved) */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-border/60 pb-2">
-          <TabsList className="bg-surface-2 p-0.5 rounded-lg flex flex-wrap h-auto">
+          <TabsList className="bg-surface-2 p-1 rounded-xl flex flex-wrap sm:flex-nowrap gap-1 h-auto group-data-horizontal/tabs:h-auto w-full sm:w-auto">
             {/* Tab 1: Matched Triplets */}
             <TabsTrigger
               value="matched"
-              className="text-xs font-semibold px-3 py-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:text-[#0D94FB] data-[state=active]:shadow-xs transition-all"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-background data-active:bg-background data-[state=active]:text-[#0D94FB] data-active:text-[#0D94FB] data-[state=active]:shadow-xs data-active:shadow-xs transition-all h-8 inline-flex items-center gap-1.5 shrink-0"
             >
-              <CheckCircle2Icon className="mr-1.5 size-3.5 text-[#0D94FB]" />
+              <CheckCircle2Icon className="size-3.5 text-[#0D94FB]" />
               Matched Triplets
               <Badge
                 variant="secondary"
-                className="ml-1.5 text-[10px] px-1.5 py-0 font-mono font-bold bg-[#0D94FB]/10 text-[#0D94FB] border border-[#0D94FB]/20"
+                className="ml-1 text-[10px] px-1.5 py-0 font-mono font-bold bg-[#0D94FB]/10 text-[#0D94FB] border border-[#0D94FB]/20"
               >
                 {results.triplets?.length || 0}
               </Badge>
             </TabsTrigger>
 
-            {/* Tab 2: Unallocated Cash (Razorpay cash entries with no invoice) */}
+            {/* Tab 2: Unallocated Cash */}
             <TabsTrigger
               value="unallocated"
-              className="text-xs font-semibold px-3 py-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400 data-[state=active]:shadow-xs transition-all"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-background data-active:bg-background data-[state=active]:text-amber-600 dark:data-[state=active]:text-amber-400 data-active:text-amber-600 dark:data-active:text-amber-400 data-[state=active]:shadow-xs data-active:shadow-xs transition-all h-8 inline-flex items-center gap-1.5 shrink-0"
             >
-              <BanknoteIcon className="mr-1.5 size-3.5 text-amber-500" />
+              <BanknoteIcon className="size-3.5 text-amber-500" />
               Unallocated Cash
               <Badge
                 variant="secondary"
-                className="ml-1.5 text-[10px] px-1.5 py-0 font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                className="ml-1 text-[10px] px-1.5 py-0 font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
               >
                 {unallocatedCashList.length}
               </Badge>
             </TabsTrigger>
 
-            {/* Tab 3: Exceptions (Unmatched Invoices & Bank records) */}
+            {/* Tab 3: Exceptions */}
             <TabsTrigger
               value="exceptions"
-              className="text-xs font-semibold px-3 py-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:shadow-xs transition-all"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-background data-active:bg-background data-[state=active]:text-destructive data-active:text-destructive data-[state=active]:shadow-xs data-active:shadow-xs transition-all h-8 inline-flex items-center gap-1.5 shrink-0"
             >
-              <AlertTriangleIcon className="mr-1.5 size-3.5 text-destructive" />
+              <AlertTriangleIcon className="size-3.5 text-destructive" />
               Exceptions
               <Badge
                 variant="secondary"
-                className={`ml-1.5 text-[10px] px-1.5 py-0 font-mono font-bold ${
+                className={`ml-1 text-[10px] px-1.5 py-0 font-mono font-bold ${
                   auditExceptionsList.length > 0
                     ? "bg-destructive/10 text-destructive border border-destructive/20"
                     : "bg-muted text-text-muted border border-border"
                 }`}
               >
                 {auditExceptionsList.length}
+              </Badge>
+            </TabsTrigger>
+
+            {/* Tab 4: Resolved (NEW) */}
+            <TabsTrigger
+              value="resolved"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg data-[state=active]:bg-background data-active:bg-background data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-400 data-active:text-emerald-600 dark:data-active:text-emerald-400 data-[state=active]:shadow-xs data-active:shadow-xs transition-all h-8 inline-flex items-center gap-1.5 shrink-0"
+            >
+              <ShieldCheckIcon className="size-3.5 text-emerald-500" />
+              Resolved
+              <Badge
+                variant="secondary"
+                className="ml-1 text-[10px] px-1.5 py-0 font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+              >
+                {resolvedList.length}
               </Badge>
             </TabsTrigger>
           </TabsList>
@@ -679,6 +936,8 @@ export default function ResultsPage() {
                     ? "Search ID, UTR, Vendor..."
                     : activeTab === "unallocated"
                     ? "Search Settlements..."
+                    : activeTab === "resolved"
+                    ? "Search Resolved Items..."
                     : "Search Exceptions..."
                 }
                 value={search}
@@ -702,6 +961,14 @@ export default function ResultsPage() {
                 className="h-7.5 text-xs font-semibold bg-amber-600 hover:bg-amber-600/90 text-white shadow-2xs px-3"
               >
                 <DownloadIcon className="mr-1.5 size-3.5" /> Export Unallocated CSV
+              </Button>
+            ) : activeTab === "resolved" ? (
+              <Button
+                size="sm"
+                onClick={() => exportCSV(resolvedList, "resolved_exceptions.csv")}
+                className="h-7.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-600/90 text-white shadow-2xs px-3"
+              >
+                <DownloadIcon className="mr-1.5 size-3.5" /> Export Resolved CSV
               </Button>
             ) : (
               <Button
@@ -924,19 +1191,42 @@ export default function ResultsPage() {
           </Card>
         </TabsContent>
 
-        {/* ── TAB 2: Unallocated Cash (Extra Cash: Gateway / Bank records without matching invoices) ── */}
+        {/* ── TAB 2: Unallocated Cash ────────────────────────────────────────── */}
         <TabsContent value="unallocated" className="space-y-3">
           <Card className="border border-border/80 bg-card shadow-xs overflow-hidden">
-            <CardHeader className="bg-surface-1/60 border-b border-border/50 py-2.5 px-4">
-              <div className="flex items-center gap-1.5">
-                <BanknoteIcon className="size-4 text-amber-500" />
-                <CardTitle className="text-xs font-bold text-text-primary">
-                  Unallocated Cash (Extra Cash — Medium Risk)
-                </CardTitle>
+            <CardHeader className="bg-surface-1/60 border-b border-border/50 py-2.5 px-4 flex flex-row items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <BanknoteIcon className="size-4 text-amber-500" />
+                  <CardTitle className="text-xs font-bold text-text-primary">
+                    Unallocated Cash (Extra Cash — Medium Risk)
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-[11px] text-text-muted mt-0.5">
+                  Money physically present in payment gateway or bank accounts without a matching billing invoice.
+                </CardDescription>
               </div>
-              <CardDescription className="text-[11px] text-text-muted mt-0.5">
-                Money physically present in payment gateway or bank accounts that has no corresponding billing invoice in this cycle.
-              </CardDescription>
+
+              {filteredUnallocatedCash.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleSelectAll(filteredUnallocatedCash)}
+                    className="h-6.5 text-[11px] font-medium px-2"
+                  >
+                    {filteredUnallocatedCash.every((e) => selectedExceptionIds.has(e.source_id || e.id)) ? (
+                      <>
+                        <CheckSquare2Icon className="mr-1 size-3 text-[#0D94FB]" /> Deselect All
+                      </>
+                    ) : (
+                      <>
+                        <SquareIcon className="mr-1 size-3 text-text-muted" /> Select All ({filteredUnallocatedCash.length})
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </CardHeader>
 
             <CardContent className="pt-0 px-0 bg-card">
@@ -944,6 +1234,14 @@ export default function ResultsPage() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-surface-1/95 backdrop-blur z-10 shadow-xs">
                     <TableRow className="border-b border-border/60">
+                      <TableHead className="w-8 text-center py-2 px-2">
+                        <input
+                          type="checkbox"
+                          checked={filteredUnallocatedCash.length > 0 && filteredUnallocatedCash.every((e) => selectedExceptionIds.has(e.source_id || e.id))}
+                          onChange={() => handleToggleSelectAll(filteredUnallocatedCash)}
+                          className="rounded border-border size-3.5 accent-[#0D94FB] cursor-pointer align-middle"
+                        />
+                      </TableHead>
                       <TableHead className="w-9 text-center text-[11px] font-semibold text-text-secondary py-2 px-2.5">#</TableHead>
                       <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Stream Type</TableHead>
                       <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Source ID / UTR</TableHead>
@@ -952,59 +1250,109 @@ export default function ResultsPage() {
                       <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Date</TableHead>
                       <TableHead className="text-xs font-semibold text-text-secondary py-2 px-3">Classification &amp; Root Cause</TableHead>
                       <TableHead className="text-center text-[11px] font-semibold text-text-secondary py-2 px-3">Risk Level</TableHead>
+                      <TableHead className="w-56 text-right text-[11px] font-semibold text-text-secondary py-2 px-3 sticky right-0 bg-surface-1/95 z-20 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUnallocatedCash.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-28 text-center text-xs text-text-muted">
+                        <TableCell colSpan={10} className="h-28 text-center text-xs text-text-muted">
                           <div className="flex flex-col items-center justify-center gap-1">
                             <CheckCircle2Icon className="size-5 text-emerald-500" />
-                            <span className="font-semibold text-text-primary">No unallocated cash records found.</span>
-                            <span className="text-[11px] text-text-muted">All gateway settlements and bank deposits have matching invoices.</span>
+                            <span className="font-semibold text-text-primary">No unallocated cash records pending.</span>
+                            <span className="text-[11px] text-text-muted">All gateway settlements and bank deposits have matching invoices or are resolved.</span>
                           </div>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredUnallocatedCash.map((exc, idx) => (
-                        <TableRow key={exc.id || idx} className="hover:bg-surface-1/60 transition-colors border-b border-border/40">
-                          <TableCell className="text-center font-mono text-[10px] text-text-disabled py-1.5 px-2.5">
-                            {idx + 1}
-                          </TableCell>
-                          <TableCell className="px-3 py-1.5 font-medium text-xs text-text-primary">
-                            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30">
-                              {exc.type || "Razorpay"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-mono text-xs font-semibold text-text-primary px-3 py-1.5">
-                            {exc.source_id || "—"}
-                          </TableCell>
-                          <TableCell className="text-xs px-3 py-1.5 max-w-[130px] truncate text-text-primary font-medium">
-                            {exc.vendor || "—"}
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-xs font-bold text-amber-600 dark:text-amber-400 px-3 py-1.5">
-                            {fmt(exc.amount)}
-                          </TableCell>
-                          <TableCell className="text-xs px-3 py-1.5 text-text-muted font-mono">
-                            {exc.date || "—"}
-                          </TableCell>
-                          <TableCell className="text-xs px-3 py-1.5 text-text-secondary max-w-sm">
-                            <div className="flex items-start gap-1.5">
-                              <HelpCircleIcon className="size-3.5 shrink-0 text-amber-500 mt-0.5" />
-                              <span>{exc.reason || "Cash received, but no matching invoice in dataset"}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center px-3 py-1.5">
-                            <span
-                              style={{ color: "#F59E0B", backgroundColor: "rgba(245, 158, 11, 0.12)", borderColor: "rgba(245, 158, 11, 0.3)" }}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold border"
-                            >
-                              <span className="size-1.5 rounded-full" style={{ backgroundColor: "#F59E0B" }} />
-                              Medium
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      filteredUnallocatedCash.map((exc, idx) => {
+                        const excId = exc.source_id || exc.id
+                        const isSelected = selectedExceptionIds.has(excId)
+
+                        return (
+                          <TableRow
+                            key={exc.id || idx}
+                            className={cn(
+                              "transition-colors border-b border-border/40",
+                              isSelected ? "bg-[#0D94FB]/5 hover:bg-[#0D94FB]/10" : "hover:bg-surface-1/60"
+                            )}
+                          >
+                            <TableCell className="text-center py-1.5 px-2">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleRowSelect(excId)}
+                                className="rounded border-border size-3.5 accent-[#0D94FB] cursor-pointer align-middle"
+                              />
+                            </TableCell>
+                            <TableCell className="text-center font-mono text-[10px] text-text-disabled py-1.5 px-2.5">
+                              {idx + 1}
+                            </TableCell>
+                            <TableCell className="px-3 py-1.5 font-medium text-xs text-text-primary">
+                              <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30">
+                                {exc.type || "Razorpay"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs font-semibold text-text-primary px-3 py-1.5">
+                              {exc.source_id || "—"}
+                            </TableCell>
+                            <TableCell className="text-xs px-3 py-1.5 max-w-[130px] truncate text-text-primary font-medium">
+                              {exc.vendor || "—"}
+                            </TableCell>
+                            <TableCell className="text-right font-mono text-xs font-bold text-amber-600 dark:text-amber-400 px-3 py-1.5">
+                              {fmt(exc.amount)}
+                            </TableCell>
+                            <TableCell className="text-xs px-3 py-1.5 text-text-muted font-mono">
+                              {exc.date || "—"}
+                            </TableCell>
+                            <TableCell className="text-xs px-3 py-1.5 text-text-secondary max-w-sm">
+                              <div className="flex items-start gap-1.5">
+                                <HelpCircleIcon className="size-3.5 shrink-0 text-amber-500 mt-0.5" />
+                                <span>{exc.reason || "Cash received, but no matching invoice in dataset"}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center px-3 py-1.5">
+                              <span
+                                style={{ color: "#F59E0B", backgroundColor: "rgba(245, 158, 11, 0.12)", borderColor: "rgba(245, 158, 11, 0.3)" }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold border"
+                              >
+                                <span className="size-1.5 rounded-full" style={{ backgroundColor: "#F59E0B" }} />
+                                Medium
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right px-3 py-1.5 sticky right-0 bg-background/95 backdrop-blur z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* 1. Direct Resolve */}
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleDirectManualResolve([excId])}
+                                  disabled={isResolving}
+                                  className="h-6.5 px-2.5 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-2xs cursor-pointer shrink-0"
+                                  title="Directly resolve this record"
+                                >
+                                  <CheckIcon className="size-3 mr-1" />
+                                  Resolve
+                                </Button>
+
+                                {/* 2. Resolve with PennyWise (AI Gemini sparkle) */}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenPennyWiseResolve(exc)}
+                                  className="h-6.5 px-2.5 text-[11px] font-medium border-[#0D94FB]/40 bg-[#0D94FB]/10 hover:bg-[#0D94FB]/20 text-[#0D94FB] shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
+                                  title="Open in PennyWise AI to draft memo & resolve"
+                                >
+                                  <span className="text-xs select-none">✨</span>
+                                  <span>PennyWise</span>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -1013,19 +1361,42 @@ export default function ResultsPage() {
           </Card>
         </TabsContent>
 
-        {/* ── TAB 3: Exceptions (Missing Cash: Unmatched Invoices & Missing Bank deposits) ── */}
+        {/* ── TAB 3: Exceptions (Missing Cash) ────────────────────────────────── */}
         <TabsContent value="exceptions" className="space-y-3">
           <Card className="border border-border/80 bg-card shadow-xs overflow-hidden">
-            <CardHeader className="bg-surface-1/60 border-b border-border/50 py-2.5 px-4">
-              <div className="flex items-center gap-1.5">
-                <AlertTriangleIcon className="size-4 text-destructive" />
-                <CardTitle className="text-xs font-bold text-text-primary">
-                  Exceptions (Missing Cash — High Risk)
-                </CardTitle>
+            <CardHeader className="bg-surface-1/60 border-b border-border/50 py-2.5 px-4 flex flex-row items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <AlertTriangleIcon className="size-4 text-destructive" />
+                  <CardTitle className="text-xs font-bold text-text-primary">
+                    Exceptions (Missing Cash — High Risk)
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-[11px] text-text-muted mt-0.5">
+                  Expected revenue or settlements that are not physically present (unmatched billing invoices, settlements missing bank deposits).
+                </CardDescription>
               </div>
-              <CardDescription className="text-[11px] text-text-muted mt-0.5">
-                Expected revenue or settlements that are not physically present (unmatched billing invoices, settlements missing bank deposits).
-              </CardDescription>
+
+              {filteredAuditExceptions.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleSelectAll(filteredAuditExceptions)}
+                    className="h-6.5 text-[11px] font-medium px-2"
+                  >
+                    {filteredAuditExceptions.every((e) => selectedExceptionIds.has(e.source_id || e.id)) ? (
+                      <>
+                        <CheckSquare2Icon className="mr-1 size-3 text-[#0D94FB]" /> Deselect All
+                      </>
+                    ) : (
+                      <>
+                        <SquareIcon className="mr-1 size-3 text-text-muted" /> Select All ({filteredAuditExceptions.length})
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </CardHeader>
 
             <CardContent className="pt-0 px-0 bg-card">
@@ -1033,6 +1404,14 @@ export default function ResultsPage() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-surface-1/95 backdrop-blur z-10 shadow-xs">
                     <TableRow className="border-b border-border/60">
+                      <TableHead className="w-8 text-center py-2 px-2">
+                        <input
+                          type="checkbox"
+                          checked={filteredAuditExceptions.length > 0 && filteredAuditExceptions.every((e) => selectedExceptionIds.has(e.source_id || e.id))}
+                          onChange={() => handleToggleSelectAll(filteredAuditExceptions)}
+                          className="rounded border-border size-3.5 accent-[#0D94FB] cursor-pointer align-middle"
+                        />
+                      </TableHead>
                       <TableHead className="w-9 text-center text-[11px] font-semibold text-text-secondary py-2 px-2.5">#</TableHead>
                       <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Stream Type</TableHead>
                       <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Source ID</TableHead>
@@ -1041,27 +1420,46 @@ export default function ResultsPage() {
                       <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Date</TableHead>
                       <TableHead className="text-xs font-semibold text-text-secondary py-2 px-3">Reason / Description</TableHead>
                       <TableHead className="text-center text-[11px] font-semibold text-text-secondary py-2 px-3">Risk Level</TableHead>
+                      <TableHead className="w-56 text-right text-[11px] font-semibold text-text-secondary py-2 px-3 sticky right-0 bg-surface-1/95 z-20 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredAuditExceptions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-28 text-center text-xs text-text-muted">
+                        <TableCell colSpan={10} className="h-28 text-center text-xs text-text-muted">
                           <div className="flex flex-col items-center justify-center gap-1">
                             <CheckCircle2Icon className="size-5 text-emerald-500" />
-                            <span className="font-semibold text-text-primary">No missing cash exceptions found!</span>
-                            <span className="text-[11px] text-text-muted">All billings were successfully captured and deposited.</span>
+                            <span className="font-semibold text-text-primary">No missing cash exceptions pending!</span>
+                            <span className="text-[11px] text-text-muted">All billings were successfully captured and deposited or resolved.</span>
                           </div>
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredAuditExceptions.map((exc, idx) => {
+                        const excId = exc.source_id || exc.id
+                        const isSelected = selectedExceptionIds.has(excId)
                         const sev = (exc.severity || "High").toLowerCase()
                         const sevColor = sev === "high" ? "#EF4444" : sev === "low" ? "#10B981" : "#F59E0B"
                         const sevLabel = sev === "high" ? "High" : sev === "low" ? "Low" : "Medium"
 
                         return (
-                          <TableRow key={exc.id || idx} className="hover:bg-surface-1/60 transition-colors border-b border-border/40">
+                          <TableRow
+                            key={exc.id || idx}
+                            className={cn(
+                              "transition-colors border-b border-border/40",
+                              isSelected ? "bg-[#0D94FB]/5 hover:bg-[#0D94FB]/10" : "hover:bg-surface-1/60"
+                            )}
+                          >
+                            <TableCell className="text-center py-1.5 px-2">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleRowSelect(excId)}
+                                className="rounded border-border size-3.5 accent-[#0D94FB] cursor-pointer align-middle"
+                              />
+                            </TableCell>
                             <TableCell className="text-center font-mono text-[10px] text-text-disabled py-1.5 px-2.5">
                               {idx + 1}
                             </TableCell>
@@ -1101,6 +1499,34 @@ export default function ResultsPage() {
                                 {sevLabel}
                               </span>
                             </TableCell>
+                            <TableCell className="text-right px-3 py-1.5 sticky right-0 bg-background/95 backdrop-blur z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* 1. Direct Resolve */}
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleDirectManualResolve([excId])}
+                                  disabled={isResolving}
+                                  className="h-6.5 px-2.5 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-2xs cursor-pointer shrink-0"
+                                  title="Directly resolve this exception"
+                                >
+                                  <CheckIcon className="size-3 mr-1" />
+                                  Resolve
+                                </Button>
+
+                                {/* 2. Resolve with PennyWise (AI Gemini sparkle) */}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenPennyWiseResolve(exc)}
+                                  className="h-6.5 px-2.5 text-[11px] font-medium border-[#0D94FB]/40 bg-[#0D94FB]/10 hover:bg-[#0D94FB]/20 text-[#0D94FB] shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
+                                  title="Open in PennyWise AI to draft memo & resolve"
+                                >
+                                  <span className="text-xs select-none">✨</span>
+                                  <span>PennyWise</span>
+                                </Button>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         )
                       })
@@ -1111,7 +1537,223 @@ export default function ResultsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── TAB 4: Resolved (NEW) ───────────────────────────────────────────── */}
+        <TabsContent value="resolved" className="space-y-3">
+          <Card className="border border-border/80 bg-card shadow-xs overflow-hidden">
+            <CardHeader className="bg-surface-1/60 border-b border-border/50 py-2.5 px-4 flex flex-row items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheckIcon className="size-4 text-emerald-500" />
+                  <CardTitle className="text-xs font-bold text-text-primary">
+                    Resolved Audit Registry
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-[11px] text-text-muted mt-0.5">
+                  Exceptions and unallocated entries manually cleared, reconciled offline, or verified by controller notes.
+                </CardDescription>
+              </div>
+
+              {resolvedList.length > 0 && (
+                <Badge variant="outline" className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                  {resolvedList.length} items settled ({fmt(totalResolvedAmount)})
+                </Badge>
+              )}
+            </CardHeader>
+
+            <CardContent className="pt-0 px-0 bg-card">
+              <div className="max-h-[420px] overflow-y-auto overflow-x-auto relative rounded-b-xl">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-surface-1/95 backdrop-blur z-10 shadow-xs">
+                    <TableRow className="border-b border-border/60">
+                      <TableHead className="w-9 text-center text-[11px] font-semibold text-text-secondary py-2 px-2.5">#</TableHead>
+                      <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Stream Type</TableHead>
+                      <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Source ID</TableHead>
+                      <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Vendor / Counterparty</TableHead>
+                      <TableHead className="text-right text-[11px] font-semibold text-text-secondary py-2 px-3">Amount</TableHead>
+                      <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Original Date</TableHead>
+                      <TableHead className="text-xs font-semibold text-text-secondary py-2 px-3">Original Issue</TableHead>
+                      <TableHead className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 py-2 px-3">Resolution Note &amp; Audit Trail</TableHead>
+                      <TableHead className="text-[11px] font-semibold text-text-secondary py-2 px-3">Resolved At</TableHead>
+                      <TableHead className="text-right text-[11px] font-semibold text-text-secondary py-2 px-3">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredResolvedList.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="h-28 text-center text-xs text-text-muted">
+                          <div className="flex flex-col items-center justify-center gap-1">
+                            <ShieldCheckIcon className="size-5 text-text-disabled" />
+                            <span className="font-semibold text-text-primary">No resolved records in this audit cycle.</span>
+                            <span className="text-[11px] text-text-muted">Use the "Resolve" button on any exception or unallocated cash item to clear it.</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredResolvedList.map((exc, idx) => (
+                        <TableRow key={exc.id || idx} className="hover:bg-surface-1/60 transition-colors border-b border-border/40 bg-emerald-500/5">
+                          <TableCell className="text-center font-mono text-[10px] text-text-disabled py-1.5 px-2.5">
+                            {idx + 1}
+                          </TableCell>
+                          <TableCell className="px-3 py-1.5 font-medium text-xs text-text-primary">
+                            <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+                              {exc.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs font-semibold text-text-primary px-3 py-1.5">
+                            {exc.source_id || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs px-3 py-1.5 max-w-[130px] truncate text-text-primary font-medium">
+                            {exc.vendor || "—"}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 px-3 py-1.5">
+                            {fmt(exc.amount)}
+                          </TableCell>
+                          <TableCell className="text-xs px-3 py-1.5 text-text-muted font-mono">
+                            {exc.date || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs px-3 py-1.5 text-text-secondary max-w-xs truncate">
+                            {exc.reason || "Audited record"}
+                          </TableCell>
+                          <TableCell className="text-xs px-3 py-1.5 text-emerald-800 dark:text-emerald-300 font-medium max-w-sm">
+                            <div className="flex items-center gap-1.5">
+                              <CheckCircle2Icon className="size-3.5 shrink-0 text-emerald-600" />
+                              <span>{exc.resolution_note || "Resolved manually by user"}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs px-3 py-1.5 text-text-muted font-mono text-[10px]">
+                            {exc.resolved_at || "Audit Finalized"}
+                          </TableCell>
+                          <TableCell className="text-right px-3 py-1.5">
+                            <Badge className="bg-emerald-600 text-white text-[9px] font-medium px-2 py-0.5">
+                              <ShieldCheckIcon className="mr-0.5 size-2.5" />
+                              Resolved
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* ── FLOATING BULK RESOLUTION ACTION BAR ──────────────────────────────── */}
+      {selectedExceptionIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-surface-1/95 border border-[#0D94FB]/40 shadow-2xl backdrop-blur-md px-4 py-2.5 rounded-2xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2 pr-2 border-r border-border">
+            <span className="flex size-5 items-center justify-center rounded-full bg-[#0D94FB] text-[10px] font-bold text-white">
+              {selectedExceptionIds.size}
+            </span>
+            <span className="text-xs font-semibold text-text-primary">
+              Record(s) Selected
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => handleDirectManualResolve(Array.from(selectedExceptionIds))}
+              disabled={isResolving}
+              className="h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+            >
+              <CheckIcon className="mr-1.5 size-3.5" />
+              One-Click Resolve
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => handleOpenBatchPennyWiseResolve(Array.from(selectedExceptionIds))}
+              className="h-8 text-xs font-semibold bg-[#0D94FB] hover:bg-[#0D94FB]/90 text-white shadow-xs flex items-center gap-1.5"
+            >
+              <span className="text-xs select-none">✨</span>
+              <span>Resolve with PennyWise</span>
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleOpenCustomNoteModal(Array.from(selectedExceptionIds))}
+              className="h-8 text-xs font-medium"
+            >
+              <MessageSquareIcon className="mr-1.5 size-3.5 text-text-muted" />
+              Add Note...
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedExceptionIds(new Set())}
+              className="h-8 px-2 text-xs text-text-muted hover:text-destructive"
+              title="Clear selection"
+            >
+              <XIcon className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── RESOLUTION WORKFLOW MODAL DIALOG ──────────────────────────────────── */}
+      {resolveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <Card className="w-full max-w-md bg-card border-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <CardHeader className="bg-surface-1/80 border-b border-border/60 pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+                    <ShieldCheckIcon className="size-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-bold text-text-primary">
+                      Resolve Reconciliation Exception(s)
+                    </CardTitle>
+                    <CardDescription className="text-[11px] text-text-muted">
+                      Resolving {targetResolveIds.length} selected record(s)
+                    </CardDescription>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-text-muted hover:text-text-primary"
+                  onClick={() => setResolveModalOpen(false)}
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
+                <Button type="button" variant="outline" size="sm" onClick={() => handleOpenMemoChat(targetResolveIds)} className="text-xs text-[#0D94FB] border-[#0D94FB]/30 hover:bg-[#0D94FB]/10 h-8">
+                  <MessageSquareIcon className="mr-1.5 size-3.5" />Draft Memo via Chat
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setResolveModalOpen(false)} className="text-xs h-8">Cancel</Button>
+                  <Button type="button" size="sm" disabled={isResolving} onClick={() => handleDirectManualResolve(targetResolveIds, customNote.trim() || "Resolved with controller note")} className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-8 px-3">
+                    <CheckIcon className="mr-1.5 size-3.5" />Confirm &amp; Resolve
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ResolveDialog – PennyWise Draft Memo / Send Email */}
+      <ResolveDialog
+        open={resolveDialogOpen}
+        onClose={() => {
+          setResolveDialogOpen(false)
+          setResolveDialogException(null)
+          setResolveDialogExceptions([])
+        }}
+        exception={resolveDialogException}
+        exceptions={resolveDialogExceptions}
+        onConfirm={handleResolveDialogConfirm}
+      />
     </div>
   )
 }

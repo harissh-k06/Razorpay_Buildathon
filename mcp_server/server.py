@@ -446,7 +446,11 @@ def _get_parsed_exceptions_df() -> pd.DataFrame:
         date_val = str(rec_dict.get("date") or row.get("date", ""))
         rec_type = row.get("type", "unknown")
         raw_reason = row.get("reason", "")
+        status_val = str(row.get("status", "Open")).strip()
         status_type, severity = _classify_exception_row(rec_type, raw_reason)
+        if status_val.lower() == "resolved":
+            status_type = "resolved"
+            severity = "Resolved"
 
         parsed_rows.append({
             "type": rec_type,
@@ -456,10 +460,11 @@ def _get_parsed_exceptions_df() -> pd.DataFrame:
             "amount": amount,
             "date": date_val,
             "reason": raw_reason,
-            "status": row.get("status", "Open"),
+            "status": status_val,
             "status_type": status_type,
             "severity": severity,
             "resolution_note": row.get("resolution_note", ""),
+            "resolved_at": row.get("resolved_at", ""),
             "raw_record": row.get("record", "")
         })
     return pd.DataFrame(parsed_rows)
@@ -695,7 +700,13 @@ def update_csv_record(source: str, record_id: str, field_to_update: str, new_val
     # Save
     save_df(source, df)
     
-    return {"success": True, "updated_count": 1, "backup_file": str(backup_file)}
+    return {
+        "success": True,
+        "action": "review",
+        "source": source,
+        "updated_count": 1,
+        "backup_file": str(backup_file)
+    }
 
 @mcp.tool()
 def get_standardized_data_preview(source: str, limit: Optional[int] = 10) -> Dict[str, Any]:
@@ -778,6 +789,11 @@ def draft_dispute_memo(exception_ids: List[str], memo_type: str = "vendor_disput
     Groups exception details by vendor and formats net amounts, dates, IDs, and dispute reasons.
     Outputs structured memo text ready to send to vendors, gateway support, or banking partners.
     """
+    # ---- AGENTIC CHECK ----
+    err = require_agentic_mode()
+    if err:
+        return err
+
     exceptions_file = RECONCILIATION_DIR / "reconciliation_exceptions.csv"
     if not exceptions_file.exists():
         return {"error": "No exceptions found. Run reconciliation first."}
@@ -904,6 +920,11 @@ def draft_unallocated_cash_memo(
     - vendor: Optional vendor name to filter unallocated cash records (e.g. 'slack', 'zoho').
     - source_type: Optional source filter ('razorpay', 'bank', or 'all').
     """
+    # ---- AGENTIC CHECK ----
+    err = require_agentic_mode()
+    if err:
+        return err
+
     df = _get_parsed_exceptions_df()
     if df.empty:
         return {"error": "No reconciliation records found. Run reconciliation first."}
@@ -1662,40 +1683,310 @@ def mark_exceptions_resolved(exception_ids: List[str], resolution_note: str) -> 
     backup_file = RECONCILIATION_DIR / f"reconciliation_exceptions_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     df.to_csv(backup_file, index=False)
 
-    if "status" not in df.columns:
-        df["status"] = "Open"
-    if "resolution_note" not in df.columns:
-        df["resolution_note"] = ""
-    if "resolved_at" not in df.columns:
-        df["resolved_at"] = ""
+    # Convert all string columns to object/str to avoid pandas float64 assignment errors
+    for col in ["status", "resolution_note", "resolved_at", "type", "reason"]:
+        if col not in df.columns:
+            df[col] = ""
+        df[col] = df[col].fillna("").astype(object)
 
     if isinstance(exception_ids, str):
         exception_ids = [exception_ids]
 
+    clean_ids = [str(x).strip().lower() for x in exception_ids if str(x).strip()]
     updated_count = 0
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     for idx, row in df.iterrows():
         rec_str = str(row.get("record", ""))
-        matches = any(eid in rec_str for eid in exception_ids)
+        row_id_str = str(row.get("id", "")) + " " + str(row.get("source_id", "")) + " " + str(row.get("invoice_id", "")) + " " + str(row.get("entity_id", "")) + " " + str(row.get("ref_no", ""))
+        combined_text = (rec_str + " " + row_id_str).lower()
+        
+        matches = any(eid in combined_text for eid in clean_ids)
         if matches:
             df.at[idx, "status"] = "Resolved"
-            existing_note = str(df.at[idx, "resolution_note"]) if pd.notna(df.at[idx, "resolution_note"]) else ""
+            existing_note = str(df.at[idx, "resolution_note"]) if pd.notna(df.at[idx, "resolution_note"]) and str(df.at[idx, "resolution_note"]).lower() != "nan" else ""
             new_note = f"{existing_note}; {resolution_note}".strip("; ") if existing_note else resolution_note
             df.at[idx, "resolution_note"] = new_note
             df.at[idx, "resolved_at"] = now_str
             updated_count += 1
 
     df.to_csv(exceptions_file, index=False)
+    
+    # Also sync to reconciliation/data/ if it exists
+    data_exc_file = RECONCILIATION_DIR / "data" / "reconciliation_exceptions.csv"
+    if data_exc_file.parent.exists():
+        df.to_csv(data_exc_file, index=False)
+
+    # Compute updated counts per status_type
+    parsed_df = _get_parsed_exceptions_df()
+    exc_count = int(len(parsed_df[parsed_df["status_type"] == "exception"])) if not parsed_df.empty else 0
+    unalloc_count = int(len(parsed_df[parsed_df["status_type"] == "unallocated_cash"])) if not parsed_df.empty else 0
+    resolved_count = int(len(parsed_df[parsed_df["status_type"] == "resolved"])) if not parsed_df.empty else 0
+    total_count = int(len(parsed_df)) if not parsed_df.empty else 0
+
+    stats = {
+        "exceptions": exc_count,
+        "unallocated_cash": unalloc_count,
+        "resolved": resolved_count,
+        "total": total_count,
+    }
+
     return {
         "success": True,
         "resolved_count": updated_count,
         "backup_file": str(backup_file),
         "exception_ids": exception_ids,
-        "resolution_note": resolution_note
+        "resolution_note": resolution_note,
+        "stats": stats,
+        "message": f"Successfully marked {updated_count} record(s) as Resolved."
+    
     }
 
+@mcp.tool()
+def resolve_exceptions_bulk(
+    exception_ids: List[str],
+    mode: str = "direct",
+    resolution_note: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Resolve one or multiple reconciliation exceptions (Missing Cash or Unallocated Cash) via 3 workflows:
+    - mode="memo": Drafts professional dispute or invoice allocation memos for user review with requires_confirmation=True.
+    - mode="direct": Direct resolution with accountant notes.
+    - mode="manual": One-click manual resolution with default audit trail note.
+    """
+    # ---- AGENTIC CHECK ----
+    err = require_agentic_mode()
+    if err:
+        return err
 
+    if isinstance(exception_ids, str):
+        exception_ids = [exception_ids]
+
+    if not exception_ids:
+        return {"error": "exception_ids cannot be empty."}
+
+    mode_clean = str(mode).lower().strip()
+
+    if mode_clean == "memo":
+        # Check whether records are predominantly unallocated cash or missing cash
+        parsed_df = _get_parsed_exceptions_df()
+        is_unalloc = False
+        if not parsed_df.empty:
+            clean_ids = [str(x).strip().lower() for x in exception_ids if str(x).strip()]
+            mask = pd.Series(False, index=parsed_df.index)
+            for col in ["source_id", "exception_id"]:
+                if col in parsed_df.columns:
+                    mask |= parsed_df[col].astype(str).str.lower().isin(clean_ids)
+            if mask.sum() == 0 and "raw_record" in parsed_df.columns:
+                for eid in clean_ids:
+                    mask |= parsed_df["raw_record"].astype(str).str.lower().str.contains(eid, na=False)
+            matched_subset = parsed_df[mask]
+            if not matched_subset.empty:
+                unalloc_rows = matched_subset[matched_subset["status_type"] == "unallocated_cash"]
+                if len(unalloc_rows) >= len(matched_subset) / 2:
+                    is_unalloc = True
+
+        if is_unalloc:
+            memo_res = draft_unallocated_cash_memo(record_ids=exception_ids)
+        else:
+            memo_res = draft_dispute_memo(exception_ids=exception_ids)
+
+        if "error" in memo_res:
+            return memo_res
+
+        return {
+            "success": True,
+            "mode": "memo",
+            "requires_confirmation": True,
+            "exception_ids": exception_ids,
+            "memo_type": "unallocated_cash" if is_unalloc else "dispute",
+            "memo_text": memo_res.get("full_memo_text", ""),
+            "memos": memo_res.get("memos", []),
+            "message": "Dispute/Allocation memorandum generated. Please review and confirm resolution."
+        }
+
+    elif mode_clean == "manual":
+        note = resolution_note or "Resolved manually by user"
+        return mark_exceptions_resolved(exception_ids=exception_ids, resolution_note=note)
+
+    elif mode_clean == "direct":
+        note = resolution_note or "Directly resolved by user"
+        return mark_exceptions_resolved(exception_ids=exception_ids, resolution_note=note)
+
+    else:
+        return {"error": f"Invalid mode '{mode}'. Must be 'memo', 'direct', or 'manual'."}
+
+# -------------------------------------------------------------------
+# Email Generation Tool for Vendor / Counterparty Resolution
+# (Supports both Missing Cash Exceptions and Unallocated Cash Records)
+# -------------------------------------------------------------------
+@mcp.tool()
+def generate_email_from_exception(
+    exception_ids: List[str],
+    recipient_email: str,
+    sender_name: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Generate a professional email draft (subject + body) in a conversational tone to send to a vendor, counterparty, or customer regarding one or more reconciliation exceptions or unallocated cash entries.
+    
+    Supports both:
+    1. Exceptions / Missing Cash (Invoice Discrepancies, Missing Gateway Settlements, Missing Bank Deposits)
+    2. Unallocated Cash / Extra Cash (Payments received in Razorpay/Bank without corresponding invoices)
+    
+    Parameters:
+    - exception_ids: List of exception source IDs, invoice numbers, payment IDs (e.g. ['pay_123'], ['INV-1001']), or bank references.
+    - recipient_email: Recipient's email address (e.g. 'finance@vendor.com').
+    - sender_name: Optional sender name (e.g. 'PennyWise Finance Team').
+    
+    Returns structured email draft with subject, body, to, exception_ids, category, and summary stats.
+    """
+    # ---- AGENTIC CHECK ----
+    err = require_agentic_mode()
+    if err:
+        return err
+
+    if not exception_ids:
+        return {"error": "exception_ids cannot be empty."}
+    if not recipient_email or "@" not in recipient_email:
+        return {"error": "A valid recipient_email is required."}
+
+    if isinstance(exception_ids, str):
+        exception_ids = [exception_ids]
+
+    df = _get_parsed_exceptions_df()
+    id_col = _detect_id_column(df) or "source_id" if not df.empty else "source_id"
+    clean_ids = [str(x).strip().lower() for x in exception_ids if str(x).strip()]
+
+    matched_records = []
+    if not df.empty:
+        mask = pd.Series(False, index=df.index)
+        for col in [id_col, "source_id", "exception_id"]:
+            if col in df.columns:
+                mask |= df[col].astype(str).str.lower().isin(clean_ids)
+        if mask.sum() == 0 and "raw_record" in df.columns:
+            for eid in clean_ids:
+                mask |= df["raw_record"].astype(str).str.lower().str.contains(eid, na=False)
+        matched_records = df[mask].to_dict(orient="records")
+
+    sender_signoff = sender_name or "PennyWise Finance & Reconciliation Team"
+
+    # Group records by vendor so each distinct vendor gets its own distinct email draft
+    vendor_groups: Dict[str, List[Dict[str, Any]]] = {}
+    if matched_records:
+        for r in matched_records:
+            v = str(r.get("vendor", "")).strip()
+            v_name = v.title() if v and v.lower() != "nan" else "Vendor"
+            if v_name not in vendor_groups:
+                vendor_groups[v_name] = []
+            vendor_groups[v_name].append(r)
+    else:
+        # Fallback if no specific rows were found in dataframe
+        vendor_groups["Vendor"] = [{"source_id": eid, "amount": 0.0} for eid in exception_ids]
+
+    emails_list = []
+    total_amount_all = 0.0
+
+    for vendor_name, records in vendor_groups.items():
+        v_total = sum(float(r.get("amount", 0.0) or 0.0) for r in records)
+        total_amount_all += v_total
+        
+        v_ids = []
+        for r in records:
+            eid = str(r.get(id_col) or r.get("source_id") or r.get("exception_id") or "").strip()
+            if eid and eid not in v_ids:
+                v_ids.append(eid)
+        if not v_ids:
+            v_ids = exception_ids
+
+        v_dates = [str(r.get("date", "")).strip() for r in records if str(r.get("date", "")).strip() and str(r.get("date", "")).strip().lower() != "nan"]
+        v_reasons = [str(r.get("reason", "")).strip() for r in records if str(r.get("reason", "")).strip() and str(r.get("reason", "")).strip().lower() != "nan"]
+        
+        v_id_str = ", ".join(v_ids)
+        v_amount_str = f"₹{v_total:,.2f}" if v_total > 0 else "the referenced amount"
+        v_dates_str = ", ".join(dict.fromkeys(v_dates)) if v_dates else "Recent"
+        v_primary_reason = v_reasons[0] if v_reasons else "No matching settlement or deposit found"
+
+        is_unalloc = any(
+            str(r.get("status_type", "")).lower() == "unallocated_cash" or
+            "unallocated" in str(r.get("reason", "")).lower() or
+            "no matching invoice" in str(r.get("reason", "")).lower() or
+            str(r.get("type", "")).lower() in ["razorpay", "bank"]
+            for r in records
+        )
+
+        display_vendor = vendor_name if vendor_name != "Vendor" else "Team"
+
+        if is_unalloc:
+            v_subject = f"Clarification on Unallocated Payment – Ref: {v_id_str}"
+            v_body = f"""Hi {display_vendor},
+
+I hope this email finds you well.
+
+I'm reaching out from our finance and reconciliation team regarding an unallocated payment record we received:
+
+• Reference ID(s): {v_id_str}
+• Counterparty / Vendor: {vendor_name}
+• Amount: {v_amount_str}
+• Date: {v_dates_str}
+• Details: {v_primary_reason}
+
+We currently have this payment recorded in our payment gateway/bank statement without a matching billing invoice in our system. Could you please help us with the relevant tax invoice or remittance advice so we can allocate and credit this payment accurately to your account?
+
+Thank you for your assistance. Please let us know if you need any additional information from our side.
+
+Warm regards,
+{sender_signoff}"""
+        else:
+            v_subject = f"Reconciliation Inquiry – Ref: {v_id_str}"
+            v_body = f"""Hi {display_vendor},
+
+I hope you're having a good week.
+
+I'm writing from the finance and accounting team regarding the following transaction in our 3-way reconciliation audit:
+
+• Reference / Invoice ID(s): {v_id_str}
+• Vendor / Counterparty: {vendor_name}
+• Amount: {v_amount_str}
+• Transaction Date: {v_dates_str}
+• Issue Identified: {v_primary_reason}
+
+During our audit, we identified that the corresponding settlement or bank deposit has not been reflected for this invoice. Could you please verify the payment status on your end or share the settlement reference/UTR number so we can match and close this in our books?
+
+We appreciate your prompt support in resolving this discrepancy. Please feel free to reply directly to this email with any updates or questions.
+
+Warm regards,
+{sender_signoff}"""
+
+        emails_list.append({
+            "to": recipient_email.strip(),
+            "subject": v_subject.strip(),
+            "body": v_body.strip(),
+            "vendor": vendor_name,
+            "exception_ids": v_ids,
+            "total_amount": round(v_total, 2),
+            "exception_count": len(v_ids),
+            "category": "unallocated_cash" if is_unalloc else "exception",
+        })
+
+    first_email = emails_list[0] if emails_list else {}
+
+    return {
+        "success": True,
+        "email_count": len(emails_list),
+        "emails": emails_list,
+        "subject": first_email.get("subject", ""),
+        "body": first_email.get("body", ""),
+        "to": recipient_email.strip(),
+        "exception_ids": exception_ids,
+        "vendor": first_email.get("vendor", ""),
+        "total_amount": round(total_amount_all, 2),
+        "exception_count": len(exception_ids),
+        "category": first_email.get("category", "exception"),
+        "formatted_email": "\n\n---\n\n".join(
+            f"📧 To: {e['to']}\nSubject: {e['subject']}\nVendor: {e['vendor']}\n\n{e['body']}"
+            for e in emails_list
+        )
+    }
 
 # -------------------------------------------------------------------
 # Run the server

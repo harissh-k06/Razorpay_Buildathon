@@ -153,7 +153,7 @@ async def stream_chat(message: str, session_id: str = "default", agentic_mode: O
     logger.info(f"[PennyWise-Agent] Authoritative Agentic Mode for session '{session_id}': {is_agentic}")
 
     active_mode_str = "AGENTIC MODE (GREEN / ON — AUTO-EXECUTE ENABLED)" if is_agentic else "ASK MODE (YELLOW / OFF — ACTIONS LOCKED)"
-    permission_str = "UNLOCKED: Write and action tools (update_csv_record, bulk_update_csv, standardize_data, run_reconciliation, change_base_currency, mark_exceptions_resolved, etc.) execute directly." if is_agentic else "LOCKED: Write and action tools are locked until Agentic Mode is turned ON."
+    permission_str = "UNLOCKED: Write, action, memo drafting, and email drafting tools (generate_email_from_exception, draft_dispute_memo, draft_unallocated_cash_memo, update_csv_record, bulk_update_csv, standardize_data, run_reconciliation, change_base_currency, mark_exceptions_resolved, etc.) execute directly." if is_agentic else "LOCKED: Write, action, memo drafting, and email writing tools are locked until Agentic Mode is turned ON."
 
     mode_status_summary = f"""
 
@@ -280,6 +280,29 @@ async def stream_chat(message: str, session_id: str = "default", agentic_mode: O
                             result_text = json.dumps({"error": str(tool_err)})
 
                     logger.info(f"Tool '{tool_name}' result: {result_text[:500]}{'...' if len(result_text) > 500 else ''}")
+
+                    # If this tool modified data, emit an immediate SSE action event so frontend updates in real time
+                    action_name = None
+                    target_name = "review"
+                    try:
+                        parsed_res = json.loads(result_text) if isinstance(result_text, str) else result_text
+                        if isinstance(parsed_res, dict) and parsed_res.get("action"):
+                            action_name = parsed_res.get("action")
+                            target_name = parsed_res.get("target") or parsed_res.get("source") or "review"
+                    except Exception:
+                        pass
+
+                    if not action_name and tool_name in [
+                        "update_csv_record", "bulk_update_csv", "standardize_data",
+                        "change_base_currency", "revert_last_action", "mark_exceptions_resolved",
+                        "resolve_exceptions_bulk"
+                    ]:
+                        action_name = "data_refresh"
+                        target_name = "review"
+
+                    if action_name:
+                        logger.info(f"Emitting real-time action event: {action_name} (target: {target_name}) for tool '{tool_name}'")
+                        yield f"data: {json.dumps({'action': action_name, 'target': target_name, 'tool': tool_name})}\n\n"
 
                     # Append tool result
                     messages.append({

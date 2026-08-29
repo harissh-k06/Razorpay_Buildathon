@@ -14,8 +14,11 @@ import {
   runStandardization as apiStandardize,
   runReconciliation as apiReconcile,
   fetchStandardizedData,
+  fetchReconciliationResults,
   fetchAgenticMode,
   updateAgenticMode,
+  updateStandardizedRow,
+  resolveExceptionsApi,
   ReconcileParams,
 } from '@/lib/api'
 
@@ -42,6 +45,17 @@ export interface ReconciliationState {
   reconcile: () => Promise<void>
   loadData: () => Promise<void>
   updateVendorName: (fileType: 'invoice' | 'razorpay' | 'bank', rowIndex: number, newVendor: string) => void
+  updateRow: (
+    fileType: 'invoice' | 'razorpay' | 'bank',
+    rowIndex: number,
+    rowId: string | number | null,
+    updatedData: Record<string, any>
+  ) => Promise<{ success: boolean; error?: string }>
+  resolveExceptions: (
+    exceptionIds: string[],
+    mode: 'memo' | 'direct' | 'manual',
+    resolutionNote?: string
+  ) => Promise<{ success: boolean; error?: string; memo_text?: string; requires_confirmation?: boolean; result?: any }>
   setReconcileParams: (params: Partial<ReconcileParams>) => void
   setAgenticMode: (enabled: boolean) => Promise<void>
   resetAll: () => void
@@ -68,6 +82,8 @@ const initialState: Omit<
   | 'reconcile'
   | 'loadData'
   | 'updateVendorName'
+  | 'updateRow'
+  | 'resolveExceptions'
   | 'setReconcileParams'
   | 'setAgenticMode'
   | 'resetAll'
@@ -280,26 +296,37 @@ state = {
       const result = await fetchStandardizedData()
       const sf = result.standardized_files
       if (sf && (sf.invoice || sf.razorpay || sf.bank)) {
-        setState((prev) => ({
-          standardizationStatus: 'completed',
-          standardizedData: {
-            invoice: sf.invoice
-              ? { ...sf.invoice, preview: [...sf.invoice.preview] }
-              : prev.standardizedData.invoice,
-            razorpay: sf.razorpay
-              ? { ...sf.razorpay, preview: [...sf.razorpay.preview] }
-              : prev.standardizedData.razorpay,
-            bank: sf.bank
-              ? { ...sf.bank, preview: [...sf.bank.preview] }
-              : prev.standardizedData.bank,
-          },
-          savedPaths: {
-            invoice: sf.invoice?.saved_path || prev.savedPaths.invoice,
-            razorpay: sf.razorpay?.saved_path || prev.savedPaths.razorpay,
-            bank: sf.bank?.saved_path || prev.savedPaths.bank,
-          },
-          error: null,
-        }))
+        setState((prev) => {
+          const newInvoice = sf.invoice
+            ? { ...sf.invoice, preview: [...sf.invoice.preview] }
+            : prev.standardizedData.invoice
+          const newRazorpay = sf.razorpay
+            ? { ...sf.razorpay, preview: [...sf.razorpay.preview] }
+            : prev.standardizedData.razorpay
+          const newBank = sf.bank
+            ? { ...sf.bank, preview: [...sf.bank.preview] }
+            : prev.standardizedData.bank
+
+          return {
+            standardizationStatus: 'completed',
+            standardizedData: {
+              invoice: newInvoice,
+              razorpay: newRazorpay,
+              bank: newBank,
+            },
+            previewData: {
+              invoice: newInvoice || prev.previewData.invoice,
+              razorpay: newRazorpay || prev.previewData.razorpay,
+              bank: newBank || prev.previewData.bank,
+            },
+            savedPaths: {
+              invoice: sf.invoice?.saved_path || prev.savedPaths.invoice,
+              razorpay: sf.razorpay?.saved_path || prev.savedPaths.razorpay,
+              bank: sf.bank?.saved_path || prev.savedPaths.bank,
+            },
+            error: null,
+          }
+        })
       }
     } catch (err: any) {
       console.error('Error loading standardized data:', err)
@@ -311,6 +338,21 @@ state = {
         setState({ agenticMode: modeData.enabled })
       }
     } catch {}
+
+    try {
+      const reconResults = await fetchReconciliationResults()
+      if (reconResults && reconResults.triplets) {
+        setState((prev) => ({
+          reconciliationStatus: 'completed',
+          results: {
+            ...prev.results,
+            ...reconResults,
+          },
+        }))
+      }
+    } catch (err: any) {
+      // ignore if results not available yet
+    }
   },
 
   setAgenticMode: async (enabled: boolean) => {
@@ -343,6 +385,135 @@ state = {
         previewData: { ...prev.previewData, [fileType]: updated },
       }
     })
+  },
+
+  updateRow: async (fileType, rowIndex, rowId, updatedData) => {
+    try {
+      const res = await updateStandardizedRow({
+        source: fileType,
+        rowId: rowId ?? undefined,
+        rowIndex,
+        updatedData,
+      })
+
+      if (res.status === 'success' && res.preview) {
+        setState((prev) => ({
+          standardizedData: {
+            ...prev.standardizedData,
+            [fileType]: res.preview,
+          },
+          previewData: {
+            ...prev.previewData,
+            [fileType]: res.preview,
+          },
+        }))
+        return { success: true }
+      }
+
+      // Fallback local update
+      setState((prev) => {
+        const source = prev.standardizedData[fileType] || prev.previewData[fileType]
+        if (!source) return prev
+        const updatedPreview = [...source.preview]
+        if (updatedPreview[rowIndex]) {
+          updatedPreview[rowIndex] = {
+            ...updatedPreview[rowIndex],
+            ...updatedData,
+          }
+        }
+        const updated: FilePreviewData = { ...source, preview: updatedPreview }
+        return {
+          standardizedData: { ...prev.standardizedData, [fileType]: updated },
+          previewData: { ...prev.previewData, [fileType]: updated },
+        }
+      })
+      return { success: true }
+    } catch (err: any) {
+      console.error('Error updating row in backend:', err)
+      return { success: false, error: err.message || 'Failed to update row' }
+    }
+  },
+
+  resolveExceptions: async (exceptionIds: string[], mode: 'memo' | 'direct' | 'manual', resolutionNote?: string) => {
+    try {
+      const res = await resolveExceptionsApi({
+        exception_ids: exceptionIds,
+        mode,
+        resolution_note: resolutionNote,
+      })
+
+      if (res.status === 'success' || res.success) {
+        if (res.exceptions) {
+          setState((prev) => {
+            if (!prev.results) return prev
+            const resolvedAmt = res.exceptions
+              ? res.exceptions
+                  .filter((e) => e.status_type === 'resolved' || e.status === 'Resolved')
+                  .reduce((sum, e) => sum + (e.amount || 0), 0)
+              : 0
+
+            return {
+              results: {
+                ...prev.results,
+                exceptions: res.exceptions || [],
+                unallocatedCount: res.unallocatedCount ?? prev.results.unallocatedCount,
+                auditExceptionCount: res.auditExceptionCount ?? prev.results.auditExceptionCount,
+                resolvedCount: res.resolvedCount ?? prev.results.resolvedCount,
+                totalResolvedAmount: resolvedAmt,
+              },
+            }
+          })
+        } else {
+          // Optimistic update
+          setState((prev) => {
+            if (!prev.results || !prev.results.exceptions) return prev
+            const cleanIds = exceptionIds.map((id) => String(id).toLowerCase().trim())
+            const updated = prev.results.exceptions.map((exc) => {
+              const excIdStr = (exc.id + ' ' + exc.source_id).toLowerCase()
+              const isMatch = cleanIds.some((cid) => excIdStr.includes(cid))
+              if (isMatch) {
+                return {
+                  ...exc,
+                  status: 'Resolved',
+                  status_type: 'resolved',
+                  severity: 'Resolved',
+                  resolution_note: resolutionNote || exc.resolution_note || 'Resolved',
+                  resolved_at: new Date().toISOString(),
+                }
+              }
+              return exc
+            })
+
+            const unallocatedCount = updated.filter((e) => e.status_type === 'unallocated_cash' && e.status !== 'Resolved').length
+            const auditExceptionCount = updated.filter((e) => e.status_type === 'exception' && e.status !== 'Resolved').length
+            const resolvedCount = updated.filter((e) => e.status_type === 'resolved' || e.status === 'Resolved').length
+            const resolvedAmt = updated.filter((e) => e.status_type === 'resolved' || e.status === 'Resolved').reduce((sum, e) => sum + (e.amount || 0), 0)
+
+            return {
+              results: {
+                ...prev.results,
+                exceptions: updated,
+                unallocatedCount,
+                auditExceptionCount,
+                resolvedCount,
+                totalResolvedAmount: resolvedAmt,
+              },
+            }
+          })
+        }
+        return {
+          success: true,
+          memo_text: res.memo_text,
+          requires_confirmation: res.requires_confirmation,
+          result: res.result,
+        }
+      }
+
+      return { success: false, error: res.error || 'Failed to resolve exceptions' }
+    } catch (err: any) {
+      console.error('Error resolving exceptions:', err)
+      return { success: false, error: err.message || 'Network error while resolving exceptions' }
+    }
   },
 
   setReconcileParams: (params) => {
