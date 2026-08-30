@@ -7,10 +7,11 @@
 [![Python Version](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![FastMCP](https://img.shields.io/badge/FastMCP-20+_Tools-0D94FB)](https://github.com/jlowin/fastmcp)
-[![Status](https://img.shields.io/badge/Status-Production_Ready-brightgreen)](https://github.com/harissh-k06/Razorpay_Buildathon)
 
 <p align="center">
   <a href="#key-features">Key Features</a> •
+  <a href="#pennywise-ai-copilot-capabilities">AI Copilot</a> •
+  <a href="#repository-structure">Repo Structure</a> •
   <a href="#architecture-at-a-glance">Architecture</a> •
   <a href="#technology-stack">Tech Stack</a> •
   <a href="#quick-start">Quick Start</a> •
@@ -45,6 +46,54 @@ Equipped with **PennyWise AI**—an interactive financial audit assistant powere
 | **Exception Management** | Automated categorization of **Missing Cash** (High Risk) vs. **Unallocated Cash** (Extra Cash) with resolution workflows. |
 | **Data Standardisation** | High-throughput parallel LLM normalization for semantic vendor naming, unified date parsing, and live FX conversion. |
 | **Immutable Audit Trail** | Timestamped snapshot backups and full historic audit logs for reversible ledger modifications. |
+
+---
+
+## PennyWise AI Copilot: Capabilities
+
+PennyWise functions as an interactive financial accountant agent integrated directly into the reconciliation workflow via the Model Context Protocol (FastMCP):
+
+- **Root-Cause Diagnostics**: Investigates why specific invoices or settlements failed matching, diagnosing fee deductions, timing delays, or missing bank deposits.
+- **Universal Multi-Ledger Search**: Scans across Invoices, Razorpay settlements, and Bank statements simultaneously by UTR, customer, or amount.
+- **Ledger Mutation & Reassignment**: Corrects misclassified vendors, adjusts fee allocations, and updates customer accounts with pre-mutation snapshot backups.
+- **Dispute Memo Generation**: Synthesizes formal, audit-ready dispute memos with variance breakdowns and remediation steps.
+- **Closed-Loop Gmail Resolution**: Dispatches resolution emails directly to counterparties via Google OAuth and auto-marks exceptions as resolved.
+- **Dual Execution Safety**: Operates in read-only **Ask Mode** for exploratory auditing, and unlocks full ledger mutation tools in **Agentic Mode**.
+
+---
+
+## Repository Structure
+
+```text
+Razorpay-2/
+├── api/                    # FastAPI backend (REST endpoints, SSE chat streaming, OAuth routing)
+├── chat-bot/               # PennyWise AI agent (FastMCP tool caller, skill routing, sliding memory)
+├── frontend/               # Next.js 15 dashboard (App Router, Tailwind CSS, Recharts, Zustand)
+├── mcp_server/             # FastMCP server (22+ financial tools for queries, edits, and emails)
+├── reconciliation/         # 3-Way matching engine (Hungarian bipartite & Subset-sum solvers)
+├── standardisation/        # Two-phase data standardization pipeline & batch LLM client
+├── synthetic data/         # Deterministic test ledger generators (Invoices, Razorpay, Bank)
+├── docs/                   # Documentation assets & UI screenshots
+├── .env                    # Single source of truth environment configuration
+├── .env.example            # Official template for onboarding & git clone
+├── ARCHITECTURE.md         # In-depth system design, algorithms & technical reference
+├── QUICKSTART.md           # Step-by-step local installation and setup guide
+├── README.md               # Main project overview and user documentation
+└── requirements.txt        # Unified global backend Python dependencies
+```
+
+### Directory Breakdown and Responsibilities
+
+| Directory | Core Files | Responsibility & Use Case |
+| :--- | :--- | :--- |
+| **`api/`** | `main.py`, `auth.py`, `email_api.py` | FastAPI application layer providing REST endpoints for file staging (`/api/upload`), standardization (`/api/standardize`), reconciliation (`/api/reconcile`), SSE streaming (`/api/chat/stream`), and Google OAuth 2.0 session handling. |
+| **`chat-bot/`** | `chat_bot.py`, `skills_catalog.md`, `system_prompt.txt`, `workspace/skills/` | Conversational financial copilot. Implements the agentic loop, progressive skill routing, 5-turn sliding window memory, and in-process tool execution against the FastMCP tool bus. |
+| **`frontend/`** | `src/app/`, `src/components/`, `src/store/`, `src/lib/` | Next.js 15 web application delivering the executive reconciliation dashboard, interactive 3-way review/edit tables, real-time analytics charts (donut, gauge, waterfall), and the PennyWise AI drawer with the Agentic Mode toggle. |
+| **`mcp_server/`** | `server.py`, `test_mcp.py`, `test_parsing.py` | Model Context Protocol (FastMCP) server hosting 22+ financial tools categorized into Read-Only audit tools (11 tools), Write/Mutation tools (10 tools guarded by Agentic Mode), and Gmail dispatch tools. |
+| **`reconciliation/`** | `hungarian_matcher.py`, `subset_sum_matcher.py`, `config.py`, `run_reconciliation.py` | Core mathematical matching engine. Implements global bipartite Hungarian optimization for 1:1 pairs, combinatorial branch-and-bound subset-sum solving for N:1 and 1:N batch settlements, and residual ledger classification. |
+| **`standardisation/`**| `standardizer.py`, `llm_client.py`, `prompts.py` | High-throughput two-phase data normalization pipeline. Phase 1 executes semantic vendor clustering via concurrent LLM worker pools and in-memory caching; Phase 2 performs deterministic ISO-8601 date parsing and multi-currency FX conversions. |
+| **`synthetic data/`** | `generate_invoices.py`, `generate_razorpay.py`, `generate_bank.py` | Deterministic synthetic dataset generator used for development, benchmarking, and ground-truth validation, maintaining exact relational mappings across invoices, orders, gateway settlements, and bank credits. |
+| **`docs/`** | `docs/screenshots/` | Documentation assets and interface screen captures illustrating end-to-end reconciliation and resolution workflows. |
 
 ---
 

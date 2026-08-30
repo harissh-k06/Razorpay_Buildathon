@@ -335,99 +335,131 @@ flowchart TD
 
 ## 8. Model Context Protocol (FastMCP) Tool Ecosystem
 
-PennyWise exposes a comprehensive tool bus implemented via `FastMCP` in `mcp_server/server.py`.
+PennyWise implements an in-process tool bus powered by `FastMCP` in `mcp_server/server.py`. The tool bus exposes 22+ discrete financial analysis, mutation, and communication endpoints directly to the PennyWise AI agent without network serialization overhead.
 
 ### 8.1 Read-Only Tools (Always Accessible)
-Read-only tools are accessible in both Ask Mode and Agentic Mode:
+Read-only tools are accessible in both Ask Mode and Agentic Mode without modifying ledger state:
 
-| Tool Name | Parameters | Purpose |
-| :--- | :--- | :--- |
-| `get_pipeline_state` | `None` | Retrieves current standardization and reconciliation progress. |
-| `query_exceptions` | `status_type`, `vendor`, `min_amount`, `max_amount` | Queries audit exceptions with dynamic multi-attribute filtering. |
-| `get_unallocated_cash` | `min_amount`, `max_amount`, `vendor` | Retrieves unallocated cash and surplus ledger items. |
-| `get_standardized_data_preview` | `dataset_type`, `limit` | Returns paginated preview of standardized CSV records. |
-| `get_summary_stats` | `None` | Computes aggregate financial metrics (Match Rate, Gross, Net, Variance). |
-| `aggregate_exceptions_by_vendor`| `top_n` | Groups and sums exception exposure by vendor counterparty. |
-| `get_total_gateway_fees` | `None` | Calculates total platform fees and GST deductions from Razorpay. |
-| `get_matched_triplets` | `limit`, `vendor` | Retrieves verified 3-way matched records. |
-| `search_transactions` | `query`, `search_in` | Global full-text search across Invoices, Razorpay, and Bank records. |
-| `get_top_exceptions` | `n`, `category` | Returns the highest-value outstanding exceptions. |
-| `list_backups` | `None` | Lists timestamped CSV backup snapshots available for rollback. |
+| Tool Name | Parameter Schema | Return Payload | Purpose & Functional Scope |
+| :--- | :--- | :--- | :--- |
+| `get_pipeline_state` | `None` | `Dict[str, Any]` | Inspects filesystem timestamps and returns the current lifecycle status of raw, standardized, and reconciled datasets. |
+| `query_exceptions` | `status_type`, `vendor`, `min_amount`, `max_amount` | `List[Dict[str, Any]]` | Queries audit exceptions with multi-attribute filtering by category (`exception` for Missing Cash vs `unallocated_cash`), counterparty, and monetary range. |
+| `get_unallocated_cash` | `min_amount`, `max_amount`, `vendor` | `List[Dict[str, Any]]` | Queries unallocated gateway payouts and bank deposits that lack matching billing invoices. |
+| `get_standardized_data_preview` | `dataset_type`, `limit` | `Dict[str, Any]` | Returns a paginated structural preview of standardized CSV records (`invoice`, `razorpay`, `bank`). |
+| `get_summary_stats` | `None` | `Dict[str, Any]` | Calculates real-time aggregate financial metrics: total invoiced gross, bank settled net, realization rate percentage, and missing cash variance. |
+| `aggregate_exceptions_by_vendor`| `top_n: int = 5` | `List[Dict[str, Any]]` | Groups and sums monetary exception exposure by vendor counterparty to identify high-risk accounts. |
+| `get_total_gateway_fees` | `None` | `Dict[str, Any]` | Aggregates platform processing fees and GST deductions extracted from Razorpay settlement records. |
+| `get_matched_triplets` | `limit: int = 50`, `vendor` | `List[Dict[str, Any]]` | Retrieves verified 3-way matched records linking invoice, gateway payout, and bank UTR. |
+| `search_transactions` | `query: str`, `search_in: str` | `Dict[str, List]` | Performs global multi-column full-text substring search across Invoices, Razorpay, and Bank statements. |
+| `get_top_exceptions` | `n: int = 5`, `category` | `List[Dict[str, Any]]` | Returns the highest-value outstanding exceptions sorted by descending monetary value. |
+| `list_backups` | `None` | `List[Dict[str, Any]]` | Enumerates timestamped snapshot backups available in `standardisation/data/backup/`. |
 
 ### 8.2 Write and Mutation Tools (Agentic Mode Guarded)
-These tools modify filesystem state and are locked behind the Agentic Mode gatekeeper:
+Write tools modify CSV ledger files, trigger compute-heavy pipelines, or alter configuration parameters. These tools are strictly blocked in Ask Mode and executed in Agentic Mode with automatic snapshot backups:
 
-| Tool Name | Parameters | Purpose |
-| :--- | :--- | :--- |
-| `bulk_update_csv` | `dataset`, `updates` | Executes atomic batch modifications across standardized CSVs. |
-| `update_csv_record` | `dataset`, `record_id`, `updates` | Modifies specific cell values for a single record. |
-| `standardize_data` | `base_currency` | Triggers the Two-Phase Data Standardization pipeline. |
-| `run_reconciliation` | `params_dict` | Executes the 3-Way Hungarian and Subset-Sum matching engine. |
-| `change_base_currency` | `new_currency` | Converts all financial records to a new base currency. |
-| `revert_last_action` | `dataset_name` | Restores standardized datasets to the previous snapshot state. |
-| `mark_exceptions_resolved` | `exception_ids`, `resolution_note` | Updates exception records to `Resolved` status. |
-| `resolve_exceptions_bulk` | `mode`, `filter_vendor`, `note` | Resolves multiple exceptions based on filter criteria. |
-| `export_to_csv` | `export_type`, `output_filename` | Generates downloadable audit CSV reports. |
-| `parse_financial_file` | `file_path`, `file_type` | Parses raw statement files into standardized format. |
+| Tool Name | Parameter Schema | Return Payload | Purpose & Side Effects |
+| :--- | :--- | :--- | :--- |
+| `bulk_update_csv` | `dataset`, `updates: List[Dict]` | `Dict[str, Any]` | Executes atomic batch updates across multiple rows in standardized datasets with pre-mutation backup. |
+| `update_csv_record` | `dataset`, `record_id`, `updates: Dict` | `Dict[str, Any]` | Modifies specific cell values for an individual transaction record in a standardized CSV file. |
+| `standardize_data` | `base_currency: str = "INR"` | `Dict[str, Any]` | Triggers the Two-Phase Data Standardization pipeline, normalising vendor names and currency fields. |
+| `run_reconciliation` | `params_dict: Optional[Dict]` | `Dict[str, Any]` | Executes the 3-Way Hungarian and Subset-Sum matching engine and generates result datasets. |
+| `change_base_currency` | `new_currency: str` | `Dict[str, Any]` | Re-evaluates foreign currency conversions across all datasets against the newly selected base currency. |
+| `revert_last_action` | `dataset_name: Optional[str]` | `Dict[str, Any]` | Restores standardized datasets to the previous snapshot state from the backup directory. |
+| `mark_exceptions_resolved` | `exception_ids: List`, `note: str` | `Dict[str, Any]` | Updates exception records to `Resolved` status in `exceptions.csv` and persists audit trail notes. |
+| `resolve_exceptions_bulk` | `mode: str`, `filter_vendor: str`, `note` | `Dict[str, Any]` | Performs bulk resolution of exceptions filtered by vendor or risk tier. |
+| `export_to_csv` | `export_type: str`, `output_filename` | `Dict[str, Any]` | Exports filtered subsets of reconciliation results into custom CSV files for reporting. |
+| `parse_financial_file` | `file_path`, `file_type` | `Dict[str, Any]` | Ingests and parses arbitrary raw tabular files into canonical staging schemas. |
 
 ### 8.3 Communication and Resolution Tools
-| Tool Name | Parameters | Purpose |
-| :--- | :--- | :--- |
-| `send_email_via_gmail` | `to`, `subject`, `body`, `exception_id` | Sends resolution emails via Gmail API and resolves the exception. |
-| `generate_email_from_exception`| `exception_id`, `recipient_email` | Drafts structured counterparty resolution emails with transaction context. |
+| Tool Name | Parameter Schema | Return Payload | Purpose & Side Effects |
+| :--- | :--- | :--- | :--- |
+| `send_email_via_gmail` | `to`, `subject`, `body`, `exception_id` | `Dict[str, Any]` | Dispatches RFC-2822 MIME emails via Google Gmail REST API and marks the referenced exception as `Resolved`. |
+| `generate_email_from_exception`| `exception_id`, `recipient_email` | `Dict[str, str]` | Synthesizes an audit-ready vendor dispute email containing invoice ID, gross amount, and variance breakdown. |
 
 ---
 
-## 9. PennyWise AI Agent Controller
+## 9. PennyWise Autonomous Agent: Architecture and Capabilities
 
-The conversational assistant in `chat-bot/chat_bot.py` operates as an autonomous financial accountant copilot.
+PennyWise is an autonomous financial accountant agent implemented in `chat-bot/chat_bot.py`. It pairs reasoning capabilities with structured tool access over FastMCP to provide end-to-end reconciliation assistance.
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Finance Controller
-    participant Web as Next.js Chat Drawer
-    participant API as FastAPI SSE Endpoint
-    participant Agent as Agentic Controller
-    participant MCP as FastMCP Server
-    participant LLM as OpenAI-Compatible LLM API
+flowchart TD
+    subgraph AgentCore["PennyWise Agent Core"]
+        Prompt["System Persona & Guardrails<br/>(system_prompt.txt)"]
+        Router["Progressive Disclosure<br/>Skill Router (skills_catalog.md)"]
+        Memory["Sliding Window Memory<br/>(Last 5 Conversation Turns)"]
+    end
 
-    User->>Web: "Why is invoice INV-034 unmatched?"
-    Web->>API: POST /api/chat/stream {message, session_id, agentic_mode}
-    API->>Agent: Stream request into agentic loop
-    Agent->>Agent: Inject System Prompt & Load Skills Catalog
-    Agent->>LLM: Send Conversation History + Available FastMCP Tools
-    LLM-->>Agent: Function Call: query_exceptions(vendor='adobe')
-    Agent->>MCP: Execute query_exceptions()
-    MCP-->>Agent: Returns JSON: INV-034 details (Missing Cash, INR 39,541.82)
-    Agent->>LLM: Send Tool Execution Result
-    LLM-->>Agent: Stream natural language explanation & remediation advice
-    Agent-->>API: SSE Data Chunks
-    API-->>Web: Real-Time Markdown Tokens Rendered
+    subgraph Capabilities["Core Capability Pillars"]
+        Cap1["1. Root-Cause Exception Investigation"]
+        Cap2["2. Full-Text Search & Multi-Ledger Auditing"]
+        Cap3["3. Interactive CSV Data Mutation & Reassignment"]
+        Cap4["4. Autonomous Pipeline Orchestration"]
+        Cap5["5. Audit-Ready Dispute Memo Generation"]
+        Cap6["6. Closed-Loop Gmail Dispute Dispatch"]
+    end
+
+    subgraph FastMCPBus["FastMCP In-Process Tool Bus"]
+        Tool_Read["11 Read-Only Query Tools"]
+        Tool_Write["10 Write/Mutation Tools"]
+        Tool_Comm["2 Gmail Resolution Tools"]
+    end
+
+    AgentCore --> Capabilities
+    Capabilities --> FastMCPBus
 ```
 
-### 9.1 Agentic Execution Loop and Tool Streaming
-1. **Request Intake**: Receives prompt, session ID, and `agentic_mode` boolean via SSE.
-2. **Context Compilation**: Injects `system_prompt.txt`, appends active skill metadata, and includes the last 5 conversation turns.
-3. **Tool Invocation**: Transmits tool schemas to the LLM API. When a tool call is returned, FastMCP executes it in-process and returns structured JSON back to the model.
-4. **Streaming Response**: Emits SSE chunks to the frontend for real-time token rendering.
+### 9.1 Persona, Guardrails, and Safety Invariants
+The agent operates under accounting guardrails defined in `chat-bot/system_prompt.txt`:
+1. **Mathematical Grounding**: Every numerical claim must be sourced from FastMCP tool execution payloads; hallucinated numbers or unverified calculations are strictly prohibited.
+2. **Category Distinction**: Explicitly segregates **Missing Cash** (receivables risk requiring recovery) from **Unallocated Cash** (surplus funds requiring ledger assignment).
+3. **Mutation Gatekeeping**: Read-only queries execute seamlessly in Ask Mode, while any write, ledger edit, or email dispatch requires the user to enable Agentic Mode.
+4. **Deterministic Auditing**: Every modification must be accompanied by an audit reason and backed by timestamped CSV snapshots.
 
-### 9.2 Skill Routing and Progressive Disclosure
-To minimize token consumption and avoid context window pollution, PennyWise implements progressive skill disclosure via `chat-bot/skills_catalog.md`.
-- **Level 1 (Catalog Index)**: The agent prompt includes a lightweight catalog indexing available capabilities.
-- **Level 2 (Dynamic Loading)**: Full `SKILL.md` directives are loaded into context only when specific task categories are invoked:
-  - `explaining`: Root-cause exception diagnostics and reconciliation formula breakdowns.
-  - `resolving_editing`: CSV ledger updates, dispute memo drafting, and email generation.
-  - `configuring`: Matching threshold parameter updates and base currency alterations.
-  - `reverting_changes`: Backup inventory queries and rollback execution.
-  - `viewing_filtering`: Targeted transaction searches and unallocated cash queries.
-  - `data_schemas`: Structural definitions of standardized CSV fields.
-  - `action_log`: Historical audit tracking.
+### 9.2 Six Core Functional Capabilities
 
-### 9.3 Sliding Window Memory Management
-Chat context is managed through a sliding-window memory buffer:
-- Retains the last 5 user-agent interaction pairs.
-- Truncates raw tool payloads exceeding 2,000 characters to prevent context window saturation while preserving core diagnostic metadata.
+#### 1. Automated Root-Cause Exception Investigation
+PennyWise analyzes why specific invoices or settlements failed matching. When queried about an unmatched transaction (e.g. `INV-034`), the agent invokes `query_exceptions`, inspects amount variances, checks dates, and explains the root cause:
+- Uncaptured gateway payment.
+- Split settlement timing delay exceeding the date window.
+- Platform fee variance beyond the 5% threshold.
+
+#### 2. Dynamic Full-Text Search and Multi-Ledger Auditing
+Using `search_transactions`, PennyWise scans across Invoices, Razorpay settlements, and Bank statements in a single operation. It cross-references UTR numbers, customer names, reference codes, and monetary values across disparate source files.
+
+#### 3. Interactive CSV Data Mutation and Reassignment
+When granted Agentic Mode permissions, PennyWise can edit cell values directly in standardized datasets using `update_csv_record` and `bulk_update_csv`. It reassigns misclassified vendor names, adjusts fee allocations, and updates customer accounts while preserving raw original values.
+
+#### 4. Autonomous Pipeline Orchestration
+PennyWise can trigger both data normalization (`standardize_data`) and matching execution (`run_reconciliation`) directly from natural language prompts, adjusting parameter tolerances dynamically (e.g., expanding the date window to 14 days).
+
+#### 5. Audit-Ready Dispute Memo Generation
+PennyWise drafts formal, structured financial dispute memos containing:
+- Executive Summary and transaction metadata (Invoice ID, Settlement ID, Bank Ref).
+- Numerical Variance Breakdown (Gross Amount, Deducted Fees, Missing Amount).
+- Root Cause Hypothesis and recommended accounting adjustments.
+
+#### 6. Closed-Loop Counterparty Communication via Gmail API
+PennyWise can generate vendor inquiry emails and dispatch them directly from the user's authenticated Google account via `send_email_via_gmail`. Upon confirmed delivery, it automatically marks the referenced exception as `Resolved` in the audit log.
+
+### 9.3 Modular Skills Architecture and Progressive Disclosure
+To maintain token efficiency and prevent context saturation, PennyWise uses progressive skill routing via `chat-bot/skills_catalog.md`:
+
+| Skill Module | Directory | Functional Scope |
+| :--- | :--- | :--- |
+| **`master_skills`** | `workspace/skills/master_skills/` | Main operational rules, financial category definitions, and tool routing directives. |
+| **`explaining`** | `workspace/skills/explaining/` | Guides root-cause diagnostics, Hungarian cost breakdowns, and metric explanations. |
+| **`resolving_editing`**| `workspace/skills/resolving_editing/` | Governs CSV cell updates, batch mutations, dispute memo synthesis, and resolution workflows. |
+| **`configuring`** | `workspace/skills/configuring/` | Directs matching parameter updates (`amount_tolerance`, `date_window_days`) and base currency switches. |
+| **`reverting_changes`**| `workspace/skills/reverting_changes/` | Manages backup inventory queries and rollback restoration execution. |
+| **`viewing_filtering`**| `workspace/skills/viewing_filtering/` | Directs multi-attribute exception queries and unallocated cash searches. |
+| **`data_schemas`** | `workspace/skills/data_schemas/` | Defines structural specifications of standardized CSV columns and data types. |
+| **`action_log`** | `workspace/skills/action_log/` | Tracks audit logs and maintains reversible change histories. |
+
+### 9.4 Sliding-Window Memory and Payload Optimization
+Context memory in `chat_bot.py` is managed dynamically:
+- Retains a sliding window of the last 5 conversation turns.
+- Truncates raw tool JSON payloads exceeding 2,000 characters, retaining essential analytical keys to avoid context window degradation.
 
 ---
 
