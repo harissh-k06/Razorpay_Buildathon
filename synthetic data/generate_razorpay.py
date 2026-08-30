@@ -19,10 +19,9 @@ if sys.stdout.encoding != 'utf-8':
     except Exception:
         pass
 
-from pathlib import Path
+# Load .env from project root
 root_env = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=root_env)
-load_dotenv()  # Load from local .env if present
+load_dotenv(dotenv_path=root_env, override=True)
 
 KEY_ID = os.getenv("KEY_ID")
 SECRET_KEY = os.getenv("SECRET_KEY")

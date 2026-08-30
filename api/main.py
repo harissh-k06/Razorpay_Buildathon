@@ -27,8 +27,7 @@ for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "mcp_server"), str(PROJECT_ROOT 
 
 # ── Load env for OAuth config ───────────────────────────────────────────────────
 from dotenv import load_dotenv
-load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
-load_dotenv(dotenv_path=BASE_DIR / ".env")
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env", override=True)
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 logging.basicConfig(

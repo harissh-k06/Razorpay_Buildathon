@@ -23,14 +23,12 @@ except Exception:
     Client = None
     StdioTransport = None
 
-from mydeepseek_client import DeepSeekStandardizer
+from llm_client import LLMStandardizer, DeepSeekStandardizer
 from dateutil import parser
 
-# Load .env from root and standardisation directory
+# Load .env from project root
 root_env = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=root_env)
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=root_env, override=True)
 
 # Deterministic exchange rates relative to USD
 EXCHANGE_RATES = {
@@ -248,9 +246,10 @@ class DataStandardizer:
        Can be re-run on demand in milliseconds when changing base currency without invoking the LLM.
     """
 
-    def __init__(self, base_currency: str = "INR", deepseek_api_key: str = None):
+    def __init__(self, base_currency: str = "INR", model_api_key: str = None, deepseek_api_key: str = None):
         self.base_currency = base_currency.upper().strip()
-        self.standardizer = DeepSeekStandardizer()
+        api_key = model_api_key or deepseek_api_key
+        self.standardizer = LLMStandardizer(api_key=api_key)
         self._llm_data: Dict[str, pd.DataFrame] = {}
 
         # Base directories
@@ -341,11 +340,11 @@ class DataStandardizer:
 
         # ---- VENDORS (LLM Batch) ----
         if "vendor" in df.columns and df["vendor"].astype(str).str.strip().ne("").any():
-            print(f"   [{source_key}] Standardizing vendors from 'vendor' using LLM (DeepSeek)...")
+            print(f"   [{source_key}] Standardizing vendors from 'vendor' using LLM...")
             raw_vendors = df["vendor"].fillna("").astype(str).tolist()
             df["vendor_standardized"] = self.standardizer.standardize_vendors_batch(raw_vendors)
         elif "description" in df.columns and df["description"].astype(str).str.strip().ne("").any():
-            print(f"   [{source_key}] Extracting vendors from 'description' using LLM (DeepSeek)...")
+            print(f"   [{source_key}] Extracting vendors from 'description' using LLM...")
             raw_desc = df["description"].fillna("").astype(str).tolist()
             df["vendor_standardized"] = self.standardizer.standardize_vendors_batch(raw_desc)
         else:
@@ -353,7 +352,7 @@ class DataStandardizer:
 
         # ---- DESCRIPTIONS (LLM Batch) ----
         if "description" in df.columns and df["description"].astype(str).str.strip().ne("").any():
-            print(f"   [{source_key}] Summarizing descriptions from 'description' using LLM (DeepSeek)...")
+            print(f"   [{source_key}] Summarizing descriptions from 'description' using LLM...")
             raw_desc = df["description"].fillna("").astype(str).tolist()
             df["description_standardized"] = self.standardizer.standardize_descriptions_batch(raw_desc)
         else:
@@ -645,7 +644,7 @@ class DataStandardizer:
 if __name__ == "__main__":
     import sys
     print("="*60)
-    print("Data Standardizer - MCP Canonical Pipeline (DeepSeek)")
+    print("Data Standardizer - MCP Canonical Pipeline (OpenAI-Compatible LLM)")
     print("="*60)
     # Get currency from CLI args, default to INR if not provided
     if len(sys.argv) > 1 and sys.argv[1].strip():
@@ -658,6 +657,6 @@ if __name__ == "__main__":
     base_curr = base_curr if base_curr else "INR"
     standardizer = DataStandardizer(
         base_currency=base_curr,
-        deepseek_api_key=os.getenv("deepseek_API_KEY") or os.getenv("API_KEY") or os.getenv("DEEPSEEK_API_KEY")
+        model_api_key=os.getenv("MODEL_API_KEY") or os.getenv("DEEPSEEK_API_KEY") or os.getenv("API_KEY")
     )
     standardizer.process_files()

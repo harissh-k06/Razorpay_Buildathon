@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import patch
-from deepseek_client import DeepSeekStandardizer
+from llm_client import LLMStandardizer
 
-class TestDeepSeekStandardizer(unittest.TestCase):
+class TestLLMStandardizer(unittest.TestCase):
     def setUp(self):
-        self.standardizer = DeepSeekStandardizer(
+        self.standardizer = LLMStandardizer(
             api_key="mock-key",
             cache_enabled=True,
             max_batch_tokens=15000,
@@ -34,7 +34,7 @@ class TestDeepSeekStandardizer(unittest.TestCase):
         self.assertIsNotNone(recovered)
         self.assertIn("stripe usage-based", recovered)
 
-    @patch.object(DeepSeekStandardizer, "_call_with_retry")
+    @patch.object(LLMStandardizer, "_call_with_retry")
     def test_standardize_vendors_batch(self, mock_call):
         mock_call.return_value = '["amazon", "google"]'
         results = self.standardizer.standardize_vendors_batch(["Amzn", "Google Cloud", "Amzn"])

@@ -11,10 +11,9 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from fastmcp import FastMCP
 from dotenv import load_dotenv
+# Load .env from project root
 root_env = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=root_env)
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=root_env, override=True)
 # Optional LLM fallback – only imported when needed
 try:
     from openai import OpenAI
@@ -233,12 +232,15 @@ def parse_transaction_table(df: pd.DataFrame) -> List[Dict]:
 # LLM fallback (when deterministic detection fails)
 # -------------------------------------------------------------------
 def llm_detect_headers(lines: List[str]) -> Dict:
-    """Use DeepSeek to find the header row and column mapping."""
+    """Use OpenAI-compatible LLM to find the header row and column mapping."""
     if OpenAI is None:
         raise ImportError("OpenAI library not installed – cannot use LLM fallback.")
+    api_key = os.environ.get("MODEL_API_KEY") or os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("API_KEY")
+    base_url = os.environ.get("MODEL_BASE_URL") or os.environ.get("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
+    model = os.environ.get("MODEL_NAME") or os.environ.get("DEEPSEEK_MODEL") or "deepseek-chat"
     client = OpenAI(
-        api_key=os.environ.get("DEEPSEEK_API_KEY"),
-        base_url="https://api.deepseek.com"
+        api_key=api_key,
+        base_url=base_url
     )
     sample = "\n".join(lines[:30])  # first 30 lines
     prompt = f"""
@@ -254,7 +256,7 @@ File snippet:
 {sample}
 """
     response = client.chat.completions.create(
-        model="deepseek-chat",
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"}
     )

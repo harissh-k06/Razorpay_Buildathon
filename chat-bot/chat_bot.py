@@ -14,8 +14,7 @@ PROJECT_ROOT = BASE_DIR.parent
 SKILLS_DIR = BASE_DIR / "workspace" / "skills"
 MCP_SCRIPT = PROJECT_ROOT / "mcp_server" / "server.py"
 
-load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
-load_dotenv(dotenv_path=BASE_DIR / ".env")
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env", override=True)
 
 # Configure logger for chat_bot
 logger = logging.getLogger("pennywise.chatbot")
@@ -114,10 +113,12 @@ async def get_tools_and_client():
 async def stream_chat(message: str, session_id: str = "default", agentic_mode: Optional[bool] = None):
     logger.info(f"Starting stream_chat for session '{session_id}' | Message: '{message}' | agentic_mode: {agentic_mode}")
     from openai import OpenAI
-    api_key = os.getenv("DEEPSEEK_API_KEY")
+    api_key = os.getenv("MODEL_API_KEY") or os.getenv("DEEPSEEK_API_KEY") or os.getenv("API_KEY")
+    base_url = os.getenv("MODEL_BASE_URL") or os.getenv("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
+    model = os.getenv("MODEL_NAME") or os.getenv("DEEPSEEK_MODEL") or "deepseek-chat"
     if not api_key:
-        logger.error("DEEPSEEK_API_KEY is not set in environment variables!")
-    client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+        logger.error("MODEL_API_KEY (or DEEPSEEK_API_KEY) is not set in environment variables!")
+    client = OpenAI(api_key=api_key, base_url=base_url)
     
     # 1. Connect to in-process FastMCP and discover all active tools dynamically
     mcp_client, tool_schemas = await get_tools_and_client()
@@ -191,11 +192,11 @@ async def stream_chat(message: str, session_id: str = "default", agentic_mode: O
         while True:
             turn_count += 1
             tool_names_list = [t['function']['name'] for t in tool_schemas]
-            logger.info(f"Turn {turn_count}: Calling DeepSeek API with {len(tool_schemas)} tools: {tool_names_list}")
+            logger.info(f"Turn {turn_count}: Calling LLM API ({model}) with {len(tool_schemas)} tools: {tool_names_list}")
             
             # Stream the API response
             stream = client.chat.completions.create(
-                model="deepseek-chat",
+                model=model,
                 messages=messages,
                 tools=tool_schemas,
                 stream=True
@@ -234,7 +235,7 @@ async def stream_chat(message: str, session_id: str = "default", agentic_mode: O
                             tool_calls_buffer[index]["args"] += tc.function.arguments
 
             if token_count > 0:
-                logger.info(f"Turn {turn_count}: Streamed {token_count} tokens from DeepSeek.")
+                logger.info(f"Turn {turn_count}: Streamed {token_count} tokens from LLM ({model}).")
 
             # If tool calls were requested, execute them
             if tool_calls_buffer:

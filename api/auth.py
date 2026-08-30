@@ -13,11 +13,10 @@ from fastapi import APIRouter, Request, Response, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from dotenv import load_dotenv
 
-# Load env from root and api/.env
+# Load env from root .env
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
-load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
-load_dotenv(dotenv_path=BASE_DIR / ".env")
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env", override=True)
 
 logger = logging.getLogger("auth")
 

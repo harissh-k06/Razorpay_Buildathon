@@ -3,16 +3,16 @@ import re
 import json
 import time
 import random
+import threading
 from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 from typing import List, Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Load .env file from root and standardisation folder
+# Load .env file from project root
 root_env = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=root_env)
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=root_env, override=True)
 
 from prompts import (
     BATCH_SYSTEM_PROMPT,
@@ -20,64 +20,94 @@ from prompts import (
     BATCH_DESCRIPTION_INSTRUCTION,
 )
 
-class DeepSeekStandardizer:
+class LLMStandardizer:
     """
-    High-throughput batch standardizer using DeepSeek-V4-Flash-0731 via Logfare's OpenAI-compatible API.
-    FEATURES:
-    - Smart in-memory caching
-    - Token estimation and safe chunking
-    - Exponential backoff with jitter on 429 / rate limits
-    - LLM USED ONLY FOR:
-        - Vendor name canonicalization (including bank descriptions)
+    High-throughput batch standardizer using any OpenAI-compatible LLM endpoint
+    (DeepSeek, OpenAI, Groq, OpenRouter, Together, Ollama, etc.).
+    
+    - Reads MODEL_API_KEY (with backward-compatible fallback to DEEPSEEK_API_KEY / API_KEY)
+    - Reads optional MODEL_BASE_URL (defaults to https://api.deepseek.com/v1)
+    - Reads optional MODEL_NAME (defaults to deepseek-chat / deepseek-v4-flash)
+    - Smart thread-safe in-memory caching
+    - Token estimation and item-bounded chunking (25 items/batch for rapid parallel completion)
+    - Parallel batch execution
+    - Exponential backoff with jitter on rate limits / connection errors
+    - Pure LLM standardization for:
+        - Vendor canonicalization
         - Description summarization
-    - Everything else (dates, amounts, currencies) is deterministic
     """
 
     def __init__(
         self,
-        model: str = "deepseek-v4-flash-0731",  # Updated model name
+        model: Optional[str] = None,
         cache_enabled: bool = True,
-        max_batch_tokens: int = 15000,
+        max_batch_tokens: int = 150000,
+        max_items_per_batch: int = 25,
         max_retries: int = 5,
         base_delay: float = 1.0,
         api_key: Optional[str] = None,
-        base_url: str = "https://logfare.ai/v1"  # Logfare base URL
+        base_url: Optional[str] = None,
+        max_parallel_batches: int = 20
     ):
-        self.model = model
-        self.cache_enabled = cache_enabled
-        self.max_batch_tokens = max_batch_tokens
-        self.max_retries = max_retries
-        self.base_delay = base_delay
-        # Use LOGFARE_API_KEY / DEEPSEEK_API_KEY / API_KEY from environment
+        # Resolve API Key
         self.api_key = (
             api_key
+            or os.getenv("MODEL_API_KEY")
             or os.getenv("DEEPSEEK_API_KEY")
+            or os.getenv("API_KEY")
         )
-        self.base_url = base_url
+        if not self.api_key:
+            raise ValueError(
+                "MODEL_API_KEY (or DEEPSEEK_API_KEY) not found in environment variables. "
+                "Please set MODEL_API_KEY in your .env file."
+            )
 
-        # Initialize OpenAI client with Logfare settings
+        # Resolve Base URL and Model Name
+        self.base_url = (
+            base_url
+            or os.getenv("MODEL_BASE_URL")
+            or os.getenv("DEEPSEEK_BASE_URL")
+            or "https://api.deepseek.com/v1"
+        )
+        self.model = (
+            model
+            or os.getenv("MODEL_NAME")
+            or os.getenv("DEEPSEEK_MODEL")
+            or "deepseek-chat"
+        )
+
+        self.cache_enabled = cache_enabled
+        self.max_batch_tokens = max_batch_tokens
+        self.max_items_per_batch = max_items_per_batch
+        self.max_retries = max_retries
+        self.base_delay = base_delay
+        self.max_parallel_batches = max_parallel_batches
+
         self.client = OpenAI(
             base_url=self.base_url,
             api_key=self.api_key
         )
         self.cache: Dict[str, Any] = {}
+        self._lock = threading.Lock()
 
+    # ---------- Cache methods ----------
     def _get_cache_key(self, value: Any, task_type: str) -> str:
-        """Generate cache key: 'vendor:amazon web services'"""
         val_str = str(value).lower().strip() if value is not None else ""
         return f"{task_type}:{val_str}"
 
     def _get_cached(self, value: Any, task_type: str) -> Optional[Any]:
         if not self.cache_enabled:
             return None
-        return self.cache.get(self._get_cache_key(value, task_type))
+        with self._lock:
+            return self.cache.get(self._get_cache_key(value, task_type))
 
     def _set_cache(self, value: Any, task_type: str, result: Any):
-        if self.cache_enabled:
-            self.cache[self._get_cache_key(value, task_type)] = result
+        if self.cache_enabled and result is not None:
+            with self._lock:
+                self.cache[self._get_cache_key(value, task_type)] = result
 
+    # ---------- Token estimation and batching ----------
     def _estimate_tokens(self, text: str) -> int:
-        """Conservative token estimate."""
         if not text:
             return 2
         asian_chars = sum(1 for c in text if ord(c) > 127)
@@ -89,12 +119,11 @@ class DeepSeekStandardizer:
         """Split values into token-safe and item-bounded batches."""
         batches: List[List[str]] = []
         current_batch: List[str] = []
-        current_tokens = 200  # overhead
-        max_items_per_batch = 25  # Lowered batch size to guarantee completion without truncation
+        current_tokens = 200
 
         for val in values:
             val_tokens = self._estimate_tokens(str(val))
-            if (current_tokens + val_tokens > self.max_batch_tokens or len(current_batch) >= max_items_per_batch) and current_batch:
+            if (current_tokens + val_tokens > self.max_batch_tokens or len(current_batch) >= self.max_items_per_batch) and current_batch:
                 batches.append(current_batch)
                 current_batch = [val]
                 current_tokens = 200 + val_tokens
@@ -104,66 +133,62 @@ class DeepSeekStandardizer:
 
         if current_batch:
             batches.append(current_batch)
+
         return batches
 
+    # ---------- Response parsing helpers ----------
     def _strip_thinking_and_extract_json(self, text: str) -> str:
-        """Remove thinking tags, code fences, and extract JSON array."""
         if not text:
             return "[]"
         cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
         cleaned = re.sub(r"</?think>", "", cleaned, flags=re.IGNORECASE).strip()
-        # Remove markdown code blocks if present
         cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
         cleaned = re.sub(r"\s*```$", "", cleaned)
         json_match = re.search(r"\[.*\]", cleaned, flags=re.DOTALL)
         return json_match.group(0) if json_match else cleaned
 
     def _safe_parse_json_array(self, text: str, expected_len: int) -> Optional[List[str]]:
-        """Parse JSON array safely with repair heuristics for truncated/unterminated strings."""
         if not text:
             return None
-        # Attempt 1: Direct JSON parsing
+        # Attempt direct parse
         try:
             parsed = json.loads(text)
             if isinstance(parsed, list):
-                return [str(x) for x in parsed]
+                return [str(x).strip().lower() for x in parsed]
         except Exception:
             pass
 
-        # Attempt 2: If truncated or unterminated string, try to close open string and array
+        # Repair heuristics for truncated output
         cleaned = text.strip()
         if cleaned.startswith("["):
-            # If unterminated quote
             if cleaned.count('"') % 2 != 0:
                 repaired = cleaned + '"]'
                 try:
                     parsed = json.loads(repaired)
                     if isinstance(parsed, list):
-                        return [str(x) for x in parsed]
+                        return [str(x).strip().lower() for x in parsed]
                 except Exception:
                     pass
-            # If simply missing closing bracket
             if not cleaned.endswith("]"):
                 repaired = cleaned + "]"
                 try:
                     parsed = json.loads(repaired)
                     if isinstance(parsed, list):
-                        return [str(x) for x in parsed]
+                        return [str(x).strip().lower() for x in parsed]
                 except Exception:
                     pass
 
-        # Attempt 3: Regex extract all quoted strings within array
+        # Fallback: regex extract quoted strings
         try:
             matches = re.findall(r'"((?:[^"\\]|\\.)*)"', text)
             if matches and (abs(len(matches) - expected_len) <= 2 or len(matches) >= expected_len):
-                return matches[:expected_len]
+                return [m.strip().lower() for m in matches[:expected_len]]
         except Exception:
             pass
-
         return None
 
+    # ---------- API call with retry ----------
     def _call_with_retry(self, prompt: str, max_tokens: int) -> str:
-        """Call API with exponential backoff on rate limits and connection errors."""
         retry_count = 0
         delay = self.base_delay
 
@@ -197,62 +222,72 @@ class DeepSeekStandardizer:
                     raise
         raise RuntimeError(f"Max retries ({self.max_retries}) exceeded.")
 
+    # ---------- Batch processing with parallel execution ----------
+    def _process_single_batch(self, batch: List[str], task_type: str, instruction_template: str) -> List[tuple]:
+        """
+        Process a single batch through LLM and return (raw_item, standardized_result) pairs.
+        """
+        items_json = json.dumps(batch, ensure_ascii=False)
+        prompt = instruction_template.format(items_json=items_json)
+        max_tokens = min(max(len(batch) * 60, 300), 2000)
+
+        try:
+            raw_json = self._call_with_retry(prompt, max_tokens=max_tokens)
+            parsed = self._safe_parse_json_array(raw_json, len(batch))
+            if parsed is not None and len(parsed) == len(batch):
+                return list(zip(batch, parsed))
+            elif parsed is not None and len(parsed) > 0:
+                results = []
+                for i, raw_item in enumerate(batch):
+                    res_val = parsed[i] if i < len(parsed) and parsed[i].strip() else raw_item
+                    results.append((raw_item, res_val))
+                return results
+            else:
+                return [(raw_item, raw_item) for raw_item in batch]
+        except Exception as e:
+            print(f"[Warning] Batch {task_type} failed: {e}")
+            return [(raw_item, raw_item) for raw_item in batch]
+
     def _batch_call(self, values: List[str], task_type: str, instruction_template: str) -> List[Any]:
-        """Main batched LLM call with caching."""
         if not values:
             return []
 
-        # 1. Identify uncached unique values
+        # Identify uncached unique values
         uncached_unique: List[str] = []
         for val in values:
             if self._get_cached(val, task_type) is None and val not in uncached_unique:
                 uncached_unique.append(val)
 
-        # 2. Process uncached items in batches
         if uncached_unique:
             batches = self._batch_values(uncached_unique, task_type)
-            for batch_idx, batch in enumerate(batches):
-                items_json = json.dumps(batch, ensure_ascii=False)
-                prompt = instruction_template.format(items_json=items_json)
-                # Generous output tokens per item (up to 4096 max)
-                max_tokens = min(max(len(batch) * 120, 1000), 4096)
+            print(f"   [Batch] {len(batches)} batches for {len(uncached_unique)} uncached {task_type}s (max {self.max_items_per_batch}/batch)")
 
-                try:
-                    raw_json = self._call_with_retry(prompt, max_tokens=max_tokens)
-                    parsed = self._safe_parse_json_array(raw_json, len(batch))
-                    if parsed is not None and len(parsed) == len(batch):
-                        for raw_item, res_item in zip(batch, parsed):
-                            self._set_cache(raw_item, task_type, res_item)
-                    elif parsed is not None and len(parsed) > 0:
-                        # Partial alignment if close
-                        for i, raw_item in enumerate(batch):
-                            res_val = parsed[i] if i < len(parsed) else raw_item
-                            self._set_cache(raw_item, task_type, res_val)
-                    else:
-                        # Fallback: use raw value if unparseable
-                        for raw_item in batch:
-                            self._set_cache(raw_item, task_type, raw_item)
-                except Exception as e:
-                    print(f"[Warning] Batch {task_type} failed: {e}")
-                    for raw_item in batch:
-                        self._set_cache(raw_item, task_type, raw_item)
+            # Process batches in parallel
+            with ThreadPoolExecutor(max_workers=min(len(batches), self.max_parallel_batches)) as executor:
+                future_to_batch = {
+                    executor.submit(self._process_single_batch, batch, task_type, instruction_template): batch
+                    for batch in batches
+                }
 
-        # 3. Assemble results in original order
-        return [self._get_cached(val, task_type) if self._get_cached(val, task_type) is not None else val for val in values]
+                for future in as_completed(future_to_batch):
+                    batch_results = future.result()
+                    for raw_item, res_item in batch_results:
+                        self._set_cache(raw_item, task_type, res_item)
 
+        # Assemble final results in original order
+        return [
+            self._get_cached(val, task_type) if self._get_cached(val, task_type) is not None else val
+            for val in values
+        ]
+
+    # ---------- Public methods ----------
     def standardize_vendors_batch(self, vendors: List[str]) -> List[str]:
-        """
-        Batch standardize vendor names or bank descriptions using LLM.
-        NO hardcoded mappings used.
-        """
         raw_strings = [str(v) if v is not None else "" for v in vendors]
         return self._batch_call(raw_strings, "vendor", BATCH_VENDOR_INSTRUCTION)
 
     def standardize_descriptions_batch(self, descriptions: List[str]) -> List[str]:
-        """
-        Summarize ALL descriptions in ONE batched API call using LLM.
-        For bank descriptions: extract core meaning (e.g., 'razorpay settlement')
-        For Razorpay descriptions: clean and summarize (e.g., 'stripe payment usage-based')
-        """
         raw_strings = [str(d) if d is not None else "" for d in descriptions]
         return self._batch_call(raw_strings, "description", BATCH_DESCRIPTION_INSTRUCTION)
+
+# Backward-compatibility alias
+DeepSeekStandardizer = LLMStandardizer
