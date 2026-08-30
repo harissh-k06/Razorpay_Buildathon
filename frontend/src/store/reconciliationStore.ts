@@ -15,6 +15,8 @@ import {
   runReconciliation as apiReconcile,
   fetchStandardizedData,
   fetchReconciliationResults,
+  fetchReconcileParams,
+  updateReconcileParamsApi,
   fetchAgenticMode,
   updateAgenticMode,
   updateStandardizedRow,
@@ -58,7 +60,7 @@ export interface ReconciliationState {
     mode: 'memo' | 'direct' | 'manual',
     resolutionNote?: string
   ) => Promise<{ success: boolean; error?: string; memo_text?: string; requires_confirmation?: boolean; result?: any }>
-  setReconcileParams: (params: Partial<ReconcileParams>) => void
+  setReconcileParams: (params: Partial<ReconcileParams>, persist?: boolean) => void
   setAgenticMode: (enabled: boolean) => Promise<void>
   resetAll: () => void
 }
@@ -365,15 +367,24 @@ state = {
     } catch {}
 
     try {
-      const reconResults = await fetchReconciliationResults()
-      if (reconResults && reconResults.triplets) {
+      const paramData = await fetchReconcileParams()
+      if (paramData && paramData.params) {
         setState((prev) => ({
-          reconciliationStatus: 'completed',
-          results: {
-            ...prev.results,
-            ...reconResults,
+          reconcileParams: {
+            ...prev.reconcileParams,
+            ...paramData.params,
           },
         }))
+      }
+    } catch {}
+
+    try {
+      const reconResults = await fetchReconciliationResults()
+      if (reconResults && reconResults.triplets) {
+        setState({
+          reconciliationStatus: 'completed',
+          results: reconResults,
+        })
       }
     } catch (err: any) {
       // ignore if results not available yet
@@ -541,8 +552,11 @@ state = {
     }
   },
 
-  setReconcileParams: (params) => {
+  setReconcileParams: (params, persist = false) => {
     setState((prev) => ({ reconcileParams: { ...prev.reconcileParams, ...params } }))
+    if (persist) {
+      updateReconcileParamsApi(params).catch(() => {})
+    }
   },
 
   resetAll: () => {

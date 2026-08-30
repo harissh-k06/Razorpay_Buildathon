@@ -1,14 +1,14 @@
 {
   "accountant_friendly": {
-    "Transaction Amount Tolerance (%)": 5.0,
-    "Settlement Date Window (days)": 7,
+    "Transaction Amount Tolerance (%)": 2.5,
+    "Settlement Date Window (days)": 3,
     "Strict Vendor Matching": false,
-    "Importance of Amount Accuracy (%)": 70,
-    "Importance of Date Accuracy (%)": 30,
-    "Importance of Vendor Match (%)": 0,
-    "Match Confidence Cutoff (score)": 0.40,
+    "Importance of Amount Accuracy (%)": 60,
+    "Importance of Date Accuracy (%)": 35,
+    "Importance of Vendor Match (%)": 5,
+    "Match Confidence Cutoff (score)": 0.35,
     "Allow Split Settlements": true,
     "Maximum Invoices per Settlement": 5,
-    "Split Amount Tolerance (%)": 20.0
+    "Split Amount Tolerance (%)": 12.0
   }
 }

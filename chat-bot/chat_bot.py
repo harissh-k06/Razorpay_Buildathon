@@ -153,7 +153,7 @@ async def stream_chat(message: str, session_id: str = "default", agentic_mode: O
     logger.info(f"[PennyWise-Agent] Authoritative Agentic Mode for session '{session_id}': {is_agentic}")
 
     active_mode_str = "AGENTIC MODE (GREEN / ON — AUTO-EXECUTE ENABLED)" if is_agentic else "ASK MODE (YELLOW / OFF — ACTIONS LOCKED)"
-    permission_str = "UNLOCKED: Write, action, memo drafting, and email drafting tools (generate_email_from_exception, draft_dispute_memo, draft_unallocated_cash_memo, update_csv_record, bulk_update_csv, standardize_data, run_reconciliation, change_currency_and_date, mark_exceptions_resolved, etc.) execute directly." if is_agentic else "LOCKED: Write, action, memo drafting, and email writing tools are locked until Agentic Mode is turned ON."
+    permission_str = "UNLOCKED: Write, action, memo drafting, and email drafting tools (generate_email_from_exception, draft_dispute_memo, draft_unallocated_cash_memo, update_csv_record, bulk_update_csv, standardize_data, run_reconciliation, configure_matching_parameters, change_currency_and_date, mark_exceptions_resolved, etc.) execute directly." if is_agentic else "LOCKED: Write, action, memo drafting, and email writing tools are locked until Agentic Mode is turned ON."
 
     mode_status_summary = f"""
 

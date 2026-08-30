@@ -23,6 +23,37 @@ interface MatchRateBarChartProps {
   matchRate?: number
 }
 
+function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
+  const [count, setCount] = React.useState(0)
+
+  React.useEffect(() => {
+    let startTimestamp: number | null = null
+    let frameId: number
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1)
+      const ease = 1 - Math.pow(1 - progress, 3)
+      setCount(ease * value)
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(step)
+      } else {
+        setCount(value)
+      }
+    }
+
+    frameId = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(frameId)
+  }, [value, duration])
+
+  const formatted = count >= value - 0.05
+    ? `${value}`
+    : count.toFixed(1)
+
+  return <>{formatted}%</>
+}
+
 export function MatchRateBarChart({
   matched,
   unmatched,
@@ -33,6 +64,14 @@ export function MatchRateBarChart({
   const rate = matchRate !== undefined ? matchRate : +((matched / safeTotal) * 100).toFixed(1)
   const unmatchedRate = safeTotal > 0 ? +((unmatched / safeTotal) * 100).toFixed(1) : 0
 
+  // Trigger smooth hardware-accelerated CSS transition upon mounting / rate change
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsMounted(true), 60)
+    return () => clearTimeout(timer)
+  }, [])
+
   // SVG Gauge calculations (Semi-circle from 180 deg to 0 deg)
   const cx = 150
   const cy = 125
@@ -40,17 +79,12 @@ export function MatchRateBarChart({
   const strokeWidth = 18
   const arcCircumference = Math.PI * radius // ~314.16
 
-  // Visual scaling: ensure the 4% exception has a clear, visible gap (minimum 6% visual slice)
+  // Visual scaling: ensure the exception zone has a clear visual slice
   const clampedRate = Math.min(Math.max(rate, 0), 100)
   const visualRate = clampedRate > 94 && clampedRate < 100 ? Math.min(clampedRate, 94.5) : clampedRate
   const progressLength = (visualRate / 100) * arcCircumference
-
-  // Needle angle: 180° (0%) -> 0° (100%)
-  const needleAngle = 180 - (visualRate / 100) * 180
-  const needleRad = (needleAngle * Math.PI) / 180
+  const needleRotationDeg = (visualRate / 100) * 180
   const needleLength = radius - 16
-  const needleX = cx + needleLength * Math.cos(needleRad)
-  const needleY = cy - needleLength * Math.sin(needleRad)
 
   return (
     <Card className="border border-border/80 bg-card shadow-xs overflow-hidden flex flex-col justify-between h-full">
@@ -60,7 +94,7 @@ export function MatchRateBarChart({
             <GaugeIcon className="size-3.5" />
           </div>
           <CardTitle className="text-sm font-bold text-text-primary">
-            Invoice Match Rate Gauge
+            Invoice Match Rate
           </CardTitle>
         </div>
         <CardDescription className="text-[11px] text-text-muted mt-0.5">
@@ -96,18 +130,22 @@ export function MatchRateBarChart({
                 strokeLinecap="round"
               />
 
-              {/* Active Matched Progress Arc (Solid Razorpay Blue) */}
+              {/* Active Matched Progress Arc (Smooth GPU animated fill) */}
               <path
                 d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`}
                 fill="none"
                 stroke="#0D94FB"
                 strokeWidth={strokeWidth}
-                strokeDasharray={`${progressLength} ${arcCircumference}`}
+                strokeDasharray={arcCircumference}
+                strokeDashoffset={isMounted ? arcCircumference - progressLength : arcCircumference}
                 strokeLinecap="round"
-                className="transition-all duration-700 ease-out"
+                style={{
+                  transition: "stroke-dashoffset 1000ms cubic-bezier(0.16, 1, 0.3, 1)",
+                  willChange: "stroke-dashoffset",
+                }}
               />
 
-              {/* Central Metric Value inside upper dome (Above arrow, zero overlap) */}
+              {/* Central Metric Value inside upper dome */}
               <text
                 x={cx}
                 y={cy - 40}
@@ -121,7 +159,7 @@ export function MatchRateBarChart({
                   letterSpacing: "-0.03em",
                 }}
               >
-                {rate}%
+                <AnimatedCounter value={rate} duration={1000} />
               </text>
               <text
                 x={cx}
@@ -138,14 +176,21 @@ export function MatchRateBarChart({
                 MATCHED INVOICES RATE
               </text>
 
-              {/* Needle Dial Indicator (Solid Dark Slate) */}
-              <g className="transition-all duration-700 ease-out">
-                {/* Needle Arrow Line */}
+              {/* Needle Dial Indicator (Smooth GPU rotated around pivot) */}
+              <g
+                style={{
+                  transform: isMounted ? `rotate(${needleRotationDeg}deg)` : "rotate(0deg)",
+                  transformOrigin: `${cx}px ${cy}px`,
+                  transition: "transform 1000ms cubic-bezier(0.16, 1, 0.3, 1)",
+                  willChange: "transform",
+                }}
+              >
+                {/* Needle Arrow Line (Starts at 0% / Left horizontal baseline) */}
                 <line
                   x1={cx}
                   y1={cy}
-                  x2={needleX}
-                  y2={needleY}
+                  x2={cx - needleLength}
+                  y2={cy}
                   stroke="#0F172A"
                   strokeWidth="4"
                   strokeLinecap="round"

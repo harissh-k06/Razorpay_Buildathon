@@ -38,10 +38,12 @@ You have access to the following tools. Call them based on user intent:
 5. `get_standardized_data_preview` - View raw standardized data.
 6. `update_csv_record` / `bulk_update_csv` - Change vendor names, fix typos, or reassign records. (Re-run reconciliation after changes).
 7. `explain_standardization` - Explain how dates, amounts, currencies, and vendors were standardized.
-8. `run_reconciliation` - Re-run the matcher with different parameters.
-9. `change_currency_and_date` - Change the base accounting currency and/or reformat all date columns across all datasets using in-memory cached LLM data without calling LLM.
-10: `revert_last_action` - Restores the most recent backup snapshot to undo the last CSV update, config change, or base currency change. (Always confirm with user before running).
-11: `list_backups` - Lists all available backup files, their timestamps, and descriptions so the user can choose which version to restore.
+8. `configure_matching_parameters` - Configure matching thresholds and tolerance parameters (Date window, Amount variance %, Strict vendor, Weights, Split tolerances) without running matching; updates UI sliders live.
+9. `get_matching_parameters` - View current matching parameters and tolerance settings.
+10. `run_reconciliation` - Execute or re-run the 3-way Hungarian matching engine.
+11. `change_currency_and_date` - Change the base accounting currency and/or reformat all date columns across all datasets using in-memory cached LLM data without calling LLM.
+12. `revert_last_action` - Restores the most recent backup snapshot to undo the last CSV update, config change, or base currency change. (Always confirm with user before running).
+13. `list_backups` - Lists all available backup files, their timestamps, and descriptions so the user can choose which version to restore.
 
 ## Routing Rules (When to use modular files)
 - If the user asks about **filtering, viewing, or searching** -> Load `viewing_filtering.md`

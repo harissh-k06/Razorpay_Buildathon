@@ -578,16 +578,22 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
                 const data = JSON.parse(dataStr)
                 if (data.action) {
                   setIsLoading(false)
+                  if (data.action === "update_params") {
+                    const newParams = data.params || (typeof data.target === "object" ? data.target : null)
+                    if (newParams) {
+                      reconciliationStore.getState().setReconcileParams?.(newParams)
+                    }
+                  }
                   onActionTriggered?.(data.action, data.target)
                   if (typeof window !== "undefined") {
                     window.dispatchEvent(
                       new CustomEvent("pennywise:action", {
-                        detail: { action: data.action, target: data.target },
+                        detail: { action: data.action, target: data.target, params: data.params },
                       })
                     )
                     window.dispatchEvent(
                       new CustomEvent("pennywise:data_refresh", {
-                        detail: { action: data.action, target: data.target },
+                        detail: { action: data.action, target: data.target, params: data.params },
                       })
                     )
                   }
@@ -614,16 +620,22 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
             accumulatedText += data.token
           }
           if (data.action) {
+            if (data.action === "update_params") {
+              const newParams = data.params || (typeof data.target === "object" ? data.target : null)
+              if (newParams) {
+                reconciliationStore.getState().setReconcileParams?.(newParams)
+              }
+            }
             onActionTriggered?.(data.action, data.target)
             if (typeof window !== "undefined") {
               window.dispatchEvent(
                 new CustomEvent("pennywise:action", {
-                  detail: { action: data.action, target: data.target },
+                  detail: { action: data.action, target: data.target, params: data.params },
                 })
               )
               window.dispatchEvent(
                 new CustomEvent("pennywise:data_refresh", {
-                  detail: { action: data.action, target: data.target },
+                  detail: { action: data.action, target: data.target, params: data.params },
                 })
               )
             }

@@ -101,6 +101,18 @@ class ReconcileRequest(BaseModel):
     max_invoices_per_settlement: int = 5
     split_tolerance_pct: float = 20.0
 
+class ReconcileParamsPayload(BaseModel):
+    date_tolerance_days: Optional[int] = None
+    amount_tolerance_pct: Optional[float] = None
+    strict_vendor_matching: Optional[bool] = None
+    weight_amount: Optional[int] = None
+    weight_date: Optional[int] = None
+    weight_vendor: Optional[int] = None
+    rejection_threshold: Optional[float] = None
+    allow_split: Optional[bool] = None
+    max_invoices_per_settlement: Optional[int] = None
+    split_tolerance_pct: Optional[float] = None
+
 class UpdateRowRequest(BaseModel):
     source: str
     rowId: Optional[Any] = None
@@ -287,6 +299,59 @@ async def reconcile(req: ReconcileRequest):
     except Exception as e:
         logger.exception("Reconciliation failed")
         raise HTTPException(status_code=500, detail=f"Matching failed: {e}")
+
+@app.get("/api/reconcile-params", tags=["Reconcile"])
+@app.get("/api/reconcile_params", tags=["Reconcile"])
+async def get_reconcile_params_endpoint():
+    """Retrieve current matching parameters and tolerance thresholds."""
+    try:
+        try:
+            from server import _load_raw_params, _params_to_frontend_dict
+        except ImportError:
+            from mcp_server.server import _load_raw_params, _params_to_frontend_dict
+        raw = _load_raw_params()
+        return JSONResponse(
+            content={
+                "status": "success",
+                "params": _params_to_frontend_dict(raw),
+                "raw": raw
+            },
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to fetch matching params: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"status": "error", "error": str(e)})
+
+@app.post("/api/reconcile-params", tags=["Reconcile"])
+@app.post("/api/reconcile_params", tags=["Reconcile"])
+async def update_reconcile_params_endpoint(payload: ReconcileParamsPayload):
+    """Update matching parameters and save to reconciliation/params.json without executing matching."""
+    try:
+        try:
+            from server import configure_matching_parameters
+        except ImportError:
+            from mcp_server.server import configure_matching_parameters
+
+        res = configure_matching_parameters(
+            date_tolerance_days=payload.date_tolerance_days,
+            amount_tolerance_pct=payload.amount_tolerance_pct,
+            strict_vendor_matching=payload.strict_vendor_matching,
+            weight_amount=payload.weight_amount,
+            weight_date=payload.weight_date,
+            weight_vendor=payload.weight_vendor,
+            rejection_threshold=payload.rejection_threshold,
+            allow_split=payload.allow_split,
+            max_invoices_per_settlement=payload.max_invoices_per_settlement,
+            split_tolerance_pct=payload.split_tolerance_pct,
+        )
+        return JSONResponse(content=res)
+    except Exception as e:
+        logger.error(f"Failed to update matching params: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"status": "error", "error": str(e)})
 
 # ── Chat Endpoint ─────────────────────────────────────────────────────────────
 @app.post("/api/chat", tags=["Chat"])
@@ -613,6 +678,7 @@ async def get_reconciliation_results():
     """Retrieve current reconciliation triplets and updated exceptions from disk."""
     try:
         from reconciliation.run_reconciliation import get_reconciliation_results_summary
+        # Fetches live reconciliation results dynamically synchronized to the current base currency
         data = get_reconciliation_results_summary(project_root=PROJECT_ROOT)
         return JSONResponse(
             content=data,

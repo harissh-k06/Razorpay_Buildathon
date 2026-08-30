@@ -139,7 +139,7 @@ export function FinancialFlowChart({
               </CardTitle>
             </div>
             <CardDescription className="text-[11px] text-text-muted mt-0.5">
-              Complete balanced realization flow: Gross Billed ($62,011.17) = Net In-Hand ($48,589.98) + Govt Tax ($9,459.34) + Razorpay ($1,399.05) + Missing Cash ($2,562.80).
+              Complete balanced realization flow: Gross Billed ({formatCurrency(gross, baseCurrency)}) = Net In-Hand ({formatCurrency(netRetainedIncome, baseCurrency)}) + Govt Tax ({formatCurrency(computedInvoiceTax, baseCurrency)}) + Razorpay ({formatCurrency(computedFees, baseCurrency)}) + Missing Cash ({formatCurrency(computedUncollected, baseCurrency)}).
             </CardDescription>
           </div>
 

@@ -3,6 +3,7 @@ import sys
 import time
 import json
 import re
+import shutil
 import pandas as pd
 from pathlib import Path
 from io import StringIO
@@ -1184,6 +1185,13 @@ def standardize_data(base_currency: Optional[str] = None, config_overrides: Opti
         standardizer.base_currency = curr
         standardizer.process_files()
 
+        # Synchronize reconciliation results & exceptions to the new base currency
+        try:
+            from reconciliation.run_reconciliation import run_reconciliation_pipeline
+            run_reconciliation_pipeline(project_root=project_root)
+        except Exception as rec_err:
+            logger.warning(f"Auto-reconciliation after standardization failed: {rec_err}")
+
         # Reload standardized CSVs to get the state
         invoices = load_df("invoice")
         razorpay = load_df("razorpay")
@@ -1202,7 +1210,6 @@ def standardize_data(base_currency: Optional[str] = None, config_overrides: Opti
             "backups_created": backups,
             "output": f"Standardized all files to {curr} successfully. Invoice: {len(invoices)} rows, Razorpay: {len(razorpay)} rows, Bank: {len(bank)} rows."
         }
-
     except Exception as e:
         return {
             "success": False,
@@ -1210,6 +1217,146 @@ def standardize_data(base_currency: Optional[str] = None, config_overrides: Opti
             "error": f"Standardization in-process execution failed: {str(e)}"
         }
 
+PARAMS_FILE = Path(__file__).resolve().parent.parent / "reconciliation" / "params.json"
+
+DEFAULT_MATCHING_PARAMS = {
+    "Transaction Amount Tolerance (%)": 5.0,
+    "Settlement Date Window (days)": 7,
+    "Strict Vendor Matching": False,
+    "Importance of Amount Accuracy (%)": 70,
+    "Importance of Date Accuracy (%)": 30,
+    "Importance of Vendor Match (%)": 0,
+    "Match Confidence Cutoff (score)": 0.40,
+    "Allow Split Settlements": True,
+    "Maximum Invoices per Settlement": 5,
+    "Split Amount Tolerance (%)": 20.0
+}
+
+def _load_raw_params() -> Dict[str, Any]:
+    try:
+        if PARAMS_FILE.exists():
+            data = json.loads(PARAMS_FILE.read_text(encoding="utf-8"))
+            return data.get("accountant_friendly", data)
+    except Exception:
+        pass
+    return DEFAULT_MATCHING_PARAMS.copy()
+
+def _save_raw_params(params: Dict[str, Any]) -> None:
+    try:
+        PARAMS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        PARAMS_FILE.write_text(json.dumps({"accountant_friendly": params}, indent=2), encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"Failed to save params.json: {e}")
+
+def _params_to_frontend_dict(raw: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "date_tolerance_days": int(raw.get("Settlement Date Window (days)", 7)),
+        "amount_tolerance_pct": float(raw.get("Transaction Amount Tolerance (%)", 5.0)),
+        "strict_vendor_matching": bool(raw.get("Strict Vendor Matching", False)),
+        "weight_amount": int(raw.get("Importance of Amount Accuracy (%)", 70)),
+        "weight_date": int(raw.get("Importance of Date Accuracy (%)", 30)),
+        "weight_vendor": int(raw.get("Importance of Vendor Match (%)", 0)),
+        "rejection_threshold": float(raw.get("Match Confidence Cutoff (score)", 0.40)),
+        "allow_split": bool(raw.get("Allow Split Settlements", True)),
+        "max_invoices_per_settlement": int(raw.get("Maximum Invoices per Settlement", 5)),
+        "split_tolerance_pct": float(raw.get("Split Amount Tolerance (%)", 20.0)),
+    }
+
+@mcp.tool()
+def get_matching_parameters() -> Dict[str, Any]:
+    """
+    Retrieve the current reconciliation matching parameters and tolerance thresholds.
+    """
+    raw = _load_raw_params()
+    params = _params_to_frontend_dict(raw)
+    return {
+        "status": "success",
+        "params": params,
+        "raw": raw
+    }
+
+@mcp.tool()
+def configure_matching_parameters(
+    date_tolerance_days: Optional[int] = None,
+    amount_tolerance_pct: Optional[float] = None,
+    strict_vendor_matching: Optional[bool] = None,
+    weight_amount: Optional[int] = None,
+    weight_date: Optional[int] = None,
+    weight_vendor: Optional[int] = None,
+    rejection_threshold: Optional[float] = None,
+    allow_split: Optional[bool] = None,
+    max_invoices_per_settlement: Optional[int] = None,
+    split_tolerance_pct: Optional[float] = None
+) -> Dict[str, Any]:
+    """
+    Configure matching tolerance thresholds and weights for the reconciliation algorithm without running matching.
+    Persists parameters to reconciliation/params.json and broadcasts updates to the UI sliders.
+
+    Parameters:
+    - date_tolerance_days: Max days allowable between invoice date and bank deposit (e.g., 5, 7, 10).
+    - amount_tolerance_pct: Allowed amount variance percentage for fee/rounding diffs (e.g., 5.0).
+    - strict_vendor_matching: If True, requires exact vendor matching between records.
+    - weight_amount: Hungarian cost weight for amount difference percentage (0-100).
+    - weight_date: Hungarian cost weight for date difference percentage (0-100).
+    - weight_vendor: Hungarian cost weight for vendor match percentage (0-100).
+    - rejection_threshold: Cutoff score penalty above which candidate matches are rejected (e.g., 0.40).
+    - allow_split: If True, enables N:1 and 1:N subset-sum split settlement matching.
+    - max_invoices_per_settlement: Max invoice batch size for subset-sum split settlements (e.g., 5).
+    - split_tolerance_pct: Allowed tolerance percentage for subset-sum batch matching (e.g., 20.0).
+    """
+    err = require_agentic_mode()
+    if err:
+        return err
+
+    raw = _load_raw_params()
+    changes = []
+
+    if date_tolerance_days is not None:
+        raw["Settlement Date Window (days)"] = int(date_tolerance_days)
+        changes.append(f"Date Window: {date_tolerance_days} days")
+    if amount_tolerance_pct is not None:
+        raw["Transaction Amount Tolerance (%)"] = float(amount_tolerance_pct)
+        changes.append(f"Amount Variance: {amount_tolerance_pct}%")
+    if strict_vendor_matching is not None:
+        raw["Strict Vendor Matching"] = bool(strict_vendor_matching)
+        changes.append(f"Strict Vendor Matching: {strict_vendor_matching}")
+    if weight_amount is not None:
+        raw["Importance of Amount Accuracy (%)"] = int(weight_amount)
+        changes.append(f"Amount Weight: {weight_amount}%")
+    if weight_date is not None:
+        raw["Importance of Date Accuracy (%)"] = int(weight_date)
+        changes.append(f"Date Weight: {weight_date}%")
+    if weight_vendor is not None:
+        raw["Importance of Vendor Match (%)"] = int(weight_vendor)
+        changes.append(f"Vendor Weight: {weight_vendor}%")
+    if rejection_threshold is not None:
+        raw["Match Confidence Cutoff (score)"] = float(rejection_threshold)
+        changes.append(f"Max Allowed Cost: {rejection_threshold}")
+    if allow_split is not None:
+        raw["Allow Split Settlements"] = bool(allow_split)
+        changes.append(f"Split Settlement: {allow_split}")
+    if max_invoices_per_settlement is not None:
+        raw["Maximum Invoices per Settlement"] = int(max_invoices_per_settlement)
+        changes.append(f"Max Invoices/Batch: {max_invoices_per_settlement}")
+    if split_tolerance_pct is not None:
+        raw["Split Amount Tolerance (%)"] = float(split_tolerance_pct)
+        changes.append(f"Split Tolerance: {split_tolerance_pct}%")
+
+    if not changes:
+        return {
+            "error": "No matching parameters were provided to update. Specify parameters such as date_tolerance_days or amount_tolerance_pct."
+        }
+
+    _save_raw_params(raw)
+    updated = _params_to_frontend_dict(raw)
+
+    return {
+        "success": True,
+        "action": "update_params",
+        "target": updated,
+        "params": updated,
+        "message": f"Matching parameters updated successfully: {', '.join(changes)}. Sliders on frontend updated."
+    }
 
 @mcp.tool()
 def run_reconciliation(config_overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -1235,19 +1382,23 @@ def run_reconciliation(config_overrides: Optional[Dict[str, Any]] = None) -> Dic
         import run_reconciliation as _rr
         import hungarian_matcher as _hm
 
-        # Build config
-        params_dict = {}
+        # Build config from params.json with optional overrides
+        raw_params = _load_raw_params()
         if config_overrides:
             if "amount_tolerance_pct" in config_overrides:
-                params_dict["Transaction Amount Tolerance (%)"] = config_overrides["amount_tolerance_pct"]
+                raw_params["Transaction Amount Tolerance (%)"] = config_overrides["amount_tolerance_pct"]
             if "date_tolerance_days" in config_overrides:
-                params_dict["Settlement Date Window (days)"] = config_overrides["date_tolerance_days"]
+                raw_params["Settlement Date Window (days)"] = config_overrides["date_tolerance_days"]
             if "strict_vendor_matching" in config_overrides:
-                params_dict["Strict Vendor Matching"] = config_overrides["strict_vendor_matching"]
+                raw_params["Strict Vendor Matching"] = config_overrides["strict_vendor_matching"]
             if "split_tolerance_pct" in config_overrides:
-                params_dict["Split Amount Tolerance (%)"] = config_overrides["split_tolerance_pct"]
+                raw_params["Split Amount Tolerance (%)"] = config_overrides["split_tolerance_pct"]
+            if "rejection_threshold" in config_overrides:
+                raw_params["Match Confidence Cutoff (score)"] = config_overrides["rejection_threshold"]
+            if "allow_split" in config_overrides:
+                raw_params["Allow Split Settlements"] = config_overrides["allow_split"]
 
-        cfg = _cfg.ReconciliationConfig(params_dict=params_dict if params_dict else None)
+        cfg = _cfg.ReconciliationConfig(params_dict=raw_params)
 
         # Load standardized records
         invoices = _rr.load_records(std_dir, "invoice_standardized.csv", "invoice")
@@ -1284,6 +1435,18 @@ def run_reconciliation(config_overrides: Optional[Dict[str, Any]] = None) -> Dic
         if not triplets_df.empty and "razorpay" in triplets_df.columns:
             triplets_df["razorpay_id"] = triplets_df["razorpay"].apply(
                 lambda x: x["entity_id"] if isinstance(x, dict) else None
+            )
+            triplets_df["amount"] = triplets_df["razorpay"].apply(
+                lambda x: float(x.get("credit") or x.get("amount") or 0.0) if isinstance(x, dict) else None
+            )
+            triplets_df["vendor"] = triplets_df["razorpay"].apply(
+                lambda x: x.get("vendor") if isinstance(x, dict) else None
+            )
+            triplets_df["date"] = triplets_df["razorpay"].apply(
+                lambda x: x.get("date") if isinstance(x, dict) else None
+            )
+            triplets_df["settlement_utr"] = triplets_df["razorpay"].apply(
+                lambda x: x.get("settlement_utr") if isinstance(x, dict) else None
             )
         if not triplets_df.empty and "bank" in triplets_df.columns:
             triplets_df["bank_ref"] = triplets_df["bank"].apply(
@@ -1374,6 +1537,13 @@ def change_currency_and_date(
         # Apply deterministic normalisation (<0.2s without invoking LLM)
         standardizer.apply_deterministic(base_currency=curr, date_format=date_format)
 
+        # Synchronize reconciliation results & exceptions to the new base currency
+        try:
+            from reconciliation.run_reconciliation import run_reconciliation_pipeline
+            run_reconciliation_pipeline(project_root=project_root)
+        except Exception as rec_err:
+            logger.warning(f"Auto-reconciliation after currency change failed: {rec_err}")
+
         # Reload standardized CSVs to get current state
         invoices = load_df("invoice")
         razorpay = load_df("razorpay")
@@ -1393,7 +1563,7 @@ def change_currency_and_date(
                 "bank": len(bank)
             },
             "backups_created": backups,
-            "message": f"Deterministic normalisation applied successfully (Base Currency: {active_currency}{f', Date Format: {date_format}' if date_format else ''}). Frontend will refresh automatically."
+            "message": f"Deterministic normalisation applied successfully (Base Currency: {active_currency}{f', Date Format: {date_format}' if date_format else ''}). Reconciliation datasets synchronized."
         }
     except Exception as e:
         return {

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useReconciliationStore } from "@/store/reconciliationStore"
+import { updateReconcileParamsApi } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
@@ -36,8 +37,8 @@ export function ParamsConfig({ className, onClose }: ParamsConfigProps) {
     setReconcileParams({ [key]: numericVal })
   }
 
-  const handleResetDefaults = () => {
-    setReconcileParams({
+  const handleResetDefaults = async () => {
+    const defaults = {
       date_tolerance_days: 7,
       amount_tolerance_pct: 5.0,
       strict_vendor_matching: false,
@@ -48,22 +49,35 @@ export function ParamsConfig({ className, onClose }: ParamsConfigProps) {
       allow_split: true,
       max_invoices_per_settlement: 5,
       split_tolerance_pct: 20.0,
-    })
+    }
+    setReconcileParams(defaults)
+    try {
+      await updateReconcileParamsApi(defaults)
+    } catch {}
     toast({
       title: "Defaults Restored",
       description: "Matching parameters reset to default tolerances.",
     })
   }
 
-  const handleSaveChanges = () => {
-    setSavedSuccess(true)
-    setTimeout(() => setSavedSuccess(false), 2000)
-    toast({
-      title: "Parameters Saved",
-      description: "Tolerances updated and ready for reconciliation.",
-    })
-    if (onClose) {
-      setTimeout(() => onClose(), 600)
+  const handleSaveChanges = async () => {
+    try {
+      await updateReconcileParamsApi(reconcileParams)
+      setSavedSuccess(true)
+      setTimeout(() => setSavedSuccess(false), 2000)
+      toast({
+        title: "Parameters Saved",
+        description: "Tolerances updated and ready for reconciliation.",
+      })
+      if (onClose) {
+        setTimeout(() => onClose(), 600)
+      }
+    } catch (err: any) {
+      toast({
+        title: "Save Failed",
+        description: err.message || "Failed to save parameters to server.",
+        variant: "destructive",
+      })
     }
   }
 
