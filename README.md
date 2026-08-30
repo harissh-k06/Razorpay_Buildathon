@@ -24,6 +24,7 @@
 
 ---
 
+<a id="introduction"></a>
 ## Introduction
 
 Financial reconciliation is traditionally a manual, stressful, and error-prone grind. High-velocity businesses struggle with disparate statement formats, multi-currency conversions, gateway fee deductions, batch settlements, and timing delays between billing invoices, payment gateway records, and bank deposits. Unreconciled accounts lead to delayed financial closes, cash leakage, and audit headaches.
@@ -34,6 +35,7 @@ Equipped with **PennyWise AI**—an interactive financial audit assistant powere
 
 ---
 
+<a id="key-features"></a>
 ## Key Features
 
 | Feature | Description |
@@ -49,6 +51,7 @@ Equipped with **PennyWise AI**—an interactive financial audit assistant powere
 
 ---
 
+<a id="pennywise-ai-copilot-capabilities"></a>
 ## PennyWise AI Copilot: Capabilities
 
 PennyWise functions as an interactive financial accountant agent integrated directly into the reconciliation workflow via the Model Context Protocol (FastMCP):
@@ -62,6 +65,7 @@ PennyWise functions as an interactive financial accountant agent integrated dire
 
 ---
 
+<a id="repository-structure"></a>
 ## Repository Structure
 
 ```text
@@ -97,6 +101,7 @@ Razorpay-2/
 
 ---
 
+<a id="architecture-at-a-glance"></a>
 ## Architecture at a Glance
 
 ```mermaid
@@ -123,6 +128,7 @@ flowchart LR
 
 ---
 
+<a id="technology-stack"></a>
 ## Technology Stack
 
 | Layer | Technologies |
@@ -137,6 +143,7 @@ flowchart LR
 
 ---
 
+<a id="quick-start"></a>
 ## Quick Start
 
 ### 1. Clone & Configure Environment
@@ -184,6 +191,7 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+<a id="usage-examples"></a>
 ## Usage Examples
 
 ### 1. Investigating Unmatched Transactions
@@ -222,6 +230,7 @@ Exception record INV-034 has been marked as Resolved in the audit log."
 
 ---
 
+<a id="screenshots"></a>
 ## Screenshots
 
 ### 1. Ingestion & Raw Statement Files
@@ -266,6 +275,7 @@ Exception record INV-034 has been marked as Resolved in the audit log."
 
 ---
 
+<a id="documentation"></a>
 ## Documentation
 
 - [Quick Start Guide](QUICKSTART.md) — Step-by-step installation and local setup.
@@ -274,6 +284,7 @@ Exception record INV-034 has been marked as Resolved in the audit log."
 
 ---
 
+<a id="license"></a>
 ## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
