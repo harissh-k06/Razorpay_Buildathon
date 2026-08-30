@@ -1,5 +1,7 @@
 import sys
 import os
+import shutil
+from datetime import datetime
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -149,53 +151,65 @@ def run_reconciliation_pipeline(params_dict: Optional[dict] = None, project_root
     raw = matcher.match(invoices, razorpay, bank)
 
     # Save output datasets to disk for persistent inspection and MCP access
-    rec_dirs = [project_root / "reconciliation", project_root / "reconciliation" / "data"]
-    for rdir in rec_dirs:
-        try:
-            rdir.mkdir(parents=True, exist_ok=True)
-            triplets_df = pd.DataFrame(raw.get("triplets", []))
-            exceptions_df = pd.DataFrame(raw.get("exceptions", []))
+    # First create automatic backup snapshots in reconciliation/backup for existing datasets
+    rec_backup_dir = project_root / "reconciliation" / "backup"
+    try:
+        rec_backup_dir.mkdir(parents=True, exist_ok=True)
+        for existing_src in [project_root / "reconciliation" / "data" / "reconciliation_exceptions.csv", project_root / "reconciliation" / "data" / "reconciliation_results.csv"]:
+            if existing_src.exists() and existing_src.stat().st_size > 0:
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                b_file = rec_backup_dir / f"{existing_src.stem}_backup_{ts}.csv"
+                if not b_file.exists():
+                    shutil.copy2(existing_src, b_file)
+    except Exception:
+        pass
 
-            if not triplets_df.empty and "invoice_ids" in triplets_df.columns:
-                triplets_df["invoice_ids"] = triplets_df["invoice_ids"].apply(
-                    lambda x: ", ".join(x) if isinstance(x, (list, tuple, set)) else str(x)
-                )
-            if not triplets_df.empty and "razorpay" in triplets_df.columns:
-                triplets_df["razorpay_id"] = triplets_df["razorpay"].apply(
-                    lambda x: x["entity_id"] if isinstance(x, dict) else None
-                )
-                triplets_df["amount"] = triplets_df["razorpay"].apply(
-                    lambda x: float(x.get("credit") or x.get("amount") or 0.0) if isinstance(x, dict) else None
-                )
-                triplets_df["vendor"] = triplets_df["razorpay"].apply(
-                    lambda x: x.get("vendor") if isinstance(x, dict) else None
-                )
-                triplets_df["date"] = triplets_df["razorpay"].apply(
-                    lambda x: x.get("date") if isinstance(x, dict) else None
-                )
-                triplets_df["settlement_utr"] = triplets_df["razorpay"].apply(
-                    lambda x: x.get("settlement_utr") if isinstance(x, dict) else None
-                )
-            if not triplets_df.empty and "bank" in triplets_df.columns:
-                triplets_df["bank_ref"] = triplets_df["bank"].apply(
-                    lambda x: x["ref_no"] if isinstance(x, dict) else None
-                )
+    rec_data_dir = project_root / "reconciliation" / "data"
+    try:
+        rec_data_dir.mkdir(parents=True, exist_ok=True)
+        triplets_df = pd.DataFrame(raw.get("triplets", []))
+        exceptions_df = pd.DataFrame(raw.get("exceptions", []))
 
-            drop_cols = [c for c in ["razorpay", "bank"] if c in triplets_df.columns]
-            if drop_cols:
-                triplets_df.drop(columns=drop_cols, inplace=True)
+        if not triplets_df.empty and "invoice_ids" in triplets_df.columns:
+            triplets_df["invoice_ids"] = triplets_df["invoice_ids"].apply(
+                lambda x: ", ".join(x) if isinstance(x, (list, tuple, set)) else str(x)
+            )
+        if not triplets_df.empty and "razorpay" in triplets_df.columns:
+            triplets_df["razorpay_id"] = triplets_df["razorpay"].apply(
+                lambda x: x["entity_id"] if isinstance(x, dict) else None
+            )
+            triplets_df["amount"] = triplets_df["razorpay"].apply(
+                lambda x: float(x.get("credit") or x.get("amount") or 0.0) if isinstance(x, dict) else None
+            )
+            triplets_df["vendor"] = triplets_df["razorpay"].apply(
+                lambda x: x.get("vendor") if isinstance(x, dict) else None
+            )
+            triplets_df["date"] = triplets_df["razorpay"].apply(
+                lambda x: x.get("date") if isinstance(x, dict) else None
+            )
+            triplets_df["settlement_utr"] = triplets_df["razorpay"].apply(
+                lambda x: x.get("settlement_utr") if isinstance(x, dict) else None
+            )
+        if not triplets_df.empty and "bank" in triplets_df.columns:
+            triplets_df["bank_ref"] = triplets_df["bank"].apply(
+                lambda x: x["ref_no"] if isinstance(x, dict) else None
+            )
 
-            if "status" not in exceptions_df.columns and not exceptions_df.empty:
-                exceptions_df["status"] = "Open"
-            if "resolution_note" not in exceptions_df.columns and not exceptions_df.empty:
-                exceptions_df["resolution_note"] = ""
-            if "resolved_at" not in exceptions_df.columns and not exceptions_df.empty:
-                exceptions_df["resolved_at"] = ""
+        drop_cols = [c for c in ["razorpay", "bank"] if c in triplets_df.columns]
+        if drop_cols:
+            triplets_df.drop(columns=drop_cols, inplace=True)
 
-            triplets_df.to_csv(rdir / "reconciliation_results.csv", index=False)
-            exceptions_df.to_csv(rdir / "reconciliation_exceptions.csv", index=False)
-        except Exception:
-            pass
+        if "status" not in exceptions_df.columns and not exceptions_df.empty:
+            exceptions_df["status"] = "Open"
+        if "resolution_note" not in exceptions_df.columns and not exceptions_df.empty:
+            exceptions_df["resolution_note"] = ""
+        if "resolved_at" not in exceptions_df.columns and not exceptions_df.empty:
+            exceptions_df["resolved_at"] = ""
+
+        triplets_df.to_csv(rec_data_dir / "reconciliation_results.csv", index=False)
+        exceptions_df.to_csv(rec_data_dir / "reconciliation_exceptions.csv", index=False)
+    except Exception:
+        pass
 
     triplets   = [serialize_triplet(t, i) for i, t in enumerate(raw["triplets"])]
     exceptions = [serialize_exception(e, i) for i, e in enumerate(raw["exceptions"])]
@@ -227,6 +241,8 @@ def run_reconciliation_pipeline(params_dict: Optional[dict] = None, project_root
     total_gross_settlement = float(rzp_df["amount_converted"].sum()) if not rzp_df.empty and "amount_converted" in rzp_df.columns else sum(float(rp.get("gross_amount") or rp.get("amount") or 0) for rp in razorpay)
     total_settled_amt = float(rzp_df["credit_converted"].sum()) if not rzp_df.empty and "credit_converted" in rzp_df.columns else sum(float(rp.get("credit") or rp.get("amount") or 0) for rp in razorpay)
     total_bank_amt = float(bnk_df["credit_converted"].sum()) if not bnk_df.empty and "credit_converted" in bnk_df.columns else sum(float(bnk.get("credit") or bnk.get("amount") or 0) for bnk in bank)
+    total_fee_amt = max(0.0, total_gross_settlement - total_settled_amt)
+    discrepancy_amt = abs(total_invoice_amt - total_settled_amt)
     total_uncollected_amt = sum(float(e.get("amount") or 0.0) for e in exceptions if str(e.get("type", "")).lower() == "invoice" and str(e.get("status", "")).lower() != "resolved")
 
     return {
@@ -290,7 +306,9 @@ def get_reconciliation_results_summary(project_root: Optional[Path] = None) -> D
         except Exception:
             pass
 
-    results_file = project_root / "reconciliation" / "reconciliation_results.csv"
+    results_file = project_root / "reconciliation" / "data" / "reconciliation_results.csv"
+    if not results_file.exists():
+        results_file = project_root / "reconciliation" / "reconciliation_results.csv"
     triplets = []
     if results_file.exists():
         tdf = pd.read_csv(results_file)

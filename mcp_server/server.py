@@ -352,6 +352,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STANDARDIZED_DIR = BASE_DIR / "standardisation" / "data" / "standardized"
 BACKUP_DIR = BASE_DIR / "standardisation" / "data" / "backup"
 RECONCILIATION_DIR = BASE_DIR / "reconciliation" / "data"
+RECONCILIATION_BACKUP_DIR = BASE_DIR / "reconciliation" / "backup"
 
 # -------------------------------------------------------------------
 # In-Memory Global DataStandardizer Singleton (LLM Cache Persistence)
@@ -1262,31 +1263,39 @@ def run_reconciliation(config_overrides: Optional[Dict[str, Any]] = None) -> Dic
         result = matcher.match(invoices, razorpay, bank)
 
         # Save output datasets to reconciliation/data and reconciliation/
-        out_dirs = [rec_dir / "data", rec_dir]
-        for out_dir in out_dirs:
-            out_dir.mkdir(parents=True, exist_ok=True)
-            triplets_df = pd.DataFrame(result.get("triplets", []))
-            exceptions_df = pd.DataFrame(result.get("exceptions", []))
+        # First create backup snapshots in reconciliation/backup for existing datasets
+        RECONCILIATION_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        for existing_src in [rec_dir / "data" / "reconciliation_exceptions.csv", rec_dir / "data" / "reconciliation_results.csv"]:
+            if existing_src.exists() and existing_src.stat().st_size > 0:
+                ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+                b_file = RECONCILIATION_BACKUP_DIR / f"{existing_src.stem}_backup_{ts}.csv"
+                if not b_file.exists():
+                    shutil.copy2(existing_src, b_file)
 
-            if not triplets_df.empty and "invoice_ids" in triplets_df.columns:
-                triplets_df["invoice_ids"] = triplets_df["invoice_ids"].apply(
-                    lambda x: ", ".join(x) if isinstance(x, (list, tuple, set)) else str(x)
-                )
-            if not triplets_df.empty and "razorpay" in triplets_df.columns:
-                triplets_df["razorpay_id"] = triplets_df["razorpay"].apply(
-                    lambda x: x["entity_id"] if isinstance(x, dict) else None
-                )
-            if not triplets_df.empty and "bank" in triplets_df.columns:
-                triplets_df["bank_ref"] = triplets_df["bank"].apply(
-                    lambda x: x["ref_no"] if isinstance(x, dict) else None
-                )
+        # Save output datasets strictly to reconciliation/data
+        RECONCILIATION_DIR.mkdir(parents=True, exist_ok=True)
+        triplets_df = pd.DataFrame(result.get("triplets", []))
+        exceptions_df = pd.DataFrame(result.get("exceptions", []))
 
-            drop_cols = [c for c in ["razorpay", "bank"] if c in triplets_df.columns]
-            if drop_cols:
-                triplets_df.drop(columns=drop_cols, inplace=True)
+        if not triplets_df.empty and "invoice_ids" in triplets_df.columns:
+            triplets_df["invoice_ids"] = triplets_df["invoice_ids"].apply(
+                lambda x: ", ".join(x) if isinstance(x, (list, tuple, set)) else str(x)
+            )
+        if not triplets_df.empty and "razorpay" in triplets_df.columns:
+            triplets_df["razorpay_id"] = triplets_df["razorpay"].apply(
+                lambda x: x["entity_id"] if isinstance(x, dict) else None
+            )
+        if not triplets_df.empty and "bank" in triplets_df.columns:
+            triplets_df["bank_ref"] = triplets_df["bank"].apply(
+                lambda x: x["ref_no"] if isinstance(x, dict) else None
+            )
 
-            triplets_df.to_csv(out_dir / "reconciliation_results.csv", index=False)
-            exceptions_df.to_csv(out_dir / "reconciliation_exceptions.csv", index=False)
+        drop_cols = [c for c in ["razorpay", "bank"] if c in triplets_df.columns]
+        if drop_cols:
+            triplets_df.drop(columns=drop_cols, inplace=True)
+
+        triplets_df.to_csv(RECONCILIATION_DIR / "reconciliation_results.csv", index=False)
+        exceptions_df.to_csv(RECONCILIATION_DIR / "reconciliation_exceptions.csv", index=False)
 
         match_rate = result.get("match_rate", 0.0)
         matched_count = result.get("matched_count", 0)
@@ -1413,6 +1422,8 @@ def revert_last_action(backup_file: Optional[str] = None) -> Dict[str, Any]:
         candidates = []
         if BACKUP_DIR.exists():
             candidates.extend(BACKUP_DIR.glob("*_backup_*.csv"))
+        if RECONCILIATION_BACKUP_DIR.exists():
+            candidates.extend(RECONCILIATION_BACKUP_DIR.glob("*_backup_*.csv"))
         if STANDARDIZED_DIR.exists():
             candidates.extend(STANDARDIZED_DIR.glob("*_backup_*.csv"))
         if not candidates:
@@ -1426,6 +1437,8 @@ def revert_last_action(backup_file: Optional[str] = None) -> Dict[str, Any]:
             backup_path = p
         elif (BACKUP_DIR / raw_target).exists():
             backup_path = BACKUP_DIR / raw_target
+        elif (RECONCILIATION_BACKUP_DIR / raw_target).exists():
+            backup_path = RECONCILIATION_BACKUP_DIR / raw_target
         elif (STANDARDIZED_DIR / raw_target).exists():
             backup_path = STANDARDIZED_DIR / raw_target
         elif (BASE_DIR / raw_target).exists():
@@ -1435,6 +1448,8 @@ def revert_last_action(backup_file: Optional[str] = None) -> Dict[str, Any]:
         else:
             clean_name = Path(raw_target).name
             matches = list(BACKUP_DIR.glob(f"*{clean_name}*")) if BACKUP_DIR.exists() else []
+            if not matches and RECONCILIATION_BACKUP_DIR.exists():
+                matches = list(RECONCILIATION_BACKUP_DIR.glob(f"*{clean_name}*"))
             if not matches and STANDARDIZED_DIR.exists():
                 matches = list(STANDARDIZED_DIR.glob(f"*{clean_name}*"))
             if matches:
@@ -1449,14 +1464,18 @@ def revert_last_action(backup_file: Optional[str] = None) -> Dict[str, Any]:
     parts = stem.rsplit('_backup_', 1)
     prefix = parts[0]
     
-    if prefix == "reconciliation_exceptions":
-        original_path = RECONCILIATION_DIR / "reconciliation_exceptions.csv"
+    if prefix in ["reconciliation_exceptions", "reconciliation_results"]:
+        target_destinations = [RECONCILIATION_DIR / f"{prefix}.csv"]
+        original_path = target_destinations[0]
     else:
         original_name = f"{prefix}.csv" if not prefix.endswith(".csv") else prefix
-        original_path = STANDARDIZED_DIR / original_name
+        target_destinations = [STANDARDIZED_DIR / original_name]
+        original_path = target_destinations[0]
 
     try:
-        shutil.copy2(backup_path, original_path)
+        for dest in target_destinations:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(backup_path, dest)
         row_count = None
         try:
             restored_df = pd.read_csv(original_path)
@@ -1478,12 +1497,36 @@ def revert_last_action(backup_file: Optional[str] = None) -> Dict[str, Any]:
 @mcp.tool()
 def list_backups() -> Dict[str, Any]:
     """
-    List all available historical backup snapshots in standardisation/data/backup with creation timestamps and file sizes.
+    List all available historical backup snapshots across standardisation/data/backup and reconciliation/backup
+    with creation timestamps, file sizes, and source types.
     Use this to identify which backup file path to pass into revert_last_action.
     Provides complete audit trail information of saved states.
     """
     backups = []
     seen_paths = set()
+
+    # Search reconciliation/backup for reconciliation backups
+    if RECONCILIATION_BACKUP_DIR.exists():
+        for file in RECONCILIATION_BACKUP_DIR.glob("*_backup_*.csv"):
+            resolved = str(file.resolve())
+            if resolved in seen_paths:
+                continue
+            seen_paths.add(resolved)
+            stat = file.stat()
+            source_type = "reconciliation_exceptions" if "exceptions" in file.name.lower() else "reconciliation_results"
+            try:
+                rel_path = str(file.relative_to(BASE_DIR)).replace("\\", "/")
+            except Exception:
+                rel_path = str(file)
+            backups.append({
+                "filename": file.name,
+                "path": str(file),
+                "relative_path": rel_path,
+                "source": source_type,
+                "created": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                "size_kb": round(stat.st_size / 1024, 2),
+                "_mtime": stat.st_mtime
+            })
 
     # Search standardisation/data/backup first
     if BACKUP_DIR.exists():
@@ -1493,7 +1536,7 @@ def list_backups() -> Dict[str, Any]:
                 continue
             seen_paths.add(resolved)
             stat = file.stat()
-            source_type = "invoice" if "invoice" in file.name.lower() else ("razorpay" if "razorpay" in file.name.lower() else ("bank" if "bank" in file.name.lower() else "exceptions"))
+            source_type = "invoice" if "invoice" in file.name.lower() else ("razorpay" if "razorpay" in file.name.lower() else ("bank" if "bank" in file.name.lower() else "standardized"))
             try:
                 rel_path = str(file.relative_to(BASE_DIR)).replace("\\", "/")
             except Exception:
@@ -1516,7 +1559,7 @@ def list_backups() -> Dict[str, Any]:
                 continue
             seen_paths.add(resolved)
             stat = file.stat()
-            source_type = "invoice" if "invoice" in file.name.lower() else ("razorpay" if "razorpay" in file.name.lower() else ("bank" if "bank" in file.name.lower() else "exceptions"))
+            source_type = "invoice" if "invoice" in file.name.lower() else ("razorpay" if "razorpay" in file.name.lower() else ("bank" if "bank" in file.name.lower() else "standardized"))
             try:
                 rel_path = str(file.relative_to(BASE_DIR)).replace("\\", "/")
             except Exception:
@@ -1531,28 +1574,6 @@ def list_backups() -> Dict[str, Any]:
                 "_mtime": stat.st_mtime
             })
 
-    # Also search RECONCILIATION_DIR
-    if RECONCILIATION_DIR.exists():
-        for file in RECONCILIATION_DIR.glob("*_backup_*.csv"):
-            resolved = str(file.resolve())
-            if resolved in seen_paths:
-                continue
-            seen_paths.add(resolved)
-            stat = file.stat()
-            try:
-                rel_path = str(file.relative_to(BASE_DIR)).replace("\\", "/")
-            except Exception:
-                rel_path = str(file)
-            backups.append({
-                "filename": file.name,
-                "path": str(file),
-                "relative_path": rel_path,
-                "source": "reconciliation_exceptions",
-                "created": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                "size_kb": round(stat.st_size / 1024, 2),
-                "_mtime": stat.st_mtime
-            })
-
     # Sort descending by creation timestamp (most recent first)
     backups.sort(key=lambda x: x["_mtime"], reverse=True)
     for b in backups:
@@ -1561,7 +1582,8 @@ def list_backups() -> Dict[str, Any]:
     return {
         "backups": backups,
         "count": len(backups),
-        "backup_directory": str(BACKUP_DIR),
+        "backup_directory": str(RECONCILIATION_BACKUP_DIR),
+        "standardization_backup_directory": str(BACKUP_DIR),
         "latest_backup": backups[0] if backups else None
     }
 
@@ -2082,13 +2104,18 @@ def mark_exceptions_resolved(
 
     exceptions_file = RECONCILIATION_DIR / "reconciliation_exceptions.csv"
     if not exceptions_file.exists():
-        return {"error": "No exceptions file found."}
+        alt_file = BASE_DIR / "reconciliation" / "reconciliation_exceptions.csv"
+        if alt_file.exists():
+            exceptions_file = alt_file
+        else:
+            return {"error": "No exceptions file found."}
 
     df = pd.read_csv(exceptions_file)
     if df.empty:
         return {"error": "Exceptions file is empty."}
 
-    backup_file = RECONCILIATION_DIR / f"reconciliation_exceptions_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    RECONCILIATION_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    backup_file = RECONCILIATION_BACKUP_DIR / f"reconciliation_exceptions_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     df.to_csv(backup_file, index=False)
 
     # Convert all string columns to object/str to avoid pandas float64 assignment errors
@@ -2126,11 +2153,6 @@ def mark_exceptions_resolved(
             updated_count += 1
 
     df.to_csv(exceptions_file, index=False)
-    
-    # Also sync to reconciliation/data/ if it exists
-    data_exc_file = RECONCILIATION_DIR / "data" / "reconciliation_exceptions.csv"
-    if data_exc_file.parent.exists():
-        df.to_csv(data_exc_file, index=False)
 
     # Compute updated counts per status_type
     parsed_df = _get_parsed_exceptions_df()
