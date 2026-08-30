@@ -249,7 +249,8 @@ Where:
 - **Normalized Amount Delta**:
   $$\delta_{\text{amount}}(i, j) = \min\left(1.0, \frac{|A_{\text{invoice}} - A_{\text{settlement}}|}{\max(A_{\text{invoice}}, A_{\text{settlement}}, 1.0)}\right)$$
 - **Normalized Date Delta**:
-  $$\delta_{\text{date}}(i, j) = \min\left(1.0, \frac{|\text{Date}_{\text{invoice}} - \text{Date}_{\text{settlement}}|}{\text{date\_window\_days}}\right)$$
+  $$\delta_{\text{date}}(i, j) = \min\left(1.0, \frac{|\text{Date}_{\text{invoice}} - \text{Date}_{\text{settlement}}|}{T_{\text{window}}}\right)$$
+  *(where $T_{\text{window}}$ is the configured settlement date window in days)*
 - **Vendor Jaro-Winkler Distance**:
   $$\delta_{\text{vendor}}(i, j) = 1.0 - \text{Similarity}_{\text{vendor}}(V_i, V_j)$$
 
@@ -259,9 +260,9 @@ The global assignment problem minimizes total assignment cost across all pairs:
 $$\min_{\pi} \sum_{i} C_{i, \pi(i)}$$
 
 Candidate pairs are accepted into `matched_triplets.csv` if and only if all threshold conditions are satisfied:
-1. Overall cost: $C_{i, \pi(i)} \le 0.40$ (`rejection_threshold`)
-2. Amount variance: $\delta_{\text{amount}}(i, \pi(i)) \le 0.05$ (`amount_tolerance` = 5.0%)
-3. Temporal variance: $|\text{Date}_{\text{invoice}} - \text{Date}_{\text{settlement}}| \le 7\text{ days}$ (`date_window_days`)
+1. Overall cost: $C_{i, \pi(i)} \le \tau_{\text{cutoff}}$ (where cutoff threshold `rejection_threshold` = `0.40`)
+2. Amount variance: $\delta_{\text{amount}}(i, \pi(i)) \le \epsilon_{\text{amount}}$ (where `amount_tolerance` = `5.0%`)
+3. Temporal variance: $|\text{Date}_{\text{invoice}} - \text{Date}_{\text{settlement}}| \le T_{\text{window}}$ (where `date_window_days` = `7 days`)
 
 ### 6.2 Subset-Sum Combinatorial Solver (N:1 and 1:N Matching)
 Commercial payment gateways frequently batch multiple invoices into a single net bank deposit (N:1) or disburse large invoices in partial milestone payouts (1:N).
@@ -269,7 +270,8 @@ Commercial payment gateways frequently batch multiple invoices into a single net
 The `SubsetSumMatcher` in `reconciliation/subset_sum_matcher.py`:
 1. **Candidate Grouping**: Partitions records by shared order references (`order_id`) or common vendor identity within dynamic time windows.
 2. **Branch-and-Bound Search**: Solves the bounded subset-sum problem:
-   $$\left| \sum_{k \in S} A_{\text{invoice}, k} - A_{\text{settlement}} \right| \le \text{split\_tolerance} \times A_{\text{settlement}}$$
+   $$\left| \sum_{k \in S} A_{\text{invoice}, k} - A_{\text{settlement}} \right| \le \epsilon_{\text{split}} \cdot A_{\text{settlement}}$$
+   *(where $\epsilon_{\text{split}}$ is the configured split tolerance, default: `0.20` or 20%)*
 3. **Pruning Constraints**: Restricts maximum batch cardinality to `max_invoices_per_settlement` (default: 5) to prevent exponential combinatorial explosion ($O(2^N)$ pruning).
 
 ### 6.3 Engine Configuration Parameters
