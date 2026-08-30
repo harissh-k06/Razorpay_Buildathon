@@ -113,11 +113,11 @@ async def get_tools_and_client():
 async def stream_chat(message: str, session_id: str = "default", agentic_mode: Optional[bool] = None):
     logger.info(f"Starting stream_chat for session '{session_id}' | Message: '{message}' | agentic_mode: {agentic_mode}")
     from openai import OpenAI
-    api_key = os.getenv("MODEL_API_KEY") or os.getenv("DEEPSEEK_API_KEY") or os.getenv("API_KEY")
-    base_url = os.getenv("MODEL_BASE_URL") or os.getenv("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
-    model = os.getenv("MODEL_NAME") or os.getenv("DEEPSEEK_MODEL") or "deepseek-chat"
+    api_key = os.getenv("MODEL_API_KEY") or os.getenv("API_KEY")
+    base_url = os.getenv("MODEL_BASE_URL") or "https://api.deepseek.com"
+    model = os.getenv("MODEL_NAME") or "deepseek-chat"
     if not api_key:
-        logger.error("MODEL_API_KEY (or DEEPSEEK_API_KEY) is not set in environment variables!")
+        logger.error("MODEL_API_KEY is not set in environment variables!")
     client = OpenAI(api_key=api_key, base_url=base_url)
     
     # 1. Connect to in-process FastMCP and discover all active tools dynamically

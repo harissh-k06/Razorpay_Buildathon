@@ -23,7 +23,7 @@ except Exception:
     Client = None
     StdioTransport = None
 
-from llm_client import LLMStandardizer, DeepSeekStandardizer
+from llm_client import LLMStandardizer
 from dateutil import parser
 
 # Load .env from project root
@@ -246,10 +246,9 @@ class DataStandardizer:
        Can be re-run on demand in milliseconds when changing base currency without invoking the LLM.
     """
 
-    def __init__(self, base_currency: str = "INR", model_api_key: str = None, deepseek_api_key: str = None):
+    def __init__(self, base_currency: str = "INR", model_api_key: str = None):
         self.base_currency = base_currency.upper().strip()
-        api_key = model_api_key or deepseek_api_key
-        self.standardizer = LLMStandardizer(api_key=api_key)
+        self.standardizer = LLMStandardizer(api_key=model_api_key)
         self._llm_data: Dict[str, pd.DataFrame] = {}
 
         # Base directories
@@ -657,6 +656,6 @@ if __name__ == "__main__":
     base_curr = base_curr if base_curr else "INR"
     standardizer = DataStandardizer(
         base_currency=base_curr,
-        model_api_key=os.getenv("MODEL_API_KEY") or os.getenv("DEEPSEEK_API_KEY") or os.getenv("API_KEY")
+        model_api_key=os.getenv("MODEL_API_KEY") or os.getenv("API_KEY")
     )
     standardizer.process_files()

@@ -224,7 +224,7 @@ export function MatchRateBarChart({
           </div>
 
           {/* Legend Summary Badges */}
-          <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5 text-xs border-t border-border/40 pt-2.5 w-full max-w-2xl">
+          <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2.5 text-xs border-t border-border/40 pt-2.5 w-full max-w-2xl min-h-[64px]">
             {/* 1. Matched Invoices (Blue) */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0D94FB]/10 border border-[#0D94FB]/25 text-[11px]">
               <div className="size-2 rounded-full bg-[#0D94FB] shrink-0" />
@@ -254,6 +254,11 @@ export function MatchRateBarChart({
             </div>
           </div>
         </div>
+
+        {/* Detailed Metric Definition */}
+        <p className="mt-2 text-[11px] text-text-muted italic text-center leading-relaxed">
+          <span className="font-semibold text-text-primary not-italic">Invoice Match Rate ({rate}%):</span> Realization of customer billing invoices — <span className="font-semibold text-[#0D94FB] not-italic">{matched}</span> of <span className="font-semibold text-text-primary not-italic">{safeTotal}</span> invoices successfully settled to bank ({unmatched > 0 ? `${unmatched} missing cash exceptions` : "0 exceptions"}).
+        </p>
       </CardContent>
     </Card>
   )

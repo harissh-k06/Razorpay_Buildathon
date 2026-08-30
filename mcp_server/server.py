@@ -235,9 +235,9 @@ def llm_detect_headers(lines: List[str]) -> Dict:
     """Use OpenAI-compatible LLM to find the header row and column mapping."""
     if OpenAI is None:
         raise ImportError("OpenAI library not installed – cannot use LLM fallback.")
-    api_key = os.environ.get("MODEL_API_KEY") or os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("API_KEY")
-    base_url = os.environ.get("MODEL_BASE_URL") or os.environ.get("DEEPSEEK_BASE_URL") or "https://api.deepseek.com"
-    model = os.environ.get("MODEL_NAME") or os.environ.get("DEEPSEEK_MODEL") or "deepseek-chat"
+    api_key = os.environ.get("MODEL_API_KEY") or os.environ.get("API_KEY")
+    base_url = os.environ.get("MODEL_BASE_URL") or "https://api.deepseek.com"
+    model = os.environ.get("MODEL_NAME") or "deepseek-chat"
     client = OpenAI(
         api_key=api_key,
         base_url=base_url

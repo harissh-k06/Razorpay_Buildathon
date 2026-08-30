@@ -53,26 +53,23 @@ class LLMStandardizer:
         self.api_key = (
             api_key
             or os.getenv("MODEL_API_KEY")
-            or os.getenv("DEEPSEEK_API_KEY")
             or os.getenv("API_KEY")
         )
         if not self.api_key:
             raise ValueError(
-                "MODEL_API_KEY (or DEEPSEEK_API_KEY) not found in environment variables. "
+                "MODEL_API_KEY not found in environment variables. "
                 "Please set MODEL_API_KEY in your .env file."
             )
 
-        # Resolve Base URL and Model Name
+        # Resolve Base URL and Model Name (defaulting to standard endpoint/model)
         self.base_url = (
             base_url
             or os.getenv("MODEL_BASE_URL")
-            or os.getenv("DEEPSEEK_BASE_URL")
             or "https://api.deepseek.com/v1"
         )
         self.model = (
             model
             or os.getenv("MODEL_NAME")
-            or os.getenv("DEEPSEEK_MODEL")
             or "deepseek-chat"
         )
 
@@ -289,5 +286,4 @@ class LLMStandardizer:
         raw_strings = [str(d) if d is not None else "" for d in descriptions]
         return self._batch_call(raw_strings, "description", BATCH_DESCRIPTION_INSTRUCTION)
 
-# Backward-compatibility alias
-DeepSeekStandardizer = LLMStandardizer
+
