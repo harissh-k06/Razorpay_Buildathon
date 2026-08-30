@@ -1,0 +1,24 @@
+# Expected Screenshot Files in docs/screenshots/:
+#
+# 1. Ingestion & Raw Data:
+#    - upload.png                 (CSV File Upload Interface)
+#    - raw_invoices.png           (Raw Invoices Statement / CSV)
+#    - raw_razorpay.png           (Raw Razorpay Settlements Statement / CSV)
+#    - raw_bank.png               (Raw Bank Statement / CSV)
+#
+# 2. Pipeline & Data Review:
+#    - standardisation.png        (Data Standardization Page & Progress)
+#    - review.png                 (3-Way Standardized Dataset Review Table)
+#
+# 3. Executive Analytics & Charts:
+#    - kpi_cards.png              (Executive Realization KPI Cards)
+#    - results.png                (Full Results Dashboard & Analytics)
+#    - charts_distribution.png    (Reconciliation Status Donut Chart)
+#    - charts_gauge.png           (Invoice Match Rate Gauge Chart)
+#    - charts_waterfall.png       (Financial Flow Realization Waterfall Chart)
+#
+# 4. PennyWise AI Copilot & Resolution:
+#    - pennywise_chat_review.png  (PennyWise Chat Auditing Datasets)
+#    - pennywise_chat_results.png (PennyWise Chat Explaining Metrics & Memos)
+#    - pennywise_chat_email.png   (PennyWise Chat One-Click Gmail Resolution)
+#    - exceptions.png             (Exceptions & Unallocated Cash Audit Table)
