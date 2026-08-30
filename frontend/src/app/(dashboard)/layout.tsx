@@ -2,7 +2,6 @@
 
 import React from "react"
 import { AppSidebar } from "@/components/app-sidebar"
-import { CommandPalette } from "@/components/command-palette"
 import { DynamicBreadcrumb } from "@/components/dynamic-breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -11,7 +10,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { AuthGuard } from "@/components/auth-guard"
-import { UserAvatar } from "@/components/user-avatar"
 
 export default function DashboardLayout({
   children,
@@ -32,11 +30,7 @@ export default function DashboardLayout({
               />
               <DynamicBreadcrumb />
             </div>
-            <div className="ml-auto flex items-center gap-3 pr-4">
-              <UserAvatar />
-            </div>
           </header>
-          <CommandPalette />
           <main className="flex flex-1 flex-col bg-surface-1">{children}</main>
         </SidebarInset>
       </SidebarProvider>

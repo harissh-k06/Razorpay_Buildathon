@@ -237,5 +237,32 @@ async def dev_login(response: Response):
 
 
 def get_session_by_request(request: Request) -> Optional[Dict[str, Any]]:
-    """Helper exported for use in email.py."""
+    """Helper exported for use in email_api.py."""
     return _get_session(request)
+
+
+def refresh_access_token(session_id: str) -> Optional[str]:
+    """Refreshes the Google OAuth access token using the stored refresh_token."""
+    sessions = _load_sessions()
+    session = sessions.get(session_id)
+    if not session or not session.get("refresh_token"):
+        return None
+
+    try:
+        import requests as req_lib
+        resp = req_lib.post(GOOGLE_TOKEN_URL, data={
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "refresh_token": session["refresh_token"],
+            "grant_type": "refresh_token",
+        })
+        if resp.status_code == 200:
+            new_token = resp.json().get("access_token")
+            if new_token:
+                session["access_token"] = new_token
+                _save_sessions(sessions)
+                logger.info(f"Successfully refreshed Google OAuth token for {session.get('email')}")
+                return new_token
+    except Exception as e:
+        logger.warning(f"Auto-refreshing OAuth token failed: {e}")
+    return None

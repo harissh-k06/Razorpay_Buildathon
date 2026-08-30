@@ -10,23 +10,15 @@ import {
 } from "@/components/ui/sidebar"
 import {
   UploadCloudIcon, SparklesIcon, ScanSearchIcon,
-  BarChart3Icon, SettingsIcon, LandmarkIcon,
+  BarChart3Icon, LandmarkIcon,
 } from "lucide-react"
 
 const data = {
-  user: {
-    name: "Finance Controller",
-    email: "controller@company.com",
-    avatar: "/avatars/user.jpg",
-  },
   navReconciliation: [
     { title: "Upload Files",  url: "/reconciliation/upload",      icon: <UploadCloudIcon className="size-4" /> },
     { title: "Standardize",   url: "/reconciliation/standardize", icon: <SparklesIcon className="size-4" /> },
     { title: "Review",        url: "/reconciliation/review",      icon: <ScanSearchIcon className="size-4" /> },
     { title: "Results",       url: "/reconciliation/results",     icon: <BarChart3Icon className="size-4" /> },
-  ],
-  navSystem: [
-    { title: "Settings", url: "/settings", icon: <SettingsIcon className="size-4" /> },
   ],
 }
 
@@ -51,11 +43,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <NavMain items={data.navReconciliation} label="Reconciliation" />
-        <NavMain items={data.navSystem} label="System" />
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )

@@ -78,15 +78,15 @@ def _create_mime_message(
 async def send_email(request: Request, payload: SendEmailRequest):
     """
     Send an email via Gmail API using the authenticated user's OAuth token.
-    Reads session from cookie and uses stored access_token.
+    Reads session from cookie, uses stored access_token, and auto-refreshes if expired.
     """
-    # Import here to avoid circular imports
-    from auth import get_session_by_request
+    from auth import get_session_by_request, refresh_access_token, SESSION_COOKIE
 
     session = get_session_by_request(request)
     if not session:
         raise HTTPException(status_code=401, detail="Not authenticated. Please login first.")
 
+    session_id = request.cookies.get(SESSION_COOKIE, "")
     access_token = session.get("access_token")
     if not access_token:
         raise HTTPException(status_code=401, detail="No access token found. Please re-login.")
@@ -95,37 +95,36 @@ async def send_email(request: Request, payload: SendEmailRequest):
     sender_name  = session.get("name", "")
     sender       = f"{sender_name} <{sender_email}>" if sender_name else sender_email
 
+    message = _create_mime_message(
+        sender=sender,
+        to=payload.to,
+        subject=payload.subject,
+        body=payload.body,
+        cc=payload.cc,
+        bcc=payload.bcc,
+    )
+
     try:
         service = _build_gmail_service(access_token)
-        message = _create_mime_message(
-            sender=sender,
-            to=payload.to,
-            subject=payload.subject,
-            body=payload.body,
-            cc=payload.cc,
-            bcc=payload.bcc,
-        )
-
         sent = service.users().messages().send(userId="me", body=message).execute()
-        logger.info(f"Email sent by {sender_email} to {payload.to} | id={sent.get('id')}")
-
-        return JSONResponse({
-            "success": True,
-            "message": f"Email sent successfully to {payload.to}",
-            "message_id": sent.get("id"),
-            "sender": sender_email,
-        })
-
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Failed to send email: {e}", exc_info=True)
+        # If token expired, auto-refresh and retry once
+        new_token = refresh_access_token(session_id) if session_id else None
+        if new_token:
+            try:
+                service = _build_gmail_service(new_token)
+                sent = service.users().messages().send(userId="me", body=message).execute()
+            except Exception as retry_err:
+                logger.error(f"Failed to send email after token refresh: {retry_err}", exc_info=True)
+                raise HTTPException(status_code=500, detail=f"Failed to send email: {str(retry_err)}")
+        else:
+            logger.error(f"Failed to send email and token could not be refreshed: {e}", exc_info=True)
+            raise HTTPException(status_code=401, detail="OAuth token expired. Please log out and log in again.")
 
-        # Handle token expiry
-        if "invalid_grant" in str(e).lower() or "token" in str(e).lower():
-            raise HTTPException(
-                status_code=401,
-                detail="OAuth token expired. Please log out and log in again."
-            )
-
-        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+    logger.info(f"Email sent by {sender_email} to {payload.to} | id={sent.get('id')}")
+    return JSONResponse({
+        "success": True,
+        "message": f"Email sent successfully to {payload.to}",
+        "message_id": sent.get("id"),
+        "sender": sender_email,
+    })

@@ -395,6 +395,57 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const sessionIdRef = useRef<string>("")
 
+  // ── Smooth Adaptive Streaming Typewriter Engine ──
+  const streamTargetRef = useRef<string>("")
+  const streamDisplayRef = useRef<string>("")
+  const streamAnimTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const isStreamActiveRef = useRef<boolean>(false)
+
+  const startStreamAnimation = () => {
+    if (streamAnimTimerRef.current) return
+    streamAnimTimerRef.current = setInterval(() => {
+      const target = streamTargetRef.current
+      const current = streamDisplayRef.current
+      const remaining = target.length - current.length
+
+      if (remaining > 0) {
+        // Natural human/AI typewriter velocity with adaptive burst catchup
+        let step = 1
+        if (remaining > 120) {
+          step = Math.ceil(remaining / 6)
+        } else if (remaining > 60) {
+          step = 4
+        } else if (remaining > 25) {
+          step = 3
+        } else if (remaining > 8) {
+          step = 2
+        } else {
+          step = 1
+        }
+
+        const next = target.slice(0, current.length + step)
+        streamDisplayRef.current = next
+        setStreamingText(next)
+        setIsLoading(false)
+      } else if (!isStreamActiveRef.current && remaining === 0) {
+        stopStreamAnimation()
+      }
+    }, 16)
+  }
+
+  const stopStreamAnimation = () => {
+    if (streamAnimTimerRef.current) {
+      clearInterval(streamAnimTimerRef.current)
+      streamAnimTimerRef.current = null
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      stopStreamAnimation()
+    }
+  }, [])
+
   useEffect(() => {
     if (!sessionIdRef.current) {
       sessionIdRef.current =
@@ -533,6 +584,10 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
     setIsLoading(true)
     setStreamingText("")
 
+    streamTargetRef.current = ""
+    streamDisplayRef.current = ""
+    isStreamActiveRef.current = true
+
     let accumulatedText = ""
     const capturedRecipient = pendingEmailRecipientRef.current
     const capturedExceptionIds = [...pendingExceptionIdsRef.current]
@@ -600,8 +655,8 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
                   reconciliationStore.getState().loadData?.()
                 } else if (data.token) {
                   accumulatedText += data.token
-                  setStreamingText(accumulatedText)
-                  setIsLoading(false)
+                  streamTargetRef.current = accumulatedText
+                  startStreamAnimation()
                 } else if (data.error) {
                   throw new Error(data.error)
                 }
@@ -618,6 +673,8 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
           const data = JSON.parse(buffer.slice(6).trim())
           if (data.token) {
             accumulatedText += data.token
+            streamTargetRef.current = accumulatedText
+            startStreamAnimation()
           }
           if (data.action) {
             if (data.action === "update_params") {
@@ -643,6 +700,24 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
           }
         } catch {}
       }
+
+      // Mark stream network done and smoothly wait for typewriter buffer to finish typing
+      isStreamActiveRef.current = false
+      if (accumulatedText && streamDisplayRef.current.length < streamTargetRef.current.length) {
+        await new Promise<void>((resolve) => {
+          const checkInterval = setInterval(() => {
+            if (streamDisplayRef.current.length >= streamTargetRef.current.length) {
+              clearInterval(checkInterval)
+              resolve()
+            }
+          }, 16)
+          setTimeout(() => {
+            clearInterval(checkInterval)
+            resolve()
+          }, 2500)
+        })
+      }
+      stopStreamAnimation()
 
       // Try to extract email drafts if this was an email request or model generated emails
       if (accumulatedText) {
@@ -670,6 +745,7 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
         setMessages((prev) => [...prev, aiMsg])
       }
     } catch (err: any) {
+      stopStreamAnimation()
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -678,6 +754,7 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
       }
       setMessages((prev) => [...prev, errorMsg])
     } finally {
+      stopStreamAnimation()
       setStreamingText("")
       setIsLoading(false)
       try {
@@ -925,15 +1002,15 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
 
                   {/* Streaming bubble */}
                   {streamingText && (
-                    <div className="flex justify-start items-start gap-2.5 mb-3">
+                    <div className="flex justify-start items-start gap-2.5 mb-3 transition-all duration-150 animate-in fade-in-50">
                       <img
                         src="/penny-wise-avatar.png"
                         alt="PennyWise"
                         className="h-7 sm:h-8 w-auto object-contain shrink-0 mt-0.5 drop-shadow-xs select-none"
                       />
-                      <div className="bg-gray-50 text-gray-800 border border-gray-100 rounded-xl rounded-tl-none px-3.5 py-2.5 text-xs sm:text-sm shadow-xs max-w-[88%] break-words relative">
+                      <div className="bg-gray-50 text-gray-800 border border-gray-200/80 rounded-xl rounded-tl-none px-3.5 py-2.5 text-xs sm:text-sm shadow-xs max-w-[88%] break-words relative leading-relaxed">
                         <MarkdownRenderer content={streamingText} />
-                        <span className="inline-block w-1.5 h-3.5 ml-1 bg-blue-500 animate-pulse align-middle rounded-xs" />
+                        <span className="inline-block w-1.5 h-3.5 ml-1 bg-[#0D94FB] animate-pulse align-middle rounded-xs shadow-[0_0_8px_rgba(13,148,251,0.6)]" />
                       </div>
                     </div>
                   )}
