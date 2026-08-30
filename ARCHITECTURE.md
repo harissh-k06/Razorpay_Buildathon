@@ -65,50 +65,50 @@ The system is organized into modular layers: Presentation (Next.js 15), API Gate
 
 ```mermaid
 flowchart TB
-    subgraph ClientLayer["Frontend Presentation Layer (Next.js 15 / React / Zustand)"]
-        UI_Upload["CSV Upload & Stage"]
-        UI_Review["3-Way Interactive Review & Edit"]
-        UI_Results["Analytics Dashboard (Donut, Gauge, Waterfall)"]
-        UI_Chat["PennyWise Agent Drawer (Agentic Toggle)"]
+    subgraph ClientLayer["Presentation Layer (Next.js 15 / React / Zustand)"]
+        UI_Upload["CSV Ingestion<br/>& Upload Staging"]
+        UI_Review["3-Way Interactive<br/>Review & Edit Table"]
+        UI_Results["Analytics Dashboard<br/>(Donut, Gauge, Waterfall)"]
+        UI_Chat["PennyWise Agent Drawer<br/>(Agentic Mode Toggle)"]
     end
 
     subgraph APILayer["API Gateway Layer (FastAPI ASGI)"]
-        API_Auth["OAuth 2.0 & Session Handler (/auth)"]
-        API_Endpoints["REST Endpoints (/api/upload, /api/reconcile)"]
-        API_SSE["SSE Streaming Engine (/api/chat/stream)"]
+        API_Auth["Google OAuth 2.0<br/>& Session Router (/auth)"]
+        API_Endpoints["REST Controllers<br/>(/api/upload, /api/reconcile)"]
+        API_SSE["SSE Streaming Engine<br/>(/api/chat/stream)"]
     end
 
     subgraph AgentLayer["Agentic Controller Layer (chat-bot)"]
         Agent_Loop["Agentic Controller Loop"]
-        Agent_Memory["Sliding Window History (Last 5 Turns)"]
-        Agent_Skills["Progressive Disclosure Skill Router"]
+        Agent_Memory["Sliding Window History<br/>(Last 5 Interaction Turns)"]
+        Agent_Skills["Progressive Disclosure<br/>Skill Routing Catalog"]
     end
 
     subgraph MCPLayer["Tool Bus Layer (FastMCP Server)"]
-        MCP_Read["Read-Only Tools (11 Query & Audit Tools)"]
-        MCP_Write["Write/Action Tools (10 Mutation Tools)"]
-        MCP_Email["Gmail Dispatch & Resolution Tools"]
-        MCP_Guard["Agentic State Gatekeeper (.agentic_mode.json)"]
+        MCP_Read["Read-Only Tools<br/>(11 Auditing & Query Tools)"]
+        MCP_Write["Write/Action Tools<br/>(10 Mutation Tools)"]
+        MCP_Email["Gmail API Dispatch<br/>& Auto-Resolve Tools"]
+        MCP_Guard["Agentic State Gatekeeper<br/>(.agentic_mode.json)"]
     end
 
-    subgraph DataPipeline["Data Processing Layer"]
+    subgraph DataPipeline["Data Processing Engine"]
         subgraph StdModule["Standardisation Pipeline"]
-            Std_LLM["Phase 1: LLM Vendor Normalization (Worker Pool)"]
-            Std_Cache["In-Memory Vendor Mapping Cache"]
-            Std_Det["Phase 2: Deterministic Date & FX Engine"]
+            Std_LLM["Phase 1: Semantic Vendor<br/>Normalization (20 Workers)"]
+            Std_Cache["In-Memory Vendor<br/>Mapping Cache"]
+            Std_Det["Phase 2: Deterministic<br/>ISO Date & FX Engine"]
         end
         subgraph RecModule["Reconciliation Engine"]
-            Rec_Hungarian["Global Bipartite Hungarian Matcher (1:1)"]
-            Rec_Subset["Pruned Subset-Sum Solver (N:1 / 1:N)"]
-            Rec_Classifier["Audit Classifier (Exceptions vs Unallocated)"]
+            Rec_Hungarian["Global Bipartite<br/>Hungarian Matcher (1:1)"]
+            Rec_Subset["Pruned Branch-and-Bound<br/>Subset-Sum Solver (N:1, 1:N)"]
+            Rec_Classifier["Audit Classifier<br/>(Missing Cash vs Unallocated)"]
         end
     end
 
     subgraph StorageLayer["Data & Persistence Layer"]
-        CSV_Raw["raw/ (invoices, razorpay, bank)"]
-        CSV_Std["standardized/ (*_standardized.csv)"]
-        CSV_Backups["backup/ (Timestamped CSV Snapshots)"]
-        CSV_Results["reconciliation/data/ (matched_triplets, exceptions)"]
+        CSV_Raw["raw/<br/>(invoices, razorpay, bank)"]
+        CSV_Std["standardized/<br/>(*_standardized.csv)"]
+        CSV_Backups["backup/<br/>(Timestamped Snapshots)"]
+        CSV_Results["reconciliation/data/<br/>(triplets, exceptions)"]
     end
 
     ClientLayer --> APILayer
@@ -159,22 +159,22 @@ Financial datasets from different sources frequently exhibit incompatible schema
 ```mermaid
 flowchart LR
     subgraph Phase1["Phase 1: Semantic Vendor Normalization"]
-        R_Raw["Extract Unique Raw Vendor Names"] --> R_Cache{"In-Memory Cache Hit?"}
-        R_Cache -- No --> R_Batch["Construct Batch LLM Prompts (Chunk Size: 30)"]
-        R_Batch --> R_ThreadPool["Concurrent ThreadPoolExecutor (20 Workers)"]
-        R_ThreadPool --> R_LLM["LLM OpenAI-Compatible API"]
-        R_LLM --> R_UpdateCache["Update In-Memory Cache"]
-        R_Cache -- Yes --> R_Apply["Vectorized DataFrame Mapping"]
+        R_Raw["Extract Unique Raw<br/>Vendor Entities"] --> R_Cache{"In-Memory<br/>Cache Hit?"}
+        R_Cache -- No --> R_Batch["Construct Batch JSON<br/>Chunks (Size: 30)"]
+        R_Batch --> R_ThreadPool["Concurrent ThreadPool<br/>(20 Parallel Workers)"]
+        R_ThreadPool --> R_LLM["LLM Inference<br/>API Endpoint"]
+        R_LLM --> R_UpdateCache["Populate In-Memory<br/>Vendor Cache"]
+        R_Cache -- Yes --> R_Apply["Vectorized DataFrame<br/>Mapping"]
         R_UpdateCache --> R_Apply
     end
 
     subgraph Phase2["Phase 2: Deterministic Normalization"]
-        R_Apply --> P2_Date["Date Transformer (ISO-8601 YYYY-MM-DD)"]
-        P2_Date --> P2_FX["FX Engine (Currency Conversion to Base INR/USD)"]
-        P2_FX --> P2_Validate["Schema Validation & Missing Field Imputation"]
+        R_Apply --> P2_Date["Date Transformer<br/>(ISO-8601 YYYY-MM-DD)"]
+        P2_Date --> P2_FX["FX Engine<br/>(Currency Conversion to Base)"]
+        P2_FX --> P2_Validate["Schema Validation &<br/>Missing Field Imputation"]
     end
 
-    subgraph Outputs["Canonical Output Files"]
+    subgraph Outputs["Canonical Output Datasets"]
         P2_Validate --> Out_Inv["invoice_standardized.csv"]
         P2_Validate --> Out_Rzp["razorpay_standardized.csv"]
         P2_Validate --> Out_Bnk["bank_standardized.csv"]
@@ -217,22 +217,22 @@ The matching engine in `reconciliation/run_reconciliation.py` uses a two-tiered 
 ```mermaid
 flowchart TD
     StartRec["Standardized Datasets Ingested"] --> SubsetStage["Stage 1: Subset-Sum Matching Engine"]
-    SubsetStage --> SplitCheck{"Split / Batch Relationships Found?"}
-    SplitCheck -- Yes --> EmitSplitTriplets["Emit N:1 and 1:N Matched Triplets"]
+    SubsetStage --> SplitCheck{"Split or Batch<br/>Matches Found?"}
+    SplitCheck -- Yes --> EmitSplitTriplets["Emit N:1 and 1:N<br/>Matched Triplets"]
     SplitCheck -- No --> HungarianStage["Stage 2: Global Hungarian Bipartite Matcher"]
     
-    HungarianStage --> CostMatrix["Build Normalised Cost Matrix C(i, j)"]
+    HungarianStage --> CostMatrix["Build Normalized Cost Matrix<br/>C(i, j) = w1*Amount + w2*Date + w3*Vendor"]
     CostMatrix --> SolveAssignment["Solve via scipy.optimize.linear_sum_assignment"]
-    SolveAssignment --> ScoreFilter{"Total Cost <= Rejection Threshold (0.40)?"}
+    SolveAssignment --> ScoreFilter{"Total Cost <= Cutoff Score<br/>(rejection_threshold = 0.40)?"}
     
     ScoreFilter -- Yes --> Emit11Triplets["Emit 1:1 Matched Triplets"]
-    ScoreFilter -- No --> ResidualStage["Stage 3: Residual Classification"]
+    ScoreFilter -- No --> ResidualStage["Stage 3: Residual Ledger Classification"]
     
-    EmitSplitTriplets --> CompileResults["Compile Final Audit Results"]
+    EmitSplitTriplets --> CompileResults["Compile Final Audit Datasets"]
     Emit11Triplets --> CompileResults
-    ResidualStage --> Classifier{"Missing Cash vs Extra Cash?"}
-    Classifier -- "Billed Invoice with No Settlement" --> ExcMissing["Emit Exception (High Risk / Missing Cash)"]
-    Classifier -- "Settlement/Bank with No Invoice" --> ExcUnalloc["Emit Unallocated Cash (Medium Risk / Extra Cash)"]
+    ResidualStage --> Classifier{"Unmatched Ledger<br/>Source Origin?"}
+    Classifier -- "Billed Invoice, No Payout" --> ExcMissing["Emit Exception<br/>(Missing Cash / High Risk)"]
+    Classifier -- "Payout or Deposit, No Invoice" --> ExcUnalloc["Emit Unallocated Cash<br/>(Surplus Cash / Medium Risk)"]
     ExcMissing --> CompileResults
     ExcUnalloc --> CompileResults
 ```
@@ -249,19 +249,19 @@ Where:
 - **Normalized Amount Delta**:
   $$\delta_{\text{amount}}(i, j) = \min\left(1.0, \frac{|A_{\text{invoice}} - A_{\text{settlement}}|}{\max(A_{\text{invoice}}, A_{\text{settlement}}, 1.0)}\right)$$
 - **Normalized Date Delta**:
-  $$\delta_{\text{date}}(i, j) = \min\left(1.0, \frac{|\text{Date}_{\text{invoice}} - \text{Date}_{\text{settlement}}|}{\text{Date Window (Days)}}\right)$$
+  $$\delta_{\text{date}}(i, j) = \min\left(1.0, \frac{|\text{Date}_{\text{invoice}} - \text{Date}_{\text{settlement}}|}{\text{date\_window\_days}}\right)$$
 - **Vendor Jaro-Winkler Distance**:
   $$\delta_{\text{vendor}}(i, j) = 1.0 - \text{Similarity}_{\text{vendor}}(V_i, V_j)$$
 
-#### Assignment and Thresholding
-The global assignment problem minimizes total cost:
+#### Assignment and Acceptance Criteria
+The global assignment problem minimizes total assignment cost across all pairs:
 
 $$\min_{\pi} \sum_{i} C_{i, \pi(i)}$$
 
-Matches are accepted if and only if:
-1. $C_{i, \pi(i)} \le \text{rejection\_threshold}$ (Default: `0.40`)
-2. $\delta_{\text{amount}}(i, \pi(i)) \le \text{amount\_tolerance}$ (Default: `5.0%`)
-3. $\text{Date Difference} \le \text{date\_window\_days}$ (Default: `7 days`)
+Candidate pairs are accepted into `matched_triplets.csv` if and only if all threshold conditions are satisfied:
+1. Overall cost: $C_{i, \pi(i)} \le 0.40$ (`rejection_threshold`)
+2. Amount variance: $\delta_{\text{amount}}(i, \pi(i)) \le 0.05$ (`amount_tolerance` = 5.0%)
+3. Temporal variance: $|\text{Date}_{\text{invoice}} - \text{Date}_{\text{settlement}}| \le 7\text{ days}$ (`date_window_days`)
 
 ### 6.2 Subset-Sum Combinatorial Solver (N:1 and 1:N Matching)
 Commercial payment gateways frequently batch multiple invoices into a single net bank deposit (N:1) or disburse large invoices in partial milestone payouts (1:N).
@@ -294,21 +294,21 @@ Unmatched records are partitioned into distinct accounting categories based on l
 
 ```mermaid
 flowchart TD
-    UnmatchedPool["Residual Unmatched Records"] --> TypeCheck{"Source Ledger Origin"}
+    UnmatchedPool["Residual Unmatched Ledger Records"] --> TypeCheck{"Source Ledger Origin"}
     
-    TypeCheck -- "Invoice Present, No Settlement" --> ExpMissing["Exception: Missing Cash (High Risk)"]
-    TypeCheck -- "Settlement Present, No Bank UTR" --> ExpGateway["Exception: Gateway Transit Leak (High Risk)"]
-    TypeCheck -- "Settlement Present, No Invoice" --> UnallocRzp["Unallocated Cash: Surplus Gateway Funds (Medium Risk)"]
-    TypeCheck -- "Bank Deposit, No Invoice/Gateway" --> UnallocBank["Unallocated Cash: Direct Bank Credit (Medium Risk)"]
+    TypeCheck -- "Billed Invoice, No Payout" --> ExpMissing["Exception: Missing Cash<br/>(Receivables Exposure / High Risk)"]
+    TypeCheck -- "Gateway Payout, No Bank UTR" --> ExpGateway["Exception: Gateway Transit Leak<br/>(Settlement Transit / High Risk)"]
+    TypeCheck -- "Gateway Payout, No Invoice" --> UnallocRzp["Unallocated Cash: Surplus Gateway<br/>(Advance Deposit / Medium Risk)"]
+    TypeCheck -- "Bank Deposit, No Invoices" --> UnallocBank["Unallocated Cash: Direct Bank Credit<br/>(Unlinked Deposit / Medium Risk)"]
 
     subgraph ActionsMissing["Missing Cash Resolution Path"]
-        ExpMissing --> ActMemo["Generate Formal Dispute Memo"]
+        ExpMissing --> ActMemo["Generate Audit-Ready<br/>Dispute Memo"]
         ExpGateway --> ActMemo
-        ActMemo --> ActEmail["Dispatch Vendor Clarification Email"]
+        ActMemo --> ActEmail["Dispatch Vendor Remediation<br/>Email via Gmail API"]
     end
 
     subgraph ActionsUnalloc["Unallocated Cash Resolution Path"]
-        UnallocRzp --> ActReassign["Assign to Customer Account / Advance Ledger"]
+        UnallocRzp --> ActReassign["Assign to Customer Account<br/>or Advance Cash Ledger"]
         UnallocBank --> ActReassign
     end
 ```
@@ -383,10 +383,10 @@ The conversational assistant in `chat-bot/chat_bot.py` operates as an autonomous
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as Finance User
+    actor User as Finance Controller
     participant Web as Next.js Chat Drawer
     participant API as FastAPI SSE Endpoint
-    participant Agent as Agentic Controller (chat_bot.py)
+    participant Agent as Agentic Controller
     participant MCP as FastMCP Server
     participant LLM as OpenAI-Compatible LLM API
 
@@ -397,7 +397,7 @@ sequenceDiagram
     Agent->>LLM: Send Conversation History + Available FastMCP Tools
     LLM-->>Agent: Function Call: query_exceptions(vendor='adobe')
     Agent->>MCP: Execute query_exceptions()
-    MCP-->>Agent: Returns JSON: INV-034 details (Missing Cash, ₹39,541.82)
+    MCP-->>Agent: Returns JSON: INV-034 details (Missing Cash, INR 39,541.82)
     Agent->>LLM: Send Tool Execution Result
     LLM-->>Agent: Stream natural language explanation & remediation advice
     Agent-->>API: SSE Data Chunks
@@ -437,15 +437,15 @@ PennyWise implements a safety architecture to prevent unintended ledger mutation
 flowchart TD
     UserQuery["User Submits Prompt in Chat Drawer"] --> ModeCheck{"Agentic Mode Toggle"}
     
-    ModeCheck -- "OFF (Ask Mode / Read-Only)" --> FilterAsk["Enforce Read-Only Tools"]
-    FilterAsk --> ExecRead["Execute Query / Diagnostics / Memos"]
-    ExecRead --> StreamAsk["Stream Advisory Response to User"]
+    ModeCheck -- "OFF (Ask Mode / Read-Only)" --> FilterAsk["Enforce Read-Only Tool Set<br/>(Block Mutations)"]
+    FilterAsk --> ExecRead["Execute Audit Query /<br/>Diagnostic Analytics"]
+    ExecRead --> StreamAsk["Stream Advisory Response<br/>Tokens to User"]
     
-    ModeCheck -- "ON (Agentic Mode / Autonomous)" --> FilterAgentic["Unlock All 22+ MCP Tools"]
-    FilterAgentic --> ActionCheck{"Tool Call is Write/Mutation?"}
-    ActionCheck -- Yes --> MakeBackup["Auto-Create Timestamped Snapshot Backup"]
-    MakeBackup --> ExecWrite["Execute File Mutation / Email Dispatch"]
-    ExecWrite --> UpdateUI["Emit Real-Time Store Refresh"]
+    ModeCheck -- "ON (Agentic Mode / Autonomous)" --> FilterAgentic["Unlock Complete 22+<br/>FastMCP Tool Bus"]
+    FilterAgentic --> ActionCheck{"Tool Call is<br/>Write/Mutation?"}
+    ActionCheck -- Yes --> MakeBackup["Auto-Create Timestamped<br/>Snapshot Backup"]
+    MakeBackup --> ExecWrite["Execute File Mutation<br/>or Gmail Dispatch"]
+    ExecWrite --> UpdateUI["Emit Real-Time State<br/>Store Refresh"]
     ActionCheck -- No --> ExecRead
 ```
 
@@ -499,33 +499,27 @@ Global state is managed via Zustand in `frontend/src/store/reconciliationStore.t
 ## 13. Exception Resolution Lifecycle
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Unmatched: Reconciliation Engine Completes
+flowchart TD
+    RecFinish["3-Way Reconciliation Engine Completes"] --> UnmatchedPool["Unmatched Pool Staged"]
     
-    state Unmatched {
-        [*] --> MissingCash: Invoice with No Settlement
-        [*] --> UnallocatedCash: Deposit with No Invoice
-    }
+    UnmatchedPool --> MissingBranch["Missing Cash Exception<br/>(Billed Invoice, No Payout)"]
+    UnmatchedPool --> UnallocBranch["Unallocated Cash Item<br/>(Deposit, No Invoice)"]
     
-    MissingCash --> InReview: User Investigates in Dashboard / Chat
-    UnallocatedCash --> InReview: User Investigates in Dashboard / Chat
+    MissingBranch --> Investigate["User & PennyWise Investigate<br/>Root Causes in Chat"]
+    UnallocBranch --> Investigate
     
-    state InReview {
-        InReview --> MemoDrafted: AI Generates Dispute Memo
-        InReview --> EmailDrafted: AI Generates Resolution Email
-        InReview --> DirectAction: Manual Ledger Edit / Reassign
-    }
+    Investigate --> OptionMemo["Generate Formal Dispute Memo<br/>(draft_dispute_memo)"]
+    Investigate --> OptionEmail["Draft Remediation Email<br/>(generate_email_from_exception)"]
+    Investigate --> OptionEdit["Manual Record Reassignment<br/>(update_csv_record)"]
     
-    MemoDrafted --> EmailDrafted: User Approves Memo
-    EmailDrafted --> Resolved: Email Sent via Gmail API
-    DirectAction --> Resolved: mark_exceptions_resolved() Executed
+    OptionMemo --> OptionEmail
+    OptionEmail --> DispatchEmail["Send Email via Gmail API<br/>(send_email_via_gmail)"]
     
-    state Resolved {
-        [*] --> AuditLogged: Timestamp & Note Saved
-        AuditLogged --> SnapshotBackup: CSV Backup Staged
-    }
+    DispatchEmail --> MarkResolved["Mark Record as Resolved<br/>(mark_exceptions_resolved)"]
+    OptionEdit --> MarkResolved
     
-    Resolved --> [*]: Record Removed from Active Exceptions
+    MarkResolved --> SaveAudit["Persist Timestamped Audit Note<br/>& Snapshot CSV Backup"]
+    SaveAudit --> DashboardRefresh["Real-Time Dashboard Refresh<br/>(Move to Resolved Tab)"]
 ```
 
 ---
@@ -615,11 +609,11 @@ The PennyWise architecture is designed for modular extension across several dime
 
 ```mermaid
 flowchart LR
-    subgraph CoreEngine["Extensibility Points"]
-        Ext_MCP["New MCP Tools (mcp_server/server.py)"]
-        Ext_Skills["New Agent Skills (chat-bot/workspace/skills/)"]
-        Ext_Parsers["Custom Ingestion Parsers (PDF, XLSX, MT940, CAMT.053)"]
-        Ext_Matchers["Pluggable Matchers (ML-based Embeddings & Cosine Scoring)"]
+    subgraph CoreEngine["Extensibility Modules"]
+        Ext_MCP["New FastMCP Tools<br/>(mcp_server/server.py)"]
+        Ext_Skills["New Agent Skills<br/>(chat-bot/workspace/skills/)"]
+        Ext_Parsers["Custom Ingestion Parsers<br/>(PDF, XLSX, MT940, CAMT.053)"]
+        Ext_Matchers["Pluggable Matchers<br/>(Vector Embeddings & Cosine Scoring)"]
     end
 
     CoreEngine --> PluggableSystem["Unified PennyWise Core Bus"]
