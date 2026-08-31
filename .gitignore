@@ -5,6 +5,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.chat_sessions.json
+*.chat_sessions.json
 
 # C extensions
 *.so
