@@ -104,16 +104,20 @@ export default function UploadPage() {
     setFile, uploadAndPreview, loadSampleBenchmarkData, resetAll,
   } = useReconciliationStore()
 
-  const allSelected = Boolean(
-    (uploadedFiles.invoice || previewData.invoice) &&
-    (uploadedFiles.razorpay || previewData.razorpay) &&
-    (uploadedFiles.bank || previewData.bank)
+  const hasFreshFiles = Boolean(uploadedFiles.invoice && uploadedFiles.razorpay && uploadedFiles.bank)
+  const hasExistingData = Boolean(
+    (uploadedFiles.invoice || (previewData.invoice?.preview?.length || previewData.invoice?.filename)) &&
+    (uploadedFiles.razorpay || (previewData.razorpay?.preview?.length || previewData.razorpay?.filename)) &&
+    (uploadedFiles.bank || (previewData.bank?.preview?.length || previewData.bank?.filename))
   )
+  const allSelected = hasFreshFiles || hasExistingData
   const isUploading = uploadStatus === "uploading"
 
   const handleUploadAndContinue = async () => {
     if (uploadedFiles.invoice && uploadedFiles.razorpay && uploadedFiles.bank) {
       await uploadAndPreview()
+    } else if (!hasExistingData) {
+      await loadSampleBenchmarkData()
     }
     router.push("/reconciliation/standardize")
   }
@@ -216,8 +220,8 @@ export default function UploadPage() {
               sublabel="Accounts Receivable / Billing Export"
               icon={<FileTextIcon className="size-6" />}
               file={uploadedFiles.invoice}
-              previewFilename={previewData.invoice?.filename}
-              totalRows={previewData.invoice?.total_rows}
+              previewFilename={previewData.invoice?.filename || (previewData.invoice?.preview?.length ? "invoices.csv" : undefined)}
+              totalRows={previewData.invoice?.total_rows || previewData.invoice?.preview?.length}
               onSelect={(f) => setFile("invoice", f)}
             />
             <DropZone
@@ -225,8 +229,8 @@ export default function UploadPage() {
               sublabel="Payment Gateway Settlements"
               icon={<FileSpreadsheetIcon className="size-6" />}
               file={uploadedFiles.razorpay}
-              previewFilename={previewData.razorpay?.filename}
-              totalRows={previewData.razorpay?.total_rows}
+              previewFilename={previewData.razorpay?.filename || (previewData.razorpay?.preview?.length ? "razorpay_settlements.csv" : undefined)}
+              totalRows={previewData.razorpay?.total_rows || previewData.razorpay?.preview?.length}
               onSelect={(f) => setFile("razorpay", f)}
             />
             <DropZone
@@ -234,8 +238,8 @@ export default function UploadPage() {
               sublabel="Core Banking Feed / Statement CSV"
               icon={<FileSpreadsheetIcon className="size-6" />}
               file={uploadedFiles.bank}
-              previewFilename={previewData.bank?.filename}
-              totalRows={previewData.bank?.total_rows}
+              previewFilename={previewData.bank?.filename || (previewData.bank?.preview?.length ? "bank.csv" : undefined)}
+              totalRows={previewData.bank?.total_rows || previewData.bank?.preview?.length}
               onSelect={(f) => setFile("bank", f)}
             />
           </div>
@@ -252,6 +256,10 @@ export default function UploadPage() {
         >
           {isUploading ? (
             <><RefreshCwIcon className="mr-2 size-4 animate-spin" /> Uploading...</>
+          ) : hasFreshFiles ? (
+            <><UploadCloudIcon className="mr-2 size-4" /> Upload &amp; Continue</>
+          ) : hasExistingData ? (
+            <><CheckCircle2Icon className="mr-2 size-4" /> Continue with Loaded Data</>
           ) : (
             <><UploadCloudIcon className="mr-2 size-4" /> Upload &amp; Continue</>
           )}
