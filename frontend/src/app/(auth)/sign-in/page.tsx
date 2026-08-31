@@ -39,7 +39,9 @@ export default function SignInPage() {
   const { devLogin } = useAuthStore()
 
   const handleGoogleLogin = () => {
-    window.location.href = `${API_BASE}/api/auth/google`
+    const origin = typeof window !== "undefined" ? window.location.origin : ""
+    const query = origin ? `?redirect_to=${encodeURIComponent(origin)}` : ""
+    window.location.href = `${API_BASE}/api/auth/google${query}`
   }
 
   return (

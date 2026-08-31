@@ -77,36 +77,61 @@ def _get_session(request: Request) -> Optional[Dict[str, Any]]:
     return sessions.get(session_id)
 
 
+def _get_redirect_uri(request: Request) -> str:
+    base = os.getenv("BASE_URL", "").strip()
+    if base and base != "http://localhost:8000":
+        return f"{base.rstrip('/')}/api/auth/google/callback"
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    host = request.headers.get("x-forwarded-host", request.headers.get("host", ""))
+    if host:
+        return f"{proto}://{host}/api/auth/google/callback"
+    return REDIRECT_URI
+
+
 @auth_router.get("/google")
-async def google_login():
+async def google_login(request: Request, redirect_to: Optional[str] = None):
     """Redirect user to Google's OAuth consent screen."""
     import urllib.parse
+    target_frontend = redirect_to or request.headers.get("origin") or request.headers.get("referer")
+    if target_frontend:
+        try:
+            parsed = urllib.parse.urlparse(target_frontend)
+            if parsed.scheme and parsed.netloc:
+                target_frontend = f"{parsed.scheme}://{parsed.netloc}"
+        except Exception:
+            pass
+    if not target_frontend or target_frontend == "*":
+        target_frontend = FRONTEND_URL.rstrip("/")
+
+    redirect_uri = _get_redirect_uri(request)
     params = {
         "client_id":     GOOGLE_CLIENT_ID,
-        "redirect_uri":  REDIRECT_URI,
+        "redirect_uri":  redirect_uri,
         "response_type": "code",
         "scope":         " ".join(SCOPES),
         "access_type":   "offline",
         "prompt":        "consent",
+        "state":         target_frontend,
     }
     url = f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}"
     return RedirectResponse(url)
 
 
 @auth_router.get("/google/callback")
-async def google_callback(code: str, response: Response):
+async def google_callback(request: Request, code: str, response: Response, state: Optional[str] = None):
     """Handle Google OAuth callback, exchange code for tokens, set session cookie."""
     import requests as req_lib
 
     if not code:
         raise HTTPException(status_code=400, detail="Missing authorization code")
 
+    redirect_uri = _get_redirect_uri(request)
     # Exchange code for tokens
     token_resp = req_lib.post(GOOGLE_TOKEN_URL, data={
         "code":          code,
         "client_id":     GOOGLE_CLIENT_ID,
         "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uri":  REDIRECT_URI,
+        "redirect_uri":  redirect_uri,
         "grant_type":    "authorization_code",
     })
 
@@ -147,8 +172,13 @@ async def google_callback(code: str, response: Response):
 
     logger.info(f"User logged in: {email}")
 
+    # Determine destination frontend URL
+    dest_frontend = (state or FRONTEND_URL).rstrip("/")
+    if dest_frontend == "*":
+        dest_frontend = FRONTEND_URL.rstrip("/")
+
     # Redirect to frontend reconciliation upload with session cookie
-    redirect = RedirectResponse(url=f"{FRONTEND_URL}/reconciliation/upload")
+    redirect = RedirectResponse(url=f"{dest_frontend}/reconciliation/upload")
     redirect.set_cookie(
         key=SESSION_COOKIE,
         value=session_id,
