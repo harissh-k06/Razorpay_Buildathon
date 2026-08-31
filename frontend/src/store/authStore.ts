@@ -17,7 +17,7 @@ interface AuthState {
   logout: () => Promise<void>
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+import { getApiBaseUrl } from "@/lib/api"
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         headers["x-session-id"] = storedSessionId
       }
 
-      const res = await fetch(`${API_BASE}/api/auth/status`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/status`, {
         credentials: "include",
         headers,
         cache: "no-store",
@@ -71,7 +71,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (res.ok) {
         const data = await res.json()
         if (data.authenticated) {
-          const userRes = await fetch(`${API_BASE}/api/auth/user`, {
+          const userRes = await fetch(`${getApiBaseUrl()}/api/auth/user`, {
             credentials: "include",
             headers,
             cache: "no-store",
@@ -115,7 +115,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: demoUser, isAuthenticated: true, isLoading: false })
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/dev-login`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/dev-login`, {
         method: "POST",
         credentials: "include",
       })
@@ -134,7 +134,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (typeof window !== "undefined") {
       const sessionId = localStorage.getItem("pw_session_id")
       try {
-        await fetch(`${API_BASE}/api/auth/logout`, {
+        await fetch(`${getApiBaseUrl()}/api/auth/logout`, {
           method: "POST",
           credentials: "include",
           headers: sessionId ? { Authorization: `Bearer ${sessionId}` } : {},

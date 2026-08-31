@@ -23,7 +23,7 @@ import {
 import { useReconciliationStore, reconciliationStore } from "@/store/reconciliationStore"
 import { MarkdownRenderer } from "./MarkdownRenderer"
 import { AgenticToggle } from "./AgenticToggle"
-import { fetchAgenticMode } from "@/lib/api"
+import { fetchAgenticMode, getApiBaseUrl } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
 
@@ -50,8 +50,7 @@ interface PennyWiseChatProps {
   onActionTriggered?: (action: string, target?: string) => void
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE_URL = getApiBaseUrl()
 
 const DEFAULT_WIDTH = 400
 const DEFAULT_HEIGHT = 540

@@ -33,7 +33,7 @@ const itemVariants = {
   },
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+import { getApiBaseUrl } from "@/lib/api"
 
 export default function SignInPage() {
   const { devLogin } = useAuthStore()
@@ -41,7 +41,7 @@ export default function SignInPage() {
   const handleGoogleLogin = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : ""
     const query = origin ? `?redirect_to=${encodeURIComponent(origin)}` : ""
-    window.location.href = `${API_BASE}/api/auth/google${query}`
+    window.location.href = `${getApiBaseUrl()}/api/auth/google${query}`
   }
 
   return (

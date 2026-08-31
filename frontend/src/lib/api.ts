@@ -4,8 +4,21 @@ import {
   ReconciliationResults,
 } from './reconciliation-types'
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+export function getApiBaseUrl(): string {
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    const url = process.env.NEXT_PUBLIC_API_URL.trim().replace(/\/+$/, '')
+    if (url) return url
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname
+    if (!host.includes('localhost') && !host.includes('127.0.0.1')) {
+      return 'https://razorpay-buildathon-nmh1.onrender.com'
+    }
+  }
+  return 'http://localhost:8000'
+}
+
+export const API_BASE_URL = getApiBaseUrl()
 
 export class ApiError extends Error {
   status: number
