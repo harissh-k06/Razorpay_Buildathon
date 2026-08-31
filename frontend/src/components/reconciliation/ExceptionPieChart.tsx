@@ -37,6 +37,7 @@ export function ExceptionPieChart(props: ExceptionPieChartProps = {}) {
   const storeExceptions = results?.exceptions || []
   const storeResolvedCount = storeExceptions.filter((e) => e.status_type === "resolved" || e.status === "Resolved").length
   const storeUnallocatedCount = storeExceptions.filter((e) => e.status_type === "unallocated_cash" && e.status !== "Resolved").length
+  const storeExceptionsCount = storeExceptions.filter((e) => e.status_type === "exception" && e.status !== "Resolved").length
   const storeMatchedCount = results?.matchedTripletsCount ?? results?.triplets?.length ?? results?.matchedCount ?? 0
 
   const matchedCount = props.matchedCount !== undefined ? props.matchedCount : storeMatchedCount
