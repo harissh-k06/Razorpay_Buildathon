@@ -277,6 +277,7 @@ async def stream_chat(
                     final_text += delta.content
                     token_count += 1
                     yield f"data: {json.dumps({'token': delta.content})}\n\n"
+                    await asyncio.sleep(0)
                 
                 # Capture tool calls
                 if delta.tool_calls:
