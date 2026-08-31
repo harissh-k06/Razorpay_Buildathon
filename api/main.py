@@ -226,19 +226,40 @@ async def load_sample_files():
 @app.post("/api/standardize", tags=["Standardize"])
 async def standardize_files(req: StandardizeRequest):
     start = time.time()
-    paths = {"invoice": Path(req.invoice_path),
-             "razorpay": Path(req.razorpay_path),
-             "bank": Path(req.bank_path)}
-    for key, p in paths.items():
-        if not p.exists():
-            raise HTTPException(status_code=400, detail=f"File not found for '{key}': {p}")
-
-    # Copy to standardisation/data/raw/
     raw_dir = PROJECT_ROOT / "standardisation" / "data" / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
+    synth_dir = PROJECT_ROOT / "synthetic data" / "data"
     name_map = {"invoice": "invoices.csv", "razorpay": "razorpay_settlements.csv", "bank": "bank.csv"}
-    for key, src in paths.items():
-        shutil.copy2(src, raw_dir / name_map[key])
+
+    req_paths = {
+        "invoice": req.invoice_path,
+        "razorpay": req.razorpay_path,
+        "bank": req.bank_path
+    }
+
+    # For each required dataset, find and prepare the source file with seamless automatic fallback
+    for key, name in name_map.items():
+        src_candidate = None
+        user_p = Path(req_paths.get(key, "") or "")
+        
+        # 1. Check user provided path
+        if user_p.exists() and user_p.is_file():
+            src_candidate = user_p
+        # 2. Check standard uploads directory
+        elif (UPLOADS_DIR / f"{key}_{name}").exists():
+            src_candidate = UPLOADS_DIR / f"{key}_{name}"
+        # 3. Check existing raw data directory
+        elif (raw_dir / name).exists():
+            src_candidate = raw_dir / name
+        # 4. Check bundled synthetic benchmark data directory
+        elif (synth_dir / name).exists():
+            src_candidate = synth_dir / name
+
+        if not src_candidate or not src_candidate.exists():
+            raise HTTPException(status_code=400, detail=f"File not found for '{key}'. Please upload files or load sample data.")
+        
+        # Copy to raw directory for standardizer
+        shutil.copy2(src_candidate, raw_dir / name)
 
     # Run standardizer in-process for high speed, memory preservation, and in-memory LLM cache reuse
     try:
@@ -278,12 +299,18 @@ async def standardize_files(req: StandardizeRequest):
 @app.post("/api/reconcile", tags=["Reconcile"])
 async def reconcile(req: ReconcileRequest):
     std_dir = PROJECT_ROOT / "standardisation" / "data" / "standardized"
-    for key, fname in [("invoice", "invoice_standardized.csv"),
-                        ("razorpay", "razorpay_standardized.csv"),
-                        ("bank", "bank_standardized.csv")]:
-        if not (std_dir / fname).exists():
+    missing = [fname for key, fname in [("invoice", "invoice_standardized.csv"),
+                                        ("razorpay", "razorpay_standardized.csv"),
+                                        ("bank", "bank_standardized.csv")] if not (std_dir / fname).exists()]
+    if missing:
+        # Auto-standardize if files are missing
+        try:
+            from standardisation.standardizer import DataStandardizer
+            standardizer = DataStandardizer(base_currency="INR")
+            standardizer.process_files()
+        except Exception as auto_std_err:
             raise HTTPException(status_code=400,
-                detail=f"Standardized file missing for '{key}'. Run /api/standardize first.")
+                detail=f"Standardized files missing and auto-standardization failed: {auto_std_err}")
 
     import json as _json, importlib
 

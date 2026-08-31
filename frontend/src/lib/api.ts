@@ -53,7 +53,7 @@ export async function checkBackendHealth(): Promise<{
   service: string
   version: string
 }> {
-  const res = await fetch(`${API_BASE_URL}/api/health`)
+  const res = await fetch(`${getApiBaseUrl()}/api/health`)
   return handleResponse(res)
 }
 
@@ -78,7 +78,7 @@ export async function uploadReconciliationFiles(
   formData.append('razorpay', razorpayFile)
   formData.append('bank', bankFile)
 
-  const res = await fetch(`${API_BASE_URL}/api/upload`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/upload`, {
     method: 'POST',
     body: formData,
   })
@@ -86,7 +86,7 @@ export async function uploadReconciliationFiles(
 }
 
 export async function loadSampleBenchmark(): Promise<UploadResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/load-sample`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/load-sample`, {
     method: 'POST',
   })
   return handleResponse<UploadResponse>(res)
@@ -110,7 +110,7 @@ export async function runStandardization(savedPaths: {
   bank_path: string
   base_currency?: string
 }): Promise<StandardizeResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/standardize`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/standardize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(savedPaths),
@@ -132,7 +132,7 @@ export interface ReconcileParams {
 }
 
 export async function fetchReconcileParams(): Promise<{ status: string; params: ReconcileParams }> {
-  const res = await fetch(`${API_BASE_URL}/api/reconcile-params?_t=${Date.now()}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/reconcile-params?_t=${Date.now()}`, {
     cache: 'no-store',
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -145,7 +145,7 @@ export async function fetchReconcileParams(): Promise<{ status: string; params: 
 export async function updateReconcileParamsApi(
   params: ReconcileParams
 ): Promise<{ success: boolean; params: ReconcileParams; message?: string }> {
-  const res = await fetch(`${API_BASE_URL}/api/reconcile-params`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/reconcile-params`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -156,7 +156,7 @@ export async function updateReconcileParamsApi(
 export async function runReconciliation(
   params?: ReconcileParams
 ): Promise<ReconciliationResults> {
-  const res = await fetch(`${API_BASE_URL}/api/reconcile`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/reconcile`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params ?? {}),
@@ -165,7 +165,7 @@ export async function runReconciliation(
 }
 
 export async function fetchDataStatus(): Promise<{ last_modified: number }> {
-  const res = await fetch(`${API_BASE_URL}/api/data_status?_t=${Date.now()}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/data_status?_t=${Date.now()}`, {
     cache: 'no-store',
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -177,7 +177,7 @@ export async function fetchDataStatus(): Promise<{ last_modified: number }> {
 
 export async function fetchStandardizedData(): Promise<StandardizeResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/standardized-data?_t=${Date.now()}`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/standardized-data?_t=${Date.now()}`, {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -186,7 +186,7 @@ export async function fetchStandardizedData(): Promise<StandardizeResponse> {
     })
     if (!res.ok) {
       // Fallback to underscore alias if needed
-      const fallbackRes = await fetch(`${API_BASE_URL}/api/standardized_data?_t=${Date.now()}`, {
+      const fallbackRes = await fetch(`${getApiBaseUrl()}/api/standardized_data?_t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -210,7 +210,7 @@ export async function fetchStandardizedData(): Promise<StandardizeResponse> {
 }
 
 export async function sendChatMessage(message: string, sessionId?: string, agenticMode?: boolean): Promise<{ response: string }> {
-  const res = await fetch(`${API_BASE_URL}/api/chat`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -223,7 +223,7 @@ export async function sendChatMessage(message: string, sessionId?: string, agent
 }
 
 export async function fetchAgenticMode(): Promise<{ enabled: boolean }> {
-  const res = await fetch(`${API_BASE_URL}/api/agentic-mode?_t=${Date.now()}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/agentic-mode?_t=${Date.now()}`, {
     cache: 'no-store',
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -250,7 +250,7 @@ export interface UpdateRowResponse {
 export async function updateStandardizedRow(
   payload: UpdateRowPayload
 ): Promise<UpdateRowResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/update-row`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/update-row`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -259,7 +259,7 @@ export async function updateStandardizedRow(
 }
 
 export async function updateAgenticMode(enabled: boolean): Promise<{ enabled: boolean }> {
-  const res = await fetch(`${API_BASE_URL}/api/agentic-mode`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/agentic-mode`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ enabled }),
@@ -291,7 +291,7 @@ export interface ResolveExceptionsResponse {
 export async function resolveExceptionsApi(
   payload: ResolveExceptionsPayload
 ): Promise<ResolveExceptionsResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/resolve-exceptions`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/resolve-exceptions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -300,7 +300,7 @@ export async function resolveExceptionsApi(
 }
 
 export async function fetchReconciliationResults(): Promise<import('./reconciliation-types').ReconciliationResults> {
-  const res = await fetch(`${API_BASE_URL}/api/reconciliation-results?_t=${Date.now()}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/reconciliation-results?_t=${Date.now()}`, {
     cache: 'no-store',
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',

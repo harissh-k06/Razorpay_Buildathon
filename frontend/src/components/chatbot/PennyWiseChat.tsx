@@ -50,8 +50,6 @@ interface PennyWiseChatProps {
   onActionTriggered?: (action: string, target?: string) => void
 }
 
-const API_BASE_URL = getApiBaseUrl()
-
 const DEFAULT_WIDTH = 400
 const DEFAULT_HEIGHT = 540
 const MIN_WIDTH = 320
@@ -92,7 +90,7 @@ function EmailDraftCard({
     setIsSending(true)
     setError("")
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/email/send`, {
+      const resp = await fetch(`${getApiBaseUrl()}/api/email/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -126,7 +124,7 @@ function EmailDraftCard({
         }
 
         try {
-          await fetch(`${API_BASE_URL}/api/resolve-exceptions`, {
+          await fetch(`${getApiBaseUrl()}/api/resolve-exceptions`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -601,7 +599,7 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
           content: m.content,
         }))
 
-      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -804,7 +802,7 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
   const handleClearChat = async () => {
     try {
       if (sessionIdRef.current) {
-        await fetch(`${API_BASE_URL}/api/chat/clear`, {
+        await fetch(`${getApiBaseUrl()}/api/chat/clear`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ session_id: sessionIdRef.current }),
