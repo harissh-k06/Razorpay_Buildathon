@@ -37,15 +37,14 @@ export function ExceptionPieChart(props: ExceptionPieChartProps = {}) {
   const storeExceptions = results?.exceptions || []
   const storeResolvedCount = storeExceptions.filter((e) => e.status_type === "resolved" || e.status === "Resolved").length
   const storeUnallocatedCount = storeExceptions.filter((e) => e.status_type === "unallocated_cash" && e.status !== "Resolved").length
-  const storeExceptionsCount = storeExceptions.filter((e) => e.status_type === "exception" && e.status !== "Resolved").length
-  const storeMatchedCount = results?.matchedCount || results?.triplets?.length || 0
+  const storeMatchedCount = results?.matchedTripletsCount ?? results?.triplets?.length ?? results?.matchedCount ?? 0
 
   const matchedCount = props.matchedCount !== undefined ? props.matchedCount : storeMatchedCount
   const unallocatedCount = props.unallocatedCount !== undefined ? props.unallocatedCount : storeUnallocatedCount
   const exceptionsCount = props.exceptionsCount !== undefined ? props.exceptionsCount : storeExceptionsCount
   const resolvedCount = props.resolvedCount !== undefined ? props.resolvedCount : storeResolvedCount
 
-  const totalTriplets = props.totalTriplets !== undefined ? props.totalTriplets : (results?.triplets?.length || matchedCount)
+  const totalTriplets = props.totalTriplets !== undefined ? props.totalTriplets : (results?.matchedTripletsCount ?? results?.triplets?.length ?? matchedCount)
   const totalExceptions = props.totalExceptions !== undefined ? props.totalExceptions : (storeExceptions.length || (unallocatedCount + exceptionsCount + resolvedCount))
 
   const totalAuditUniverse = props.totalAuditUniverse !== undefined
@@ -55,7 +54,7 @@ export function ExceptionPieChart(props: ExceptionPieChartProps = {}) {
   const safeTotal = totalAuditUniverse > 0 ? totalAuditUniverse : 1
   const recordCoverageRate = props.recordCoverageRate !== undefined
     ? props.recordCoverageRate
-    : (results?.recordCoverageRate ?? (totalTriplets + totalExceptions > 0 ? +((totalTriplets / (totalTriplets + totalExceptions)) * 100).toFixed(1) : 100))
+    : (results?.recordCoverageRate ?? results?.record_coverage_rate ?? (totalTriplets + totalExceptions > 0 ? +((totalTriplets / (totalTriplets + totalExceptions)) * 100).toFixed(1) : 100))
 
   const matchedPercent = +((matchedCount / safeTotal) * 100).toFixed(1)
   const unallocatedPercent = +((unallocatedCount / safeTotal) * 100).toFixed(1)

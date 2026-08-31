@@ -613,10 +613,10 @@ export default function ResultsPage() {
     )
   }
 
-  const matchedCount = results.matchedCount || 0
-  const totalCount = results.totalCount || matchedCount || 1
+  const matchedTripletsCount = results.matchedTripletsCount || results.triplets?.length || results.matchedCount || 0
+  const totalCount = results.totalCount || results.matchedInvoicesCount || 200
 
-  // 4-Way Reconciliation Universe: Matched Invoices + Unallocated Cash + Exceptions + Resolved
+  // 4-Way Reconciliation Universe: Matched Triplets + Unallocated Cash + Exceptions + Resolved
   const unallocatedCount = unallocatedCashList.length
   const auditExceptionsCount = auditExceptionsList.length
   const resolvedCount = resolvedList.length
@@ -632,11 +632,11 @@ export default function ResultsPage() {
   const invoiceMatchRateNum = invoiceTotalCount > 0 ? +((invoiceMatchedCount / invoiceTotalCount) * 100).toFixed(1) : 100
 
   // Live Dynamic Record Coverage Rate (Increases towards 100% as records are resolved)
-  const totalTriplets = results.triplets?.length || matchedCount
+  const totalTriplets = matchedTripletsCount
   const totalExceptions = results.exceptions?.length || (unallocatedCount + auditExceptionsCount + resolvedCount)
-  const totalAuditUniverse = matchedCount + unallocatedCount + auditExceptionsCount + resolvedCount || 1
+  const totalAuditUniverse = matchedTripletsCount + unallocatedCount + auditExceptionsCount + resolvedCount || 1
   const recordCoverageRate = totalAuditUniverse > 0
-    ? +(((matchedCount + resolvedCount) / totalAuditUniverse) * 100).toFixed(1)
+    ? +(((matchedTripletsCount + resolvedCount) / totalAuditUniverse) * 100).toFixed(1)
     : 100
 
   const n1Count = groupedRows.filter((r) => r.kind === "group" && r.groupType === "N:1").length
@@ -711,7 +711,7 @@ export default function ResultsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Donut Chart - Record Coverage Universe */}
         <ExceptionPieChart
-          matchedCount={matchedCount}
+          matchedCount={matchedTripletsCount}
           unallocatedCount={unallocatedCount}
           exceptionsCount={auditExceptionsCount}
           resolvedCount={resolvedCount}
