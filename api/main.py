@@ -240,29 +240,12 @@ async def standardize_files(req: StandardizeRequest):
     for key, src in paths.items():
         shutil.copy2(src, raw_dir / name_map[key])
 
-    # Run standardizer.py in subprocess using the project venv python (dependency isolation)
+    # Run standardizer in-process for high speed, memory preservation, and in-memory LLM cache reuse
     try:
-        import subprocess
-        venv_py_win = PROJECT_ROOT / "venv" / "Scripts" / "python.exe"
-        venv_py_unix = PROJECT_ROOT / "venv" / "bin" / "python"
-        py_exec = str(venv_py_win) if venv_py_win.exists() else (
-            str(venv_py_unix) if venv_py_unix.exists() else sys.executable
-        )
-
+        from standardisation.standardizer import DataStandardizer
         base_curr = (req.base_currency or "INR").upper()
-        std_script = PROJECT_ROOT / "standardisation" / "standardizer.py"
-
-        res = subprocess.run(
-            [py_exec, str(std_script), base_curr],
-            capture_output=True,
-            text=True,
-            timeout=180,
-            cwd=str(PROJECT_ROOT)
-        )
-        if res.returncode != 0:
-            logger.error(f"Standardization subprocess failed: {res.stderr}")
-            raise RuntimeError(res.stderr.strip() or res.stdout.strip() or f"Process exited with code {res.returncode}")
-
+        standardizer = DataStandardizer(base_currency=base_curr)
+        standardizer.process_files()
     except Exception as e:
         logger.exception("Standardization failed")
         raise HTTPException(status_code=500, detail=f"Standardization failed: {e}")

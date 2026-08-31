@@ -11,9 +11,19 @@ export function getApiBaseUrl(): string {
   }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname
-    if (!host.includes('localhost') && !host.includes('127.0.0.1')) {
-      return 'https://razorpay-buildathon-nmh1.onrender.com'
+    const isLocalOrLan =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.endsWith('.local') ||
+      /^192\.168\./.test(host) ||
+      /^10\./.test(host) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host) ||
+      /^169\.254\./.test(host)
+
+    if (isLocalOrLan) {
+      return `http://${host}:8000`
     }
+    return 'https://razorpay-buildathon-nmh1.onrender.com'
   }
   return 'http://localhost:8000'
 }

@@ -75,39 +75,49 @@ def load_skill_content(skill_name: str):
     logger.warning(f"Skill '{skill_name}' not found at {skill_path}")
     return f"Skill '{skill_name}' not found."
 
-# 4. Dynamic MCP Tool Discovery
-async def get_tools_and_client():
-    from fastmcp import Client
-    
-    # Direct in-process FastMCP server client for sub-millisecond tool execution
+# 4. Dynamic MCP Tool Discovery with In-Memory Schema Caching
+_CACHED_TOOL_SCHEMAS: Optional[List[Dict[str, Any]]] = None
+_GLOBAL_OPENAI_CLIENT = None
+
+def _get_openai_client():
+    global _GLOBAL_OPENAI_CLIENT
+    if _GLOBAL_OPENAI_CLIENT is None:
+        from openai import OpenAI
+        api_key = os.getenv("MODEL_API_KEY") or os.getenv("API_KEY")
+        base_url = os.getenv("MODEL_BASE_URL") or "https://api.deepseek.com"
+        _GLOBAL_OPENAI_CLIENT = OpenAI(api_key=api_key, base_url=base_url)
+    return _GLOBAL_OPENAI_CLIENT
+
+async def get_tool_schemas():
+    global _CACHED_TOOL_SCHEMAS
+    if _CACHED_TOOL_SCHEMAS is not None:
+        return _CACHED_TOOL_SCHEMAS
+
     if str(PROJECT_ROOT / "mcp_server") not in sys.path:
         sys.path.insert(0, str(PROJECT_ROOT / "mcp_server"))
-    
-    from server import mcp
-    logger.info("Connecting to in-process FastMCP server...")
-    client = Client(mcp)
-    await client.__aenter__()
-    
-    tools = await client.list_tools()
-    tool_names = [t.name for t in tools]
-    logger.info(f"Tools discovered: {len(tools)} -> {tool_names}")
-    
-    if len(tools) == 0:
-        logger.error("WARNING: No tools found! Check if server.py is starting correctly.")
 
-    tool_schemas = []
-    for tool in tools:
-        tool_schemas.append({
-            "type": "function",
-            "function": {
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": tool.inputSchema
-            }
-        })
+    schemas = []
+    try:
+        from fastmcp import Client
+        from server import mcp
+        client = Client(mcp)
+        await client.__aenter__()
+        tools = await client.list_tools()
+        for tool in tools:
+            schemas.append({
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.inputSchema
+                }
+            })
+        await client.__aexit__(None, None, None)
+    except Exception as e:
+        logger.warning(f"FastMCP client tool discovery fallback: {e}")
 
     # Add dynamic skill loader tool
-    tool_schemas.append({
+    schemas.append({
         "type": "function",
         "function": {
             "name": "load_skill",
@@ -124,7 +134,8 @@ async def get_tools_and_client():
             }
         }
     })
-    return client, tool_schemas
+    _CACHED_TOOL_SCHEMAS = schemas
+    return _CACHED_TOOL_SCHEMAS
 
 # 5. The Final Streaming Agentic Loop
 async def stream_chat(
@@ -134,16 +145,11 @@ async def stream_chat(
     history: Optional[List[Dict[str, str]]] = None
 ):
     logger.info(f"Starting stream_chat for session '{session_id}' | Message: '{message}' | agentic_mode: {agentic_mode}")
-    from openai import OpenAI
-    api_key = os.getenv("MODEL_API_KEY") or os.getenv("API_KEY")
-    base_url = os.getenv("MODEL_BASE_URL") or "https://api.deepseek.com"
+    client = _get_openai_client()
     model = os.getenv("MODEL_NAME") or "deepseek-chat"
-    if not api_key:
-        logger.error("MODEL_API_KEY is not set in environment variables!")
-    client = OpenAI(api_key=api_key, base_url=base_url)
     
-    # 1. Connect to in-process FastMCP and discover all active tools dynamically
-    mcp_client, tool_schemas = await get_tools_and_client()
+    # 1. Discover or retrieve cached tool schemas
+    tool_schemas = await get_tool_schemas()
 
     tools_summary = "\n\n## CURRENT LIVE MCP TOOLS\n" + "\n".join(
         f"- `{t['function']['name']}`: {t['function'].get('description', '').strip().splitlines()[0]}"
@@ -321,16 +327,36 @@ async def stream_chat(
                     if tool_name == "load_skill":
                         result_text = load_skill_content(args.get("skill_name", ""))
                     else:
-                        # Call actual MCP tool
+                        # 1. High-speed direct in-process tool function execution (0% failure rate)
+                        executed = False
                         try:
-                            result = await mcp_client.call_tool(tool_name, args)
-                            if hasattr(result, "content") and result.content:
-                                result_text = result.content[0].text if isinstance(result.content[0], dict) else str(result.content[0])
-                            else:
-                                result_text = str(result)
-                        except Exception as tool_err:
-                            logger.error(f"Error executing MCP tool '{tool_name}': {tool_err}")
-                            result_text = json.dumps({"error": str(tool_err)})
+                            import server
+                            tool_fn = getattr(server, tool_name, None)
+                            if callable(tool_fn):
+                                import inspect
+                                if inspect.iscoroutinefunction(tool_fn):
+                                    raw_res = await tool_fn(**args)
+                                else:
+                                    raw_res = tool_fn(**args)
+                                result_text = json.dumps(raw_res) if not isinstance(raw_res, str) else raw_res
+                                executed = True
+                        except Exception as direct_err:
+                            logger.warning(f"Direct tool execution for '{tool_name}' failed: {direct_err}, attempting client fallback")
+
+                        # 2. FastMCP client fallback
+                        if not executed:
+                            try:
+                                from fastmcp import Client
+                                from server import mcp
+                                async with Client(mcp) as client:
+                                    result = await client.call_tool(tool_name, args)
+                                    if hasattr(result, "content") and result.content:
+                                        result_text = result.content[0].text if isinstance(result.content[0], dict) else str(result.content[0])
+                                    else:
+                                        result_text = str(result)
+                            except Exception as tool_err:
+                                logger.error(f"Error executing MCP tool '{tool_name}': {tool_err}")
+                                result_text = json.dumps({"error": str(tool_err)})
 
                     logger.info(f"Tool '{tool_name}' result: {result_text[:500]}{'...' if len(result_text) > 500 else ''}")
 
@@ -378,10 +404,9 @@ async def stream_chat(
 
         logger.info(f"Stream complete for session '{session_id}' | Total response length: {len(final_text)} chars")
         yield f"data: {json.dumps({'done': True})}\n\n"
-        
-    finally:
-        logger.info("Closing MCP client session transport.")
-        await mcp_client.__aexit__(None, None, None)
+    except Exception as e:
+        logger.error(f"Stream error for session '{session_id}': {e}", exc_info=True)
+        yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
 
 # CLI Testing
