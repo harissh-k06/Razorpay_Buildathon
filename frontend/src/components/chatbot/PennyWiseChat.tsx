@@ -592,6 +592,15 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
     const capturedExceptionIds = [...pendingExceptionIdsRef.current]
 
     try {
+      // Pass up to last 10 turns (5 user + 5 assistant)
+      const recentHistory = messages
+        .filter((m) => m.id !== "welcome" && m.content)
+        .slice(-10)
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+        }))
+
       const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -600,6 +609,7 @@ export function PennyWiseChat({ onDataRefresh, onActionTriggered }: PennyWiseCha
           message: trimmed,
           session_id: sessionIdRef.current || "pennywise-frontend",
           agentic_mode: agenticMode,
+          history: recentHistory,
         }),
       })
 

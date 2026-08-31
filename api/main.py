@@ -66,11 +66,11 @@ try:
 except Exception as _email_err:
     logger.warning(f"Email router not loaded: {_email_err}")
 
-# ── Pydantic request models ────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = "default"
     agentic_mode: Optional[bool] = None
+    history: Optional[List[Dict[str, Any]]] = None
 
 class ClearChatRequest(BaseModel):
     session_id: Optional[str] = "default"
@@ -397,10 +397,13 @@ async def chat_endpoint(request: ChatRequest):
     async def event_generator():
         chunk_count = 0
         try:
-            import importlib
             import chat_bot
-            importlib.reload(chat_bot)
-            async for chunk in chat_bot.stream_chat(request.message, session_id=session_id, agentic_mode=request.agentic_mode):
+            async for chunk in chat_bot.stream_chat(
+                request.message,
+                session_id=session_id,
+                agentic_mode=request.agentic_mode,
+                history=request.history
+            ):
                 chunk_count += 1
                 yield chunk
             logger.info(f"[/api/chat] Stream finished successfully for session '{session_id}' ({chunk_count} chunks yielded)")

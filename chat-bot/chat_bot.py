@@ -24,11 +24,28 @@ if not logger.handlers:
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
+SESSION_CACHE_FILE = BASE_DIR / ".chat_sessions.json"
 SESSION_STORE: dict[str, list[dict]] = {}
+
+def _load_chat_sessions():
+    global SESSION_STORE
+    if not SESSION_STORE and SESSION_CACHE_FILE.exists():
+        try:
+            SESSION_STORE = json.loads(SESSION_CACHE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            SESSION_STORE = {}
+
+def _save_chat_sessions():
+    try:
+        SESSION_CACHE_FILE.write_text(json.dumps(SESSION_STORE), encoding="utf-8")
+    except Exception:
+        pass
 
 def clear_session(session_id: str = "default"):
     """Clears the conversational memory history for a given session ID."""
+    _load_chat_sessions()
     SESSION_STORE[session_id] = []
+    _save_chat_sessions()
     logger.info(f"Cleared session history for session '{session_id}'")
     return True
 
@@ -110,7 +127,12 @@ async def get_tools_and_client():
     return client, tool_schemas
 
 # 5. The Final Streaming Agentic Loop
-async def stream_chat(message: str, session_id: str = "default", agentic_mode: Optional[bool] = None):
+async def stream_chat(
+    message: str,
+    session_id: str = "default",
+    agentic_mode: Optional[bool] = None,
+    history: Optional[List[Dict[str, str]]] = None
+):
     logger.info(f"Starting stream_chat for session '{session_id}' | Message: '{message}' | agentic_mode: {agentic_mode}")
     from openai import OpenAI
     api_key = os.getenv("MODEL_API_KEY") or os.getenv("API_KEY")
@@ -187,20 +209,31 @@ async def stream_chat(message: str, session_id: str = "default", agentic_mode: O
     # 4. Build dynamic system prompt with live mode, currency, tools & skill catalog
     system_prompt = load_system_prompt() + mode_status_summary + currency_status_summary + tools_summary + "\n\n## SKILL CATALOG\n" + load_skill_catalog()
 
-    # 4. Retrieve or initialize session history
-    if session_id not in SESSION_STORE:
+    # 5. Retrieve or initialize session history
+    _load_chat_sessions()
+    if session_id not in SESSION_STORE or not SESSION_STORE[session_id]:
         SESSION_STORE[session_id] = []
-    
-    # 5. Append new user message with active toggle metadata
+        if history:
+            # Seed up to last 10 messages from client
+            for h in history[-10:]:
+                if isinstance(h, dict) and h.get("role") in ["user", "assistant"] and h.get("content"):
+                    SESSION_STORE[session_id].append({
+                        "role": h["role"],
+                        "content": str(h["content"])
+                    })
+
+    # 6. Append new user message with active toggle metadata
     mode_label = "Agentic Mode (Green / ON — Write Tools Unlocked)" if is_agentic else "Ask Mode (Yellow / OFF — Write Tools Locked)"
     annotated_message = f"{message}\n\n[Active UI Toggle: {mode_label}]"
     SESSION_STORE[session_id].append({"role": "user", "content": annotated_message})
 
-    # 6. Trim to last 10 messages (5 user + 5 assistant) 
+    # 7. Trim to last 10 messages (up to 5 past user messages + 5 assistant responses)
     if len(SESSION_STORE[session_id]) > 10:
         SESSION_STORE[session_id] = SESSION_STORE[session_id][-10:]
 
-    # 7. Build the API messages: System prompt + stored history
+    _save_chat_sessions()
+
+    # 8. Build the API messages: System prompt + stored history
     messages = [
         {"role": "system", "content": system_prompt}
     ] + SESSION_STORE[session_id]
@@ -340,6 +373,7 @@ async def stream_chat(message: str, session_id: str = "default", agentic_mode: O
                 SESSION_STORE[session_id].append({"role": "assistant", "content": final_text})
                 if len(SESSION_STORE[session_id]) > 10:
                     SESSION_STORE[session_id] = SESSION_STORE[session_id][-10:]
+                _save_chat_sessions()
                 break
 
         logger.info(f"Stream complete for session '{session_id}' | Total response length: {len(final_text)} chars")
