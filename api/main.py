@@ -153,12 +153,12 @@ def _parse_csv(file_path: Path) -> pd.DataFrame:
         return pd.read_csv(file_path, encoding="latin-1")
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
-@app.get("/", tags=["General"])
+@app.api_route("/", methods=["GET", "HEAD"], tags=["General"])
 async def root():
     return {"service": "Reconciliation Platform API v2", "status": "online",
             "timestamp": datetime.utcnow().isoformat() + "Z"}
 
-@app.get("/api/health", tags=["Health"])
+@app.api_route("/api/health", methods=["GET", "HEAD"], tags=["Health"])
 async def health_check():
     return {"status": "healthy", "service": "reconciliation-backend", "version": "2.0.0",
             "timestamp": datetime.utcnow().isoformat() + "Z"}
