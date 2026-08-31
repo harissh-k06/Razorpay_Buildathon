@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (res.ok) {
         const data = await res.json()
         set({ user: data.user, isAuthenticated: true, isLoading: false })
-        window.location.href = "/dashboard"
+        window.location.href = "/reconciliation/upload"
       } else {
         set({ isLoading: false })
       }

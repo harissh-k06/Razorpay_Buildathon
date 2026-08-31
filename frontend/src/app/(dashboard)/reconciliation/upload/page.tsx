@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import {
   FileTextIcon, UploadCloudIcon, CheckCircle2Icon, FileSpreadsheetIcon,
-  AlertCircleIcon, RotateCcwIcon, RefreshCwIcon,
+  AlertCircleIcon, RotateCcwIcon, RefreshCwIcon, SparklesIcon,
 } from "lucide-react"
 
 // ── File drop zone ──────────────────────────────────────────────────────────
@@ -24,12 +24,16 @@ interface DropZoneProps {
   sublabel: string
   icon: React.ReactNode
   file: File | null
+  previewFilename?: string
   totalRows?: number
   onSelect: (f: File) => void
 }
 
-function DropZone({ label, sublabel, icon, file, totalRows, onSelect }: DropZoneProps) {
+function DropZone({ label, sublabel, icon, file, previewFilename, totalRows, onSelect }: DropZoneProps) {
   const ref = useRef<HTMLInputElement>(null)
+  const isReady = Boolean(file || previewFilename)
+  const displayName = file?.name || previewFilename || ""
+
   return (
     <div
       onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
@@ -40,7 +44,7 @@ function DropZone({ label, sublabel, icon, file, totalRows, onSelect }: DropZone
       }}
       onClick={() => ref.current?.click()}
       className={`group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition-all cursor-pointer select-none min-h-[180px] ${
-        file
+        isReady
           ? "border-primary bg-primary/5"
           : "border-border/80 bg-muted/30 hover:border-primary/50 hover:bg-muted/50"
       }`}
@@ -49,28 +53,32 @@ function DropZone({ label, sublabel, icon, file, totalRows, onSelect }: DropZone
         onChange={(e) => { const f = e.target.files?.[0]; if (f) onSelect(f) }} />
 
       <div className={`mb-3 flex size-12 items-center justify-center rounded-full transition-transform group-hover:scale-105 ${
-        file
+        isReady
           ? "bg-primary text-primary-foreground"
           : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
       }`}>
-        {file ? <CheckCircle2Icon className="size-6" /> : icon}
+        {isReady ? <CheckCircle2Icon className="size-6" /> : icon}
       </div>
 
       <div className="flex items-center gap-1.5 font-semibold text-sm">
         {label}
-        {file && (
+        {isReady && (
           <Badge className="bg-emerald-500 text-white text-[10px] h-4 px-1.5">Ready</Badge>
         )}
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{sublabel}</p>
 
-      {file ? (
+      {isReady ? (
         <div className="mt-3 w-full flex items-center justify-between rounded-lg bg-background px-3 py-2 text-xs border border-primary/20">
           <div className="flex items-center gap-2 truncate">
             <FileSpreadsheetIcon className="size-4 shrink-0 text-primary" />
-            <span className="truncate font-medium">{file.name}</span>
+            <span className="truncate font-medium">{displayName}</span>
           </div>
-          <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</span>
+          {file ? (
+            <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</span>
+          ) : (
+            <span className="shrink-0 font-mono text-[11px] text-muted-foreground">Sample CSV</span>
+          )}
         </div>
       ) : (
         <Button type="button" variant="outline" size="sm"
@@ -80,7 +88,7 @@ function DropZone({ label, sublabel, icon, file, totalRows, onSelect }: DropZone
         </Button>
       )}
 
-      {file && totalRows !== undefined && totalRows > 0 && (
+      {isReady && totalRows !== undefined && totalRows > 0 && (
         <span className="mt-2 text-[11px] font-medium text-emerald-600">{totalRows} records detected</span>
       )}
     </div>
@@ -93,27 +101,50 @@ export default function UploadPage() {
   const {
     uploadedFiles, uploadStatus, previewData, error,
     baseCurrency, setBaseCurrency,
-    setFile, uploadAndPreview, resetAll,
+    setFile, uploadAndPreview, loadSampleBenchmarkData, resetAll,
   } = useReconciliationStore()
 
   const allSelected = Boolean(
-    uploadedFiles.invoice && uploadedFiles.razorpay && uploadedFiles.bank
+    (uploadedFiles.invoice || previewData.invoice) &&
+    (uploadedFiles.razorpay || previewData.razorpay) &&
+    (uploadedFiles.bank || previewData.bank)
   )
   const isUploading = uploadStatus === "uploading"
 
   const handleUploadAndContinue = async () => {
-    await uploadAndPreview()
+    if (uploadedFiles.invoice && uploadedFiles.razorpay && uploadedFiles.bank) {
+      await uploadAndPreview()
+    }
     router.push("/reconciliation/standardize")
+  }
+
+  const handleLoadSampleBenchmark = async () => {
+    await loadSampleBenchmarkData()
   }
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Upload Source Files</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Upload your Invoice, Razorpay Settlement, and Bank Statement CSVs to begin the reconciliation pipeline.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Upload Source Files</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Upload your Invoice, Razorpay Settlement, and Bank Statement CSVs to begin the reconciliation pipeline.
+          </p>
+        </div>
+
+        {/* 1-Click Sample Benchmark */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleLoadSampleBenchmark}
+          disabled={isUploading}
+          className="shrink-0 h-9 border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary font-medium text-xs shadow-sm"
+        >
+          <SparklesIcon className="mr-1.5 size-3.5 text-primary" />
+          Load Benchmark Sample (200 records)
+        </Button>
       </div>
 
       {/* Error banner */}
@@ -185,6 +216,7 @@ export default function UploadPage() {
               sublabel="Accounts Receivable / Billing Export"
               icon={<FileTextIcon className="size-6" />}
               file={uploadedFiles.invoice}
+              previewFilename={previewData.invoice?.filename}
               totalRows={previewData.invoice?.total_rows}
               onSelect={(f) => setFile("invoice", f)}
             />
@@ -193,6 +225,7 @@ export default function UploadPage() {
               sublabel="Payment Gateway Settlements"
               icon={<FileSpreadsheetIcon className="size-6" />}
               file={uploadedFiles.razorpay}
+              previewFilename={previewData.razorpay?.filename}
               totalRows={previewData.razorpay?.total_rows}
               onSelect={(f) => setFile("razorpay", f)}
             />
@@ -201,6 +234,7 @@ export default function UploadPage() {
               sublabel="Core Banking Feed / Statement CSV"
               icon={<FileSpreadsheetIcon className="size-6" />}
               file={uploadedFiles.bank}
+              previewFilename={previewData.bank?.filename}
               totalRows={previewData.bank?.total_rows}
               onSelect={(f) => setFile("bank", f)}
             />

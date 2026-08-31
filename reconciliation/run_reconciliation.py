@@ -375,9 +375,14 @@ def get_reconciliation_results_summary(project_root: Optional[Path] = None) -> D
     total_invoice_amt = 0.0
     total_invoice_subtotal = 0.0
     total_invoice_tax = 0.0
+    detected_base_currency = "INR"
     if inv_file.exists():
         try:
             inv_df = pd.read_csv(inv_file)
+            if "base_currency" in inv_df.columns and not inv_df.empty:
+                val = str(inv_df["base_currency"].iloc[0]).strip().upper()
+                if val and val != "NAN":
+                    detected_base_currency = val
             amt_col = "amount_converted" if "amount_converted" in inv_df.columns else "amount"
             total_invoice_amt = float(pd.to_numeric(inv_df[amt_col], errors="coerce").fillna(0).sum())
             if "subtotal_converted" in inv_df.columns:
@@ -404,6 +409,7 @@ def get_reconciliation_results_summary(project_root: Optional[Path] = None) -> D
 
     return {
         "status": "success",
+        "base_currency": detected_base_currency,
         "triplets": triplets,
         "exceptions": serialized_exceptions,
         "matchedCount": total_triplets,

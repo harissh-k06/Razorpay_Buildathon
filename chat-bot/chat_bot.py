@@ -165,8 +165,27 @@ async def stream_chat(message: str, session_id: str = "default", agentic_mode: O
 - **CRITICAL INSTRUCTION**: The user can toggle this switch in the UI at any time between turns. When asked what mode you are currently in, you MUST report that you are in **{'Agentic Mode (Green / ON)' if is_agentic else 'Ask Mode (Yellow / OFF)'}** strictly matching the current active mode above, ignoring any past messages in the conversation history.
 """
 
-    # 3. Build dynamic system prompt with live mode, tools & skill catalog
-    system_prompt = load_system_prompt() + mode_status_summary + tools_summary + "\n\n## SKILL CATALOG\n" + load_skill_catalog()
+    # 3. Detect authoritative active base currency for this turn
+    curr_code, curr_sym = "INR", "₹"
+    try:
+        from server import _get_active_base_currency
+        curr_code, curr_sym = _get_active_base_currency()
+    except Exception:
+        try:
+            from mcp_server.server import _get_active_base_currency
+            curr_code, curr_sym = _get_active_base_currency()
+        except Exception:
+            pass
+
+    currency_status_summary = f"""
+
+## AUTHORITATIVE REAL-TIME ACCOUNTING BASE CURRENCY (THIS EXACT MOMENT):
+- **ACTIVE BASE CURRENCY**: **{curr_code}** (Currency Symbol: **{curr_sym}**)
+- **CRITICAL INSTRUCTION**: The user/organization has standardized all financial datasets in **{curr_code}**. All financial totals, gross amounts, net income, taxes, deductions, missing cash figures, dispute memos, and email drafts MUST be quoted and reported in **{curr_code}** using symbol **{curr_sym}** (e.g. {curr_sym}1,234.56 {curr_code}). Do NOT report amounts in INR or ₹ unless {curr_code} is INR.
+"""
+
+    # 4. Build dynamic system prompt with live mode, currency, tools & skill catalog
+    system_prompt = load_system_prompt() + mode_status_summary + currency_status_summary + tools_summary + "\n\n## SKILL CATALOG\n" + load_skill_catalog()
 
     # 4. Retrieve or initialize session history
     if session_id not in SESSION_STORE:

@@ -147,8 +147,8 @@ async def google_callback(code: str, response: Response):
 
     logger.info(f"User logged in: {email}")
 
-    # Redirect to frontend dashboard with session cookie
-    redirect = RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
+    # Redirect to frontend reconciliation upload with session cookie
+    redirect = RedirectResponse(url=f"{FRONTEND_URL}/reconciliation/upload")
     redirect.set_cookie(
         key=SESSION_COOKIE,
         value=session_id,

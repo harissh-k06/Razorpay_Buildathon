@@ -1,4 +1,6 @@
-﻿import { redirect } from "next/navigation"
+import { redirect } from "next/navigation"
+import { PIPELINE_ROUTES } from "@/lib/routes"
+
 export default function ReconciliationPage() {
-  redirect("/reconciliation/upload")
+  redirect(PIPELINE_ROUTES.UPLOAD)
 }

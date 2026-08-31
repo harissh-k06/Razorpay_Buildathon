@@ -148,7 +148,7 @@ Subject:   Urgent: Transaction Dispute & Reconciliation Clarification — Ref: [
 • Primary Reference / ID(s):  [INV-XXX / pay_XXX / UTR_XXX]
 • Vendor / Counterparty:      [Vendor Name]
 • Transaction Date(s):        [YYYY-MM-DD]
-• Financial Exposure:         ₹[Amount] INR
+• Financial Exposure:         [Currency Symbol][Amount] [Base Currency]
 • Reconciliation State:       Unreconciled Exception (Action Required)
 
 --------------------------------------------------------------------------------

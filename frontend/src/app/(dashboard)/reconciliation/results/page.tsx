@@ -616,36 +616,33 @@ export default function ResultsPage() {
   const matchedCount = results.matchedCount || 0
   const totalCount = results.totalCount || matchedCount || 1
 
-  // Strictly Invoice Match Rate Derivation (192 Matched vs 8 Unmatched = 96.0%)
-  const invoiceExceptionCount = (results.exceptions || []).filter(
-    (e) => e.type?.toLowerCase() === "invoice" && e.status !== "Resolved" && e.status_type !== "resolved"
-  ).length || 8
-  const invoiceTotalCount = (results as any).totalInvoices || (results.matchedInvoicesCount ? results.matchedInvoicesCount + invoiceExceptionCount : 200)
-  const invoiceMatchedCount = results.matchedInvoicesCount || Math.max(0, invoiceTotalCount - invoiceExceptionCount)
-  const invoiceUnmatchedCount = invoiceExceptionCount
-  const invoiceMatchRateNum = +((invoiceMatchedCount / (invoiceTotalCount || 1)) * 100).toFixed(1)
-
-  // Record Coverage Rate (Matched Triplets / (Matched Triplets + Total Exceptions))
-  const totalTriplets = results.triplets?.length || matchedCount
-  const totalExceptions = results.exceptions?.length || 0
-  const recordCoverageRate =
-    results.recordCoverageRate ??
-    (totalTriplets + totalExceptions > 0
-      ? +((totalTriplets / (totalTriplets + totalExceptions)) * 100).toFixed(1)
-      : 100)
-
   // 4-Way Reconciliation Universe: Matched Invoices + Unallocated Cash + Exceptions + Resolved
   const unallocatedCount = unallocatedCashList.length
   const auditExceptionsCount = auditExceptionsList.length
   const resolvedCount = resolvedList.length
-  const totalResolvedAmount = resolvedList.reduce((sum, e) => sum + (e.amount || 0), 0)
+  const totalResolvedAmount = resolvedList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
 
+  // Live Dynamic Invoice Match Rate (Increases towards 100% as invoice exceptions are resolved)
+  const allInvoiceExceptions = (results.exceptions || []).filter((e) => e.type?.toLowerCase() === "invoice")
+  const openInvoiceExceptions = allInvoiceExceptions.filter((e) => e.status !== "Resolved" && e.status_type !== "resolved")
+  const invoiceExceptionCount = openInvoiceExceptions.length
+  const invoiceTotalCount = (results as any).totalInvoices || (results.matchedInvoicesCount ? results.matchedInvoicesCount + allInvoiceExceptions.length : 200)
+  const invoiceMatchedCount = Math.max(0, invoiceTotalCount - invoiceExceptionCount)
+  const invoiceUnmatchedCount = invoiceExceptionCount
+  const invoiceMatchRateNum = invoiceTotalCount > 0 ? +((invoiceMatchedCount / invoiceTotalCount) * 100).toFixed(1) : 100
+
+  // Live Dynamic Record Coverage Rate (Increases towards 100% as records are resolved)
+  const totalTriplets = results.triplets?.length || matchedCount
+  const totalExceptions = results.exceptions?.length || (unallocatedCount + auditExceptionsCount + resolvedCount)
   const totalAuditUniverse = matchedCount + unallocatedCount + auditExceptionsCount + resolvedCount || 1
+  const recordCoverageRate = totalAuditUniverse > 0
+    ? +(((matchedCount + resolvedCount) / totalAuditUniverse) * 100).toFixed(1)
+    : 100
 
   const n1Count = groupedRows.filter((r) => r.kind === "group" && r.groupType === "N:1").length
   const oneNCount = groupedRows.filter((r) => r.kind === "group" && r.groupType === "1:N").length
 
-  // Dynamically computed financial breakdown values
+  // Dynamically computed live financial breakdown values for Waterfall Chart
   const grossInvoicedAmount = results.totalInvoiceAmount || 0
   const invoiceTaxAmount = results.totalInvoiceTax !== undefined && results.totalInvoiceTax !== null
     ? results.totalInvoiceTax
@@ -654,12 +651,11 @@ export default function ResultsPage() {
   const feesAmount = results.totalFeeAmount !== undefined && results.totalFeeAmount !== null
     ? results.totalFeeAmount
     : (results.totalGrossSettlement ? Math.max(0, results.totalGrossSettlement - (results.totalSettledAmount || 0)) : 0)
-  const uncollectedExceptionsAmount = results.totalUncollectedAmount !== undefined && results.totalUncollectedAmount !== null
-    ? results.totalUncollectedAmount
-    : (results.exceptions || []).filter(e => e.type?.toLowerCase() === "invoice" && e.status !== "Resolved" && e.status_type !== "resolved").reduce((s, e) => s + (e.amount || 0), 0)
-  const unallocatedCashAmount = (results.exceptions || [])
-    .filter(e => e.type?.toLowerCase() === "razorpay" && e.status !== "Resolved" && e.status_type !== "resolved")
-    .reduce((s, e) => s + (e.amount || 0), 0)
+
+  // Live dynamic Missing Cash & Unallocated Cash computed directly from active filtered lists
+  const uncollectedExceptionsAmount = auditExceptionsList.reduce((s, e) => s + (Number(e.amount) || 0), 0)
+  const unallocatedCashAmount = unallocatedCashList.reduce((s, e) => s + (Number(e.amount) || 0), 0)
+  const liveDiscrepancyAmount = Math.max(0, uncollectedExceptionsAmount + feesAmount)
 
   return (
     <div className="p-4 sm:p-5 max-w-7xl mx-auto space-y-4 relative pb-20">
@@ -697,10 +693,10 @@ export default function ResultsPage() {
         />
         <SummaryCard
           title="Discrepancy Variance"
-          value={fmt(results.discrepancyAmount)}
-          sub={results.discrepancyAmount && results.discrepancyAmount > 0 ? "Billed vs. bank receipts delta (Uncollected invoices + gateway deductions)" : "Zero invoice discrepancy"}
+          value={fmt(liveDiscrepancyAmount)}
+          sub={liveDiscrepancyAmount > 0 ? "Billed vs. bank receipts delta (Uncollected invoices + gateway deductions)" : "Zero invoice discrepancy"}
           icon={<AlertTriangleIcon className="size-4" />}
-          variant={results.discrepancyAmount && results.discrepancyAmount > 0 ? "warning" : "success"}
+          variant={liveDiscrepancyAmount > 0 ? "warning" : "success"}
         />
         <SummaryCard
           title="Resolved Records"

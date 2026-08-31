@@ -12,13 +12,14 @@ import {
   UploadCloudIcon, SparklesIcon, ScanSearchIcon,
   BarChart3Icon, LandmarkIcon,
 } from "lucide-react"
+import { PIPELINE_ROUTES } from "@/lib/routes"
 
 const data = {
   navReconciliation: [
-    { title: "Upload Files",  url: "/reconciliation/upload",      icon: <UploadCloudIcon className="size-4" /> },
-    { title: "Standardize",   url: "/reconciliation/standardize", icon: <SparklesIcon className="size-4" /> },
-    { title: "Review",        url: "/reconciliation/review",      icon: <ScanSearchIcon className="size-4" /> },
-    { title: "Results",       url: "/reconciliation/results",     icon: <BarChart3Icon className="size-4" /> },
+    { title: "Upload Files",  url: PIPELINE_ROUTES.UPLOAD,      icon: <UploadCloudIcon className="size-4" /> },
+    { title: "Standardize",   url: PIPELINE_ROUTES.STANDARDIZE, icon: <SparklesIcon className="size-4" /> },
+    { title: "Review",        url: PIPELINE_ROUTES.REVIEW,      icon: <ScanSearchIcon className="size-4" /> },
+    { title: "Results",       url: PIPELINE_ROUTES.RESULTS,     icon: <BarChart3Icon className="size-4" /> },
   ],
 }
 
@@ -28,7 +29,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/reconciliation/upload" />}>
+            <SidebarMenuButton size="lg" render={<Link href={PIPELINE_ROUTES.UPLOAD} />}>
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <LandmarkIcon className="size-4" />
               </div>

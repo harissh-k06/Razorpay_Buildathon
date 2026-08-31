@@ -71,7 +71,7 @@ export default function SignUpPage() {
       {/* Left panel - Globe */}
       <div className="relative hidden w-1/2 flex-col justify-between bg-zinc-950 lg:flex">
         {/* Logo */}
-        <Link href="/dashboard" className="relative z-20 flex items-center gap-2.5 p-8">
+        <Link href="/reconciliation/upload" className="relative z-20 flex items-center gap-2.5 p-8">
           <div className="flex size-8 items-center justify-center rounded-lg bg-white text-black">
             <LandmarkIcon className="size-4" />
           </div>

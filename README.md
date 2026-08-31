@@ -173,7 +173,8 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Start FastAPI backend
-uvicorn api.main:app --port 8000 --reload
+cd api
+uvicorn main:app --port 8000 --reload
 ```
 
 ### 3. Frontend Setup

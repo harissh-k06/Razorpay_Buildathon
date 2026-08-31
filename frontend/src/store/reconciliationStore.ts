@@ -11,6 +11,7 @@ import {
 } from '@/lib/reconciliation-types'
 import {
   uploadReconciliationFiles,
+  loadSampleBenchmark,
   runStandardization as apiStandardize,
   runReconciliation as apiReconcile,
   fetchStandardizedData,
@@ -45,6 +46,7 @@ export interface ReconciliationState {
   setBaseCurrency: (currency: string) => void
   setFile: (key: keyof UploadedFilesMap, file: File | null) => void
   uploadAndPreview: () => Promise<void>
+  loadSampleBenchmarkData: () => Promise<void>
   standardize: (baseCurrency?: string) => Promise<void>
   reconcile: () => Promise<void>
   loadData: () => Promise<void>
@@ -83,6 +85,7 @@ const initialState: Omit<
   | 'setBaseCurrency'
   | 'setFile'
   | 'uploadAndPreview'
+  | 'loadSampleBenchmarkData'
   | 'standardize'
   | 'reconcile'
   | 'loadData'
@@ -238,6 +241,32 @@ state = {
       })
     } catch (err: any) {
       setState({ uploadStatus: 'error', error: err.message || 'Upload failed', activeProgressMessage: '' })
+    }
+  },
+
+  loadSampleBenchmarkData: async () => {
+    setState({ uploadStatus: 'uploading', error: null, activeProgressMessage: 'Loading bundled benchmark dataset (200 records)...' })
+    try {
+      const response = await loadSampleBenchmark()
+      setState({
+        uploadStatus: 'uploaded',
+        standardizationStatus: 'idle',
+        standardizationDuration: null,
+        previewData: {
+          invoice: response.files.invoice,
+          razorpay: response.files.razorpay,
+          bank: response.files.bank,
+        },
+        savedPaths: {
+          invoice: response.files.invoice.saved_path,
+          razorpay: response.files.razorpay.saved_path,
+          bank: response.files.bank.saved_path,
+        },
+        error: null,
+        activeProgressMessage: '',
+      })
+    } catch (err: any) {
+      setState({ uploadStatus: 'error', error: err.message || 'Failed to load sample benchmark dataset', activeProgressMessage: '' })
     }
   },
 

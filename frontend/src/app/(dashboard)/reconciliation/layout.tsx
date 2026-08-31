@@ -15,18 +15,19 @@ import {
 import { PennyWiseChat } from "@/components/chatbot/PennyWiseChat"
 import { useReconciliationStore } from "@/store/reconciliationStore"
 import { cn } from "@/lib/utils"
+import { PIPELINE_ROUTES, PIPELINE_STEPS, resolvePennyWiseActionRoute } from "@/lib/routes"
 
-const STEPS = [
-  { label: "Upload",      href: "/reconciliation/upload",      icon: UploadCloudIcon  },
-  { label: "Standardize", href: "/reconciliation/standardize", icon: SparklesIcon     },
-  { label: "Review",      href: "/reconciliation/review",      icon: ScanSearchIcon   },
-  { label: "Results",     href: "/reconciliation/results",     icon: BarChart3Icon    },
-]
+const STEP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  [PIPELINE_ROUTES.UPLOAD]: UploadCloudIcon,
+  [PIPELINE_ROUTES.STANDARDIZE]: SparklesIcon,
+  [PIPELINE_ROUTES.REVIEW]: ScanSearchIcon,
+  [PIPELINE_ROUTES.RESULTS]: BarChart3Icon,
+}
 
 export default function ReconciliationLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const currentStep = STEPS.findIndex((s) => pathname.startsWith(s.href))
+  const currentStep = PIPELINE_STEPS.findIndex((s) => pathname.startsWith(s.href))
 
   const storeLoadData = useReconciliationStore((state) => state.loadData)
   const storeStandardize = useReconciliationStore((state) => state.standardize)
@@ -54,11 +55,12 @@ export default function ReconciliationLayout({ children }: { children: React.Rea
       }
 
       setIsFadingOut(false)
+      const targetRoute = resolvePennyWiseActionRoute(action)
 
       if (action === "reconcile") {
         setProcessingMessage("PennyWise is running reconciliation & updating results...")
         setIsProcessing(true)
-        router.push("/reconciliation/results")
+        router.push(targetRoute)
 
         if (typeof storeReconcile === "function") {
           await storeReconcile()
@@ -67,7 +69,7 @@ export default function ReconciliationLayout({ children }: { children: React.Rea
         const currencyText = target ? ` to ${target.toUpperCase()}` : ""
         setProcessingMessage(`PennyWise is re-standardizing data${currencyText}...`)
         setIsProcessing(true)
-        router.push("/reconciliation/standardize")
+        router.push(targetRoute)
 
         if (typeof storeStandardize === "function") {
           await storeStandardize(target || "INR")
@@ -75,8 +77,8 @@ export default function ReconciliationLayout({ children }: { children: React.Rea
       } else if (action === "review" || action === "bulk_update" || action === "data_updated") {
         setProcessingMessage("PennyWise updated transaction records. Refreshing data...")
         setIsProcessing(true)
-        if (!pathname.startsWith("/reconciliation/review")) {
-          router.push("/reconciliation/review")
+        if (!pathname.startsWith(targetRoute)) {
+          router.push(targetRoute)
         }
 
         if (typeof storeLoadData === "function") {
@@ -160,11 +162,11 @@ export default function ReconciliationLayout({ children }: { children: React.Rea
       {/* Step indicator */}
       <div className="shrink-0 border-b border-border/60 bg-background/95 backdrop-blur px-6 py-3">
         <nav className="flex items-center gap-0">
-          {STEPS.map((step, i) => {
-            const Icon = step.icon
+          {PIPELINE_STEPS.map((step, i) => {
+            const Icon = STEP_ICONS[step.href] || SparklesIcon
             const isActive  = pathname.startsWith(step.href)
             const isDone    = i < currentStep
-            const isLast    = i === STEPS.length - 1
+            const isLast    = i === PIPELINE_STEPS.length - 1
             return (
               <React.Fragment key={step.href}>
                 <Link

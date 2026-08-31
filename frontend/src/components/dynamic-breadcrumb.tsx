@@ -13,17 +13,11 @@ import {
 } from "@/components/ui/breadcrumb"
 
 const labelMap: Record<string, string> = {
-  dashboard: "Dashboard",
-  accounts: "Accounts",
-  transactions: "Transactions",
-  transfers: "Transfers",
-  cards: "Cards",
-  crypto: "Crypto",
-  analytics: "Analytics",
-  investments: "Investments",
-  budgets: "Budgets",
-  settings: "Settings",
-  notifications: "Notifications",
+  reconciliation: "Reconciliation",
+  upload: "Upload",
+  standardize: "Standardize",
+  review: "Review",
+  results: "Results",
   "sign-in": "Sign In",
   "sign-up": "Sign Up",
 }

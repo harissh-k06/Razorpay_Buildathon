@@ -195,6 +195,35 @@ async def upload_files(
         "files": result,
     })
 
+@app.post("/api/load-sample", tags=["Upload"])
+async def load_sample_files():
+    """Load bundled synthetic benchmark CSV files (200 Invoices, Razorpay settlements, Bank deposits) for instant 1-click testing."""
+    synth_dir = PROJECT_ROOT / "synthetic data" / "data"
+    files_to_copy = {
+        "invoice": synth_dir / "invoices.csv",
+        "razorpay": synth_dir / "razorpay_settlements.csv",
+        "bank": synth_dir / "bank.csv",
+    }
+    
+    result: Dict[str, Any] = {}
+    for key, src_path in files_to_copy.items():
+        if not src_path.exists():
+            raise HTTPException(status_code=404, detail=f"Bundled sample benchmark file not found: {src_path.name}")
+        dest = UPLOADS_DIR / f"{key}_{src_path.name}"
+        shutil.copy2(src_path, dest)
+        df = _parse_csv(dest)
+        preview = _df_to_preview(df)
+        preview["filename"] = src_path.name
+        preview["saved_path"] = str(dest)
+        result[key] = preview
+
+    return JSONResponse(status_code=200, content={
+        "status": "success",
+        "message": "Sample benchmark dataset loaded successfully (200 invoices).",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "files": result,
+    })
+
 @app.post("/api/standardize", tags=["Standardize"])
 async def standardize_files(req: StandardizeRequest):
     start = time.time()
@@ -346,6 +375,7 @@ async def update_reconcile_params_endpoint(payload: ReconcileParamsPayload):
             allow_split=payload.allow_split,
             max_invoices_per_settlement=payload.max_invoices_per_settlement,
             split_tolerance_pct=payload.split_tolerance_pct,
+            skip_agentic_check=True,
         )
         return JSONResponse(content=res)
     except Exception as e:
@@ -374,8 +404,10 @@ async def chat_endpoint(request: ChatRequest):
     async def event_generator():
         chunk_count = 0
         try:
-            from chat_bot import stream_chat
-            async for chunk in stream_chat(request.message, session_id=session_id, agentic_mode=request.agentic_mode):
+            import importlib
+            import chat_bot
+            importlib.reload(chat_bot)
+            async for chunk in chat_bot.stream_chat(request.message, session_id=session_id, agentic_mode=request.agentic_mode):
                 chunk_count += 1
                 yield chunk
             logger.info(f"[/api/chat] Stream finished successfully for session '{session_id}' ({chunk_count} chunks yielded)")
