@@ -7,8 +7,6 @@ import { useAuthStore } from "@/store/authStore"
 import { useReconciliationStore } from "@/store/reconciliationStore"
 import { PIPELINE_ROUTES, getInitialPipelineRoute } from "@/lib/routes"
 
-export { PIPELINE_ROUTES, PIPELINE_STEPS, getInitialPipelineRoute, resolvePennyWiseActionRoute } from "@/lib/routes"
-
 export default function RootPage() {
   const router = useRouter()
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
