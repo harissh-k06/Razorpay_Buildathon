@@ -21,7 +21,7 @@ PROJECT_ROOT = BASE_DIR.parent
 UPLOADS_DIR = BASE_DIR / "uploads"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
-for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "mcp_server"), str(PROJECT_ROOT / "standardisation"), str(PROJECT_ROOT / "reconciliation"), str(PROJECT_ROOT / "chat-bot")]:
+for p in [str(BASE_DIR), str(PROJECT_ROOT), str(PROJECT_ROOT / "mcp_server"), str(PROJECT_ROOT / "standardisation"), str(PROJECT_ROOT / "reconciliation"), str(PROJECT_ROOT / "chat-bot")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
@@ -53,14 +53,20 @@ app.add_middleware(
 
 # ── Auth & Email Routers ───────────────────────────────────────────────────────
 try:
-    from auth import auth_router
+    try:
+        from auth import auth_router
+    except ImportError:
+        from api.auth import auth_router
     app.include_router(auth_router)
     logger.info("Auth router registered")
 except Exception as _auth_err:
     logger.warning(f"Auth router not loaded: {_auth_err}")
 
 try:
-    from email_api import email_router
+    try:
+        from email_api import email_router
+    except ImportError:
+        from api.email_api import email_router
     app.include_router(email_router)
     logger.info("Email router registered")
 except Exception as _email_err:
