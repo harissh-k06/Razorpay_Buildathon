@@ -72,6 +72,12 @@ auth_router = APIRouter(prefix="/api/auth", tags=["Auth"])
 def _get_session(request: Request) -> Optional[Dict[str, Any]]:
     session_id = request.cookies.get(SESSION_COOKIE)
     if not session_id:
+        auth_hdr = request.headers.get("Authorization", "")
+        if auth_hdr.startswith("Bearer "):
+            session_id = auth_hdr.split("Bearer ", 1)[1].strip()
+        elif request.headers.get("x-session-id"):
+            session_id = request.headers.get("x-session-id")
+    if not session_id:
         return None
     sessions = _load_sessions()
     return sessions.get(session_id)
@@ -177,13 +183,15 @@ async def google_callback(request: Request, code: str, response: Response, state
     if dest_frontend == "*":
         dest_frontend = FRONTEND_URL.rstrip("/")
 
+    is_https = "https" in dest_frontend.lower() or request.url.scheme == "https"
     # Redirect to frontend reconciliation upload with session cookie
-    redirect = RedirectResponse(url=f"{dest_frontend}/reconciliation/upload")
+    redirect = RedirectResponse(url=f"{dest_frontend}/reconciliation/upload?session_id={session_id}")
     redirect.set_cookie(
         key=SESSION_COOKIE,
         value=session_id,
-        httponly=False,   # Needs to be readable by frontend checks via HTTP
-        samesite="lax",
+        httponly=False,
+        samesite="none" if is_https else "lax",
+        secure=is_https,
         max_age=86400 * 7,  # 7 days
         path="/",
     )
@@ -217,6 +225,10 @@ async def auth_status(request: Request):
 async def logout(request: Request, response: Response):
     """Log out the current user by clearing the session."""
     session_id = request.cookies.get(SESSION_COOKIE)
+    if not session_id:
+        auth_hdr = request.headers.get("Authorization", "")
+        if auth_hdr.startswith("Bearer "):
+            session_id = auth_hdr.split("Bearer ", 1)[1].strip()
     sessions = _load_sessions()
     if session_id and session_id in sessions:
         sessions.pop(session_id, None)
@@ -229,7 +241,7 @@ async def logout(request: Request, response: Response):
 
 
 @auth_router.post("/dev-login")
-async def dev_login(response: Response):
+async def dev_login(request: Request, response: Response):
     """Bypass login for local development / testing without Google credentials."""
     session_id = str(uuid.uuid4())
     sessions = _load_sessions()
@@ -244,9 +256,11 @@ async def dev_login(response: Response):
     _save_sessions(sessions)
     logger.info("Dev login session created")
 
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
     resp = JSONResponse({
         "success": True,
         "authenticated": True,
+        "session_id": session_id,
         "user": {
             "email": "admin@pennywise.finance",
             "name": "Demo Admin",
@@ -257,7 +271,8 @@ async def dev_login(response: Response):
         key=SESSION_COOKIE,
         value=session_id,
         httponly=False,
-        samesite="lax",
+        samesite="none" if is_https else "lax",
+        secure=is_https,
         max_age=86400 * 7,
         path="/",
     )
