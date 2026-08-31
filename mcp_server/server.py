@@ -9,21 +9,16 @@ from pathlib import Path
 from io import StringIO
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
-from fastmcp import FastMCP
-from dotenv import load_dotenv
-# Load .env from project root
-root_env = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=root_env, override=True)
-# Optional LLM fallback – only imported when needed
 try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
-
-# -------------------------------------------------------------------
-# FastMCP Server
-# -------------------------------------------------------------------
-mcp = FastMCP("Financial File Parser (Step 0)")
+    from fastmcp import FastMCP
+    mcp = FastMCP("Financial File Parser (Step 0)")
+except Exception:
+    class DummyMCP:
+        def tool(self, *args, **kwargs):
+            def decorator(f):
+                return f
+            return decorator
+    mcp = DummyMCP()
 
 # -------------------------------------------------------------------
 # Agentic Mode State (Segregation of Action/Write vs Read-Only Tools)

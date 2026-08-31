@@ -262,23 +262,29 @@ class DataStandardizer:
 
     def _call_mcp_parser(self, file_path: Path) -> dict:
         """
-        Connect to MCP server (mcp_server/server.py) via FastMCP Client using StdioTransport
-        and call parse_financial_file to obtain canonical JSON data.
+        Parse financial file to obtain canonical JSON data.
+        Tries high-speed in-process invocation first, with StdioTransport fallback.
         """
-        # Locate server.py script
-        server_script = (self.workspace_root / "mcp_server" / "server.py").resolve()
-        if not server_script.exists():
-            server_script = (self.script_dir.parent / "mcp_server" / "server.py").resolve()
-            if not server_script.exists():
-                raise RuntimeError(f"MCP server script not found at {server_script}")
-
         resolved_file = Path(file_path).resolve()
         if not resolved_file.exists():
             raise RuntimeError(f"Input file not found at {resolved_file}")
 
-        # Check if fastmcp Client is available
-        if Client is not None and StdioTransport is not None:
-            # Locate Python executable in venv if available
+        # 1. Direct in-process invocation (instantaneous, 100% resilient)
+        if str(self.workspace_root) not in sys.path:
+            sys.path.insert(0, str(self.workspace_root))
+        try:
+            from mcp_server.server import parse_financial_file
+            data = parse_financial_file(str(resolved_file))
+            if isinstance(data, dict) and "transactions" in data and "metadata" in data:
+                return data
+            if isinstance(data, dict) and "error" in data:
+                raise RuntimeError(f"MCP parser error for '{resolved_file}': {data['error']}")
+        except Exception as in_proc_err:
+            pass
+
+        # 2. FastMCP Client with StdioTransport fallback
+        server_script = (self.workspace_root / "mcp_server" / "server.py").resolve()
+        if Client is not None and StdioTransport is not None and server_script.exists():
             venv_py_win = self.workspace_root / "venv" / "Scripts" / "python.exe"
             venv_py_unix = self.workspace_root / "venv" / "bin" / "python"
             py_exec = str(venv_py_win) if venv_py_win.exists() else (
@@ -292,7 +298,6 @@ class DataStandardizer:
 
             try:
                 result = asyncio.run(_async_call())
-                # Extract parsed JSON data from result
                 data = None
                 if hasattr(result, "data") and isinstance(result.data, dict) and result.data:
                     data = result.data
@@ -312,22 +317,9 @@ class DataStandardizer:
                 if isinstance(data, dict) and "transactions" in data and "metadata" in data:
                     return data
             except Exception:
-                pass  # Fall through to direct tool invocation
+                pass
 
-        # Direct in-process invocation fallback (100% resilient across all environments)
-        if str(self.workspace_root) not in sys.path:
-            sys.path.insert(0, str(self.workspace_root))
-        try:
-            from mcp_server.server import parse_financial_file
-            data = parse_financial_file(str(resolved_file))
-            if isinstance(data, dict) and "transactions" in data and "metadata" in data:
-                return data
-            if isinstance(data, dict) and "error" in data:
-                raise RuntimeError(f"MCP parser error for '{resolved_file}': {data['error']}")
-        except Exception as e:
-            raise RuntimeError(f"Failed to parse file '{resolved_file}' via MCP tool: {e}") from e
-
-        raise RuntimeError(f"Unexpected response format from MCP parser for '{resolved_file}'")
+        raise RuntimeError(f"Failed to parse file '{resolved_file}' via MCP tool")
 
     def _standardize_llm(self, df: pd.DataFrame, source_key: str) -> pd.DataFrame:
         """
