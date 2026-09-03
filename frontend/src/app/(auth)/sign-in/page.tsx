@@ -8,10 +8,7 @@ import { Button } from "@/components/ui/button"
 import dynamic from "next/dynamic"
 
 import { useAuthStore } from "@/store/authStore"
-
-const GlobeDemo = dynamic(() => import("@/components/globe-demo"), {
-  ssr: false,
-})
+import { AuthAvatarHero } from "@/components/auth-avatar-hero"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -46,8 +43,13 @@ export default function SignInPage() {
 
   return (
     <div className="flex min-h-svh">
-      {/* ── Left panel – Globe ── */}
-      <div className="relative hidden w-1/2 flex-col justify-between bg-zinc-950 lg:flex">
+      {/* ── Left panel – Avatar Showcase ── */}
+      <div className="relative hidden w-1/2 flex-col justify-between bg-zinc-950 lg:flex overflow-hidden">
+        {/* Ambient background glows */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(13,148,251,0.12)_0%,transparent_70%)] pointer-events-none" />
+        <div className="absolute -top-24 -left-24 size-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 size-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+
         {/* Logo */}
         <Link href="/reconciliation/upload" className="relative z-20 flex items-center gap-2.5 p-8">
           <div className="flex size-9 items-center justify-center rounded-xl bg-white/95 border border-white/20 shadow-md overflow-hidden p-0.5">
@@ -60,10 +62,11 @@ export default function SignInPage() {
           <span className="text-sm font-semibold text-white tracking-tight">PennyWise</span>
         </Link>
 
-        {/* Globe */}
-        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-          <GlobeDemo />
-        </div>
+        {/* Character Avatar Hero */}
+        <AuthAvatarHero
+          headline="Meet PennyWise"
+          subheadline="Your autonomous 3-way reconciliation agent verifying customer billing, payment gateway settlements, and bank deposits."
+        />
 
         {/* Quote overlay */}
         <div className="relative z-20 mt-auto p-8">
