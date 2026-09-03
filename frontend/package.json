@@ -1,12 +1,13 @@
 {
-  "name": "pennywise-khata-agent",
+  "name": "pennywise-your-khata-agent",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:main": "git push origin master:main"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",

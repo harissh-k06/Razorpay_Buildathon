@@ -16,8 +16,8 @@ Welcome to **PennyWise – Your Autonomous Khata Agent**. Follow this guide to g
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/harissh-k06/Razorpay_Buildathon.git
-cd Razorpay_Buildathon
+git clone https://github.com/harissh-k06/pennywise-your-khata-agent.git
+cd pennywise-your-khata-agent
 
 # 2. Copy the environment configuration template
 # On Windows (PowerShell / CMD):

@@ -32,6 +32,11 @@ export const metadata: Metadata = {
     title: "PennyWise – Your Khata Agent",
     description: "AI-powered 3-way financial reconciliation assistant and automated ledger matching engine.",
   },
+  icons: {
+    icon: "/penny-wise-avatar.png",
+    shortcut: "/penny-wise-avatar.png",
+    apple: "/penny-wise-avatar.png",
+  },
 };
 
 export default function RootLayout({

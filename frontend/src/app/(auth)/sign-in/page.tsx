@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "motion/react"
-import { LandmarkIcon, ShieldCheckIcon } from "lucide-react"
+import { ShieldCheckIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import dynamic from "next/dynamic"
 
@@ -50,10 +50,14 @@ export default function SignInPage() {
       <div className="relative hidden w-1/2 flex-col justify-between bg-zinc-950 lg:flex">
         {/* Logo */}
         <Link href="/reconciliation/upload" className="relative z-20 flex items-center gap-2.5 p-8">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-white text-black">
-            <LandmarkIcon className="size-4" />
+          <div className="flex size-9 items-center justify-center rounded-xl bg-white/95 border border-white/20 shadow-md overflow-hidden p-0.5">
+            <img
+              src="/penny-wise-avatar.png"
+              alt="PennyWise"
+              className="size-full object-contain"
+            />
           </div>
-          <span className="text-sm font-semibold text-white">PennyWise</span>
+          <span className="text-sm font-semibold text-white tracking-tight">PennyWise</span>
         </Link>
 
         {/* Globe */}
@@ -65,10 +69,9 @@ export default function SignInPage() {
         <div className="relative z-20 mt-auto p-8">
           <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
             <blockquote className="text-sm leading-relaxed text-white/80">
-              &ldquo;The best time to start investing was yesterday. The second
-              best time is now.&rdquo;
+              &ldquo;Every cent accounted for, every payout verified.&rdquo;
             </blockquote>
-            <p className="mt-3 text-xs text-white/50">&mdash; Financial Wisdom</p>
+            <p className="mt-3 text-xs text-white/50">&mdash; Automated Financial Integrity</p>
           </div>
         </div>
       </div>
@@ -86,8 +89,12 @@ export default function SignInPage() {
             className="mb-8 flex flex-col items-center lg:hidden"
             variants={itemVariants}
           >
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <LandmarkIcon className="size-5" />
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 border border-blue-200 shadow-sm overflow-hidden p-1">
+              <img
+                src="/penny-wise-avatar.png"
+                alt="PennyWise"
+                className="size-full object-contain"
+              />
             </div>
           </motion.div>
 

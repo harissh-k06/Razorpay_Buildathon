@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sidebar"
 import {
   UploadCloudIcon, SparklesIcon, ScanSearchIcon,
-  BarChart3Icon, LandmarkIcon,
+  BarChart3Icon,
 } from "lucide-react"
 import { PIPELINE_ROUTES } from "@/lib/routes"
 
@@ -30,8 +30,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href={PIPELINE_ROUTES.UPLOAD} />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <LandmarkIcon className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden border border-blue-200/80 bg-blue-50/60 shadow-xs shrink-0">
+                <img
+                  src="/penny-wise-avatar.png"
+                  alt="PennyWise"
+                  className="size-full object-cover"
+                />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">PennyWise</span>

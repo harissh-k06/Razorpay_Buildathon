@@ -1,0 +1,35 @@
+name: Sync Master to Main
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git Author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fast-forward and sync main with master
+        run: |
+          echo "Fetching latest refs..."
+          git fetch origin master
+          git fetch origin main || true
+          echo "Switching to main branch..."
+          git checkout -B main origin/master
+          echo "Pushing exact copy of master to origin/main..."
+          git push origin main --force

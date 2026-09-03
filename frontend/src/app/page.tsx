@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { LandmarkIcon, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { useAuthStore } from "@/store/authStore"
 import { useReconciliationStore } from "@/store/reconciliationStore"
 import { PIPELINE_ROUTES, getInitialPipelineRoute } from "@/lib/routes"
@@ -44,8 +44,12 @@ export default function RootPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
       <div className="flex flex-col items-center gap-4 text-center">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 animate-pulse">
-          <LandmarkIcon className="size-7" />
+        <div className="relative flex size-16 items-center justify-center rounded-2xl bg-blue-50 border border-blue-200/80 shadow-lg shadow-blue-500/10 overflow-hidden animate-pulse p-1">
+          <img
+            src="/penny-wise-avatar.png"
+            alt="PennyWise"
+            className="size-full object-contain"
+          />
         </div>
         <div className="space-y-1">
           <h1 className="text-xl font-bold tracking-tight text-foreground">PennyWise</h1>

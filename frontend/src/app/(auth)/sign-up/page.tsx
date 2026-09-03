@@ -5,7 +5,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion } from "motion/react"
 import {
-  LandmarkIcon,
   MailIcon,
   LockIcon,
   EyeIcon,
@@ -72,11 +71,15 @@ export default function SignUpPage() {
       <div className="relative hidden w-1/2 flex-col justify-between bg-zinc-950 lg:flex">
         {/* Logo */}
         <Link href="/reconciliation/upload" className="relative z-20 flex items-center gap-2.5 p-8">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-white text-black">
-            <LandmarkIcon className="size-4" />
+          <div className="flex size-9 items-center justify-center rounded-xl bg-white/95 border border-white/20 shadow-md overflow-hidden p-0.5">
+            <img
+              src="/penny-wise-avatar.png"
+              alt="PennyWise"
+              className="size-full object-contain"
+            />
           </div>
-          <span className="text-sm font-semibold text-white">
-            Shadcn Fintech
+          <span className="text-sm font-semibold text-white tracking-tight">
+            PennyWise
           </span>
         </Link>
 
@@ -112,8 +115,12 @@ export default function SignUpPage() {
             className="mb-8 flex flex-col items-center lg:hidden"
             variants={itemVariants}
           >
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <LandmarkIcon className="size-5" />
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 border border-blue-200 shadow-sm overflow-hidden p-1">
+              <img
+                src="/penny-wise-avatar.png"
+                alt="PennyWise"
+                className="size-full object-contain"
+              />
             </div>
           </motion.div>
 

@@ -150,8 +150,8 @@ flowchart LR
 
 ```bash
 # Clone the repository
-git clone https://github.com/harissh-k06/Razorpay_Buildathon.git
-cd Razorpay-2
+git clone https://github.com/harissh-k06/pennywise-your-khata-agent.git
+cd pennywise-your-khata-agent
 
 # Copy the environment configuration template
 cp .env.example .env
