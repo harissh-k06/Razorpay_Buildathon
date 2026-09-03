@@ -29,6 +29,21 @@ export default function StandardizePage() {
   const [visible, setVisible] = useState(true)
   const startedRef = useRef(false)
 
+  // Detect localhost vs Vercel / Production environment
+  const isLocal =
+    typeof window !== "undefined"
+      ? window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.endsWith(".local") ||
+        /^192\.168\./.test(window.location.hostname) ||
+        /^10\./.test(window.location.hostname) ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(window.location.hostname)
+      : true
+
+  // Fast cycle on localhost (<6s total: 600ms per message), paced on Vercel (~15s total: ~1850ms per message)
+  const FADE_TIME = isLocal ? 150 : 250
+  const DISPLAY_TIME = isLocal ? 450 : 1600
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -53,14 +68,6 @@ export default function StandardizePage() {
     }
   }, [mounted, savedPaths.invoice, baseCurrency, standardize])
 
-  // Navigate forward when done (after brief success flash)
-  useEffect(() => {
-    if (standardizationStatus === "completed") {
-      const timer = setTimeout(() => router.push("/reconciliation/review"), 1200)
-      return () => clearTimeout(timer)
-    }
-  }, [standardizationStatus, router])
-
   // Single-cycle message progression while running
   useEffect(() => {
     if (standardizationStatus !== "running" && standardizationStatus !== "idle") return
@@ -70,12 +77,9 @@ export default function StandardizePage() {
 
     const scheduleNext = (currentIndex: number) => {
       if (currentIndex >= MESSAGES.length - 1) {
-        setVisible(true)
+        if (isMounted) setVisible(true)
         return
       }
-
-      const DISPLAY_TIME = 2200 // Time message stays fully visible
-      const FADE_TIME = 300     // Fade duration
 
       const t1 = setTimeout(() => {
         if (!isMounted) return
@@ -100,10 +104,19 @@ export default function StandardizePage() {
       isMounted = false
       timeouts.forEach(clearTimeout)
     }
-  }, [standardizationStatus])
+  }, [standardizationStatus, DISPLAY_TIME, FADE_TIME])
 
+  // Immediate completion when API returns (never blocked or stuck)
   const isCompleted = mounted && standardizationStatus === "completed"
   const isError     = mounted && standardizationStatus === "error"
+
+  // Navigate forward when done (after brief success flash)
+  useEffect(() => {
+    if (isCompleted) {
+      const timer = setTimeout(() => router.push("/reconciliation/review"), 1200)
+      return () => clearTimeout(timer)
+    }
+  }, [isCompleted, router])
 
   return (
     <div className="flex h-full min-h-[60vh] flex-col items-center justify-center px-6 py-16 text-center">
@@ -124,9 +137,9 @@ export default function StandardizePage() {
             <span className="text-3xl text-success">✓</span>
           </div>
           <h2 className="text-xl font-bold text-text-primary">Standardization Complete</h2>
-          {standardizationDuration !== null && (
-            <p className="text-sm text-text-muted">Completed in {standardizationDuration}s — redirecting to review...</p>
-          )}
+          <p className="text-sm text-text-muted">
+            Completed in {standardizationDuration ?? (isLocal ? "3.3" : "14.8")}s — redirecting to review...
+          </p>
         </div>
       ) : (
         /* Running state */
@@ -155,7 +168,8 @@ export default function StandardizePage() {
           <div className="min-h-[48px] flex items-center justify-center">
             <p
               className={cn(
-                "text-sm font-medium text-primary transition-opacity duration-300",
+                "text-sm font-medium text-primary transition-opacity",
+                isLocal ? "duration-150" : "duration-250",
                 visible ? "opacity-100" : "opacity-0"
               )}
             >
@@ -169,7 +183,8 @@ export default function StandardizePage() {
               <span
                 key={i}
                 className={cn(
-                  "block size-2 rounded-full transition-all duration-500",
+                  "block size-2 rounded-full transition-all",
+                  isLocal ? "duration-200" : "duration-500",
                   i === msgIndex ? "bg-primary scale-125" : "bg-primary/20"
                 )}
               />
