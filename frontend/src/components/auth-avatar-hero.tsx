@@ -10,7 +10,7 @@ interface AuthAvatarHeroProps {
 
 export function AuthAvatarHero({
   headline = "Meet PennyWise",
-  subheadline = "Autonomous 3-way reconciliation paired with an intelligent audit agent to verify payouts, isolate discrepancies, and draft memos.",
+  subheadline = "Your intelligent financial copilot that keeps your accounts balanced, accurate, and stress-free.",
 }: AuthAvatarHeroProps) {
   return (
     <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-8 text-center my-auto">
@@ -41,20 +41,13 @@ export function AuthAvatarHero({
         </motion.div>
       </div>
 
-      {/* Identity badges & text */}
+      {/* Identity text */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
-        className="mt-8 space-y-2.5 max-w-sm"
+        className="mt-6 space-y-2 max-w-sm"
       >
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/25 text-blue-400 text-xs font-medium">
-          <span className="relative flex size-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-            <span className="relative inline-flex rounded-full size-2 bg-blue-500" />
-          </span>
-          Autonomous Khata Agent
-        </div>
         <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
           {headline}
         </h3>

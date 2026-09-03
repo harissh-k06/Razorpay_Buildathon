@@ -50,22 +50,10 @@ export default function SignInPage() {
         <div className="absolute -top-24 -left-24 size-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 size-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
 
-        {/* Logo */}
-        <Link href="/reconciliation/upload" className="relative z-20 flex items-center gap-2.5 p-8">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-white/95 border border-white/20 shadow-md overflow-hidden p-0.5">
-            <img
-              src="/penny-wise-avatar.png"
-              alt="PennyWise"
-              className="size-full object-contain"
-            />
-          </div>
-          <span className="text-sm font-semibold text-white tracking-tight">PennyWise</span>
-        </Link>
-
         {/* Character Avatar Hero */}
         <AuthAvatarHero
           headline="Meet PennyWise"
-          subheadline="Your autonomous 3-way reconciliation agent verifying customer billing, payment gateway settlements, and bank deposits."
+          subheadline="Your friendly AI assistant for effortless bookkeeping and financial peace of mind."
         />
 
         {/* Quote overlay */}
